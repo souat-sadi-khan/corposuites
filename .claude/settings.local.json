@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(xargs -n1 basename)",
+      "Bash(php -l app/Contracts/Approvable.php)",
+      "Bash(php -l app/Traits/HasWorkflow.php)",
+      "Bash(php -l app/Services/WorkflowEngineService.php)",
+      "Bash(php -l app/Services/WorkflowNotifier.php)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(php -l app/Providers/AppServiceProvider.php)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(php -r \"require 'vendor/autoload.php';\")",
+      "Bash(php -r ' *)"
+    ]
+  }
+}

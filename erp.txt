@@ -1,0 +1,152 @@
+CorpoSuites ERP Development Roadmap After HRM
+
+Recommended Module Development Order After HRM:
+
+1. WORKFLOW ENGINE (Foundation Module)
+
+Purpose: Create a common approval and automation layer before adding
+more enterprise modules.
+
+Features: - Approval Levels - Single, Sequential and Parallel
+Approvals - Approval Templates - Workflow Builder - Custom Status
+Management - Approval History - Rejection and Resubmission Flow -
+Notification Trigger System - Module-wise Workflow Configuration
+
+2. CRM MODULE
+
+Purpose: Manage customer acquisition, sales pipeline and relationship
+management.
+
+Features: - CRM Dashboard - Lead Sources - Lead Statuses - Leads
+Management - Contacts Management - Companies Management - Customer
+Relationship History - Opportunities - Sales Pipeline Kanban -
+Activities (Call, Meeting, Email) - Follow Ups and Reminders - Email
+Communication History - Quotations - Sales Forecasting - CRM Reports
+
+3. SALES MODULE
+
+Purpose: Convert opportunities into revenue and manage complete sales
+lifecycle.
+
+Features: - Customers - Customer Groups - Customer Credit Limit -
+Payment Terms - Price Lists - Sales Quotations - Sales Orders - Delivery
+Management - Delivery Notes - Sales Invoices - Credit Notes - Sales
+Returns - POS System - Sales Targets - Sales Commission - Sales Reports
+
+4. PURCHASE MODULE
+
+Purpose: Manage supplier relationships and procurement process.
+
+Features: - Vendors - Vendor Groups - Vendor Performance - Purchase
+Requests - Approval Workflow - RFQ Management - Supplier Quotations -
+Purchase Orders - Goods Receipts - Purchase Invoice Matching - Debit
+Notes - Purchase Returns - Purchase Reports
+
+5. INVENTORY MODULE
+
+Purpose: Control stock movement and warehouse operations.
+
+Features: - Warehouses - Warehouse Locations - Stock Entry - Opening
+Stock - Stock Adjustment - Stock Transfer - Stock Count - Batch
+Management - Serial Number Management - Inventory Transactions - Stock
+Valuation - Reorder Level - Low Stock Alerts - Inventory Reports
+
+6. PRODUCT MANAGEMENT MODULE
+
+Purpose: Create a complete product master system connected with sales,
+purchase and inventory.
+
+Features: - Categories - Sub Categories - Brands - Units - Unit
+Conversion - Product Attributes - Attribute Values - Product Variants -
+Products - Product Images - Product Bundles - Pricing Management -
+Discount Rules - Barcode Generator - Product Reports
+
+7. ACCOUNTING MODULE
+
+Purpose: Manage complete financial operations and reporting.
+
+Features: - Chart of Accounts - Account Types - Journal Entries -
+General Ledger - Cash Book - Bank Accounts - Bank Transactions - Bank
+Reconciliation - Accounts Receivable - Accounts Payable - Payment
+Receive - Payment Make - Trial Balance - Profit and Loss - Balance
+Sheet - Cash Flow - Tax Management - Financial Reports
+
+8. ASSET MANAGEMENT MODULE
+
+Purpose: Manage company assets and their lifecycle.
+
+Features: - Asset Categories - Asset Register - Asset Purchase
+Information - Asset Assignment - Employee Asset Tracking - Asset
+Location Tracking - Maintenance Schedule - Maintenance History -
+Depreciation Calculation - Disposal Management - Asset Reports
+
+9. PROJECT MANAGEMENT MODULE
+
+Purpose: Manage client projects, resources and profitability.
+
+Features: - Clients - Projects - Project Budgets - Project Teams -
+Milestones - Tasks - Task Board Kanban - Gantt Chart - Task
+Dependencies - Time Tracking - Timesheets - Project Expenses - Project
+Billing - Project Profitability Reports
+
+10. DOCUMENT MANAGEMENT MODULE
+
+Purpose: Centralize company documents and approvals.
+
+Features: - Document Categories - Document Storage - Document Search -
+Metadata Management - Contracts - Contract Expiry Reminder - Digital
+Signature - Version Control - Document Access Permission - Document
+Audit Trail
+
+11. SUPPORT MODULE
+
+Purpose: Manage customer and internal support operations.
+
+Features: - Ticket Categories - Ticket Creation - Ticket Assignment -
+Ticket Status - Priority Management - SLA Management - Escalation
+Rules - Knowledge Base - Customer Portal - Support Reports
+
+12. BUDGET & FINANCE MODULE
+
+Purpose: Control planning, spending and business performance.
+
+Features: - Budget Planning - Department Budget - Project Budget -
+Budget Allocation - Actual vs Budget Comparison - Cost Centers - Profit
+Centers - Financial Forecasting - Budget Reports
+
+13. REPORTS & EXECUTIVE DASHBOARD
+
+Purpose: Provide complete business intelligence.
+
+Features: - Executive Dashboard - Sales Analytics - Purchase Analytics -
+Inventory Analytics - Accounting Reports - HR Reports - Customer
+Reports - Vendor Reports - Custom Report Builder - Export PDF/Excel -
+Scheduled Reports
+
+FINAL ERP BUILD ORDER
+
+1.  HRM (Completed)
+2.  Workflow Engine
+3.  CRM
+4.  Sales
+5.  Purchase
+6.  Inventory
+7.  Product Management
+8.  Accounting
+9.  Asset Management
+10. Project Management
+11. Document Management
+12. Support
+13. Budget & Finance
+14. Reports & Executive Dashboard
+
+Architecture Dependency Reason: - Workflow Engine should come early
+because Sales, Purchase, Accounting, HRM and Support require
+approvals. - CRM should come before Sales because opportunities convert
+into sales documents. - Product Management should be completed before
+Sales, Purchase and Inventory because all transactions depend on
+products. - Inventory should be connected with Sales and Purchase before
+Accounting integration. - Accounting should be implemented after
+transaction modules because it receives automated journal entries. -
+Reports should be developed last because all modules generate reporting
+data.
