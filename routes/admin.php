@@ -777,6 +777,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 
     // HRM - Salary Components
+    Route::get('salary-components/how-to', [SalaryComponentController::class, 'howTo'])->name('salary-components.how.to');
     Route::post('salary-components/status/{id}', [SalaryComponentController::class, 'updateStatus'])->name('salary-components.status');
     Route::resource('salary-components', SalaryComponentController::class)->except(['show']);
 

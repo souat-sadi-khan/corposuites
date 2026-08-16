@@ -20,14 +20,14 @@
             </div>
             <div class="fm-field">
                 <label>Type <span class="req">*</span></label>
-                <select name="type" class="form-select" required>
+                <select name="type" class="form-select select" data-minimum-results-for-search="Infinity" required>
                     <option value="earning" {{ old('type', $salaryComponent->type) == 'earning' ? 'selected' : '' }}>Earning</option>
                     <option value="deduction" {{ old('type', $salaryComponent->type) == 'deduction' ? 'selected' : '' }}>Deduction</option>
                 </select>
             </div>
             <div class="fm-field">
                 <label>Calculation Type <span class="req">*</span></label>
-                <select name="calculation_type" class="form-select" required>
+                <select name="calculation_type" class="form-select select" data-minimum-results-for-search="Infinity" required>
                     <option value="fixed" {{ old('calculation_type', $salaryComponent->calculation_type) == 'fixed' ? 'selected' : '' }}>Fixed</option>
                     <option value="percentage" {{ old('calculation_type', $salaryComponent->calculation_type) == 'percentage' ? 'selected' : '' }}>Percentage</option>
                 </select>
@@ -38,7 +38,7 @@
             </div>
             <div class="fm-field">
                 <label>Taxable</label>
-                <select name="is_taxable" class="form-select">
+                <select name="is_taxable" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('is_taxable', $salaryComponent->is_taxable) == '1' ? 'selected' : '' }}>Yes</option>
                     <option value="0" {{ old('is_taxable', $salaryComponent->is_taxable) == '0' ? 'selected' : '' }}>No</option>
                 </select>
@@ -49,7 +49,7 @@
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $salaryComponent->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $salaryComponent->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>

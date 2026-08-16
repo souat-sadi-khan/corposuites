@@ -29,6 +29,11 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.salary-components.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.salary-components.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>

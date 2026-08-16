@@ -23,6 +23,14 @@ class SalaryComponentController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee salary component.
+     */
+    public function howTo()
+    {
+        return view('admin.salary-components.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -54,7 +62,7 @@ class SalaryComponentController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.salary-components.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('name', function ($row) {
-                    return '<b class="tl-name-txt">' . $row->name . '</b><br><small>' . $row->code . '</small>';
+                    return '<b class="tl-name-txt">' . $row->name . '</b><br><small>' . $row->description . '</small>';
                 })
                 ->addColumn('type_badge', function ($row) {
                     return $row->type === 'earning'

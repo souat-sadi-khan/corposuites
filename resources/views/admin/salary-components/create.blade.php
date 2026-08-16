@@ -19,14 +19,14 @@
             </div>
             <div class="fm-field">
                 <label>Type <span class="req">*</span></label>
-                <select name="type" class="form-select" required>
+                <select name="type" class="form-select select" data-minimum-results-for-search="Infinity" required>
                     <option value="earning">Earning</option>
                     <option value="deduction">Deduction</option>
                 </select>
             </div>
             <div class="fm-field">
                 <label>Calculation Type <span class="req">*</span></label>
-                <select name="calculation_type" class="form-select" required>
+                <select name="calculation_type" class="form-select select" data-minimum-results-for-search="Infinity" required>
                     <option value="fixed">Fixed</option>
                     <option value="percentage">Percentage</option>
                 </select>
@@ -37,9 +37,9 @@
             </div>
             <div class="fm-field">
                 <label>Taxable</label>
-                <select name="is_taxable" class="form-select">
+                <select name="is_taxable" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Yes</option>
-                    <option value="0">No</option>
+                    <option selected value="0">No</option>
                 </select>
             </div>
             <div class="fm-field fm-full">
@@ -48,7 +48,7 @@
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>
