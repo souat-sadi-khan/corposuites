@@ -23,6 +23,14 @@ class LeaveTypeController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee leave type.
+     */
+    public function howTo()
+    {
+        return view('admin.leave-types.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)

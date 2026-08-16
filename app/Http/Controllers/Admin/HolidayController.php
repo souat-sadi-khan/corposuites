@@ -23,7 +23,7 @@ class HolidayController extends Controller
     }
 
     /**
-     * Display a modal for how to use the employee shift.
+     * Display a modal for how to use the employee holidays.
      */
     public function howTo()
     {

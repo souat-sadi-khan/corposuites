@@ -29,6 +29,11 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.leave-types.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.leave-types.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>

@@ -19,7 +19,7 @@
             </div>
             <div class="fm-field">
                 <label>Type</label>
-                <select name="is_paid" class="form-select">
+                <select name="is_paid" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Paid</option>
                     <option value="0">Unpaid</option>
                 </select>
@@ -30,7 +30,7 @@
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>

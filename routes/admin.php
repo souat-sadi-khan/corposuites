@@ -772,6 +772,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('holidays', HolidayController::class)->except(['show']);
 
     // HRM - Leave Types
+    Route::get('leave-types/how-to', [LeaveTypeController::class, 'howTo'])->name('leave-types.how.to');
     Route::post('leave-types/status/{id}', [LeaveTypeController::class, 'updateStatus'])->name('leave-types.status');
     Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 

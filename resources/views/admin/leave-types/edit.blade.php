@@ -20,7 +20,7 @@
             </div>
             <div class="fm-field">
                 <label>Type</label>
-                <select name="is_paid" class="form-select">
+                <select name="is_paid" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('is_paid', $leaveType->is_paid) == '1' ? 'selected' : '' }}>Paid</option>
                     <option value="0" {{ old('is_paid', $leaveType->is_paid) == '0' ? 'selected' : '' }}>Unpaid</option>
                 </select>
@@ -31,7 +31,7 @@
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $leaveType->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $leaveType->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>
