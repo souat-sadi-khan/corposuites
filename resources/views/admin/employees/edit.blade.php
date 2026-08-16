@@ -8,14 +8,68 @@
     </div>
 
     <div class="offcanvas-body">
-        <div class="fm-grid">
-            <div class="fm-field fm-full">
-                <label>Photo</label>
-                @if($employee->photo)
-                    <div class="mb-2">{!! \App\Helpers\Images::show($employee->photo) !!}</div>
-                @endif
-                <input type="file" class="form-control" name="photo" accept="image/*">
+        <div class="fm-grid fm-body">
+            <div class="row fm-full">
+                <div class="col-md-9">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Employee Type</label>
+                            <select name="employee_type_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($employeeTypes as $type)
+                                    <option data-desc="{{ $type->description }}" value="{{ $type->id }}" {{ old('employee_type_id', $employee->employee_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Employment Status</label>
+                            <select name="employment_status_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($employmentStatuses as $employmentStatus)
+                                    <option data-desc="{{ $employmentStatus->description }}" value="{{ $employmentStatus->id }}" {{ old('employment_status_id', $employee->employment_status_id) == $employmentStatus->id ? 'selected' : '' }}>{{ $employmentStatus->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Shift</label>
+                            <select name="shift_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($shifts as $shift)
+                                    <option data-desc="{{ $shift->description }}" value="{{ $shift->id }}" {{ old('shift_id', $employee->shift_id) == $shift->id ? 'selected' : '' }}>{{ $shift->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Department</label>
+                            <select name="department_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($departments as $department)
+                                    <option data-desc="{{ $department->description }}" value="{{ $department->id }}" {{ old('department_id', $employee->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-12 fm-field">
+                            <label>Designation</label>
+                            <select name="designation_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($designations as $designation)
+                                    <option data-desc="{{ $designation->description }}" value="{{ $designation->id }}" {{ old('designation_id', $employee->designation_id) == $designation->id ? 'selected' : '' }}>{{ $designation->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="fm-field fm-full">
+                        <label>Avatar</label>
+                        {{-- @if($employee->photo)
+                            <div class="mb-2">{!! \App\Helpers\Images::show($employee->photo) !!}</div>
+                        @endif --}}
+                        <input type="file" data-default-file="{{ $employee->photo ? asset($employee->photo) : '' }}" class="form-control dropify" name="photo" accept="image/*">
+                    </div>
+                </div>
             </div>
+            
             <div class="fm-field">
                 <label>Employee Code <span class="req">*</span></label>
                 <input type="text" class="form-control" name="employee_code" value="{{ old('employee_code', $employee->employee_code) }}" required>
@@ -53,51 +107,7 @@
                 <label>Date of Birth</label>
                 <input type="date" class="form-control" name="date_of_birth" value="{{ old('date_of_birth', $employee->date_of_birth?->format('Y-m-d')) }}">
             </div>
-            <div class="fm-field">
-                <label>Employee Type</label>
-                <select name="employee_type_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($employeeTypes as $type)
-                        <option value="{{ $type->id }}" {{ old('employee_type_id', $employee->employee_type_id) == $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Employment Status</label>
-                <select name="employment_status_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($employmentStatuses as $employmentStatus)
-                        <option value="{{ $employmentStatus->id }}" {{ old('employment_status_id', $employee->employment_status_id) == $employmentStatus->id ? 'selected' : '' }}>{{ $employmentStatus->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Shift</label>
-                <select name="shift_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($shifts as $shift)
-                        <option value="{{ $shift->id }}" {{ old('shift_id', $employee->shift_id) == $shift->id ? 'selected' : '' }}>{{ $shift->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Department</label>
-                <select name="department_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($departments as $department)
-                        <option value="{{ $department->id }}" {{ old('department_id', $employee->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Designation</label>
-                <select name="designation_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($designations as $designation)
-                        <option value="{{ $designation->id }}" {{ old('designation_id', $employee->designation_id) == $designation->id ? 'selected' : '' }}>{{ $designation->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            
             <div class="fm-field fm-full">
                 <label>Address</label>
                 <textarea class="form-control" name="address" rows="2">{{ old('address', $employee->address) }}</textarea>

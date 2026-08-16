@@ -33,7 +33,7 @@
 --blue      : #0284c7; --blue-s  : rgba(2,132,199,.10);
 
 /* Sidebar */
---sb-bg       : #0c0d12;
+--sb-bg       : #fff;
 --sb-tx       : rgba(255,255,255,.48);
 --sb-hover    : rgba(255,255,255,.06);
 --sb-active   : rgba(79,82,232,.20);
@@ -312,6 +312,8 @@ font-size: 11px; font-weight: 700; color: #fff;
     animation: flyIn .15s ease;
     margin-left: 10px;
     border-radius: 5px;
+    max-height: 250px;
+    overflow-y: scroll;
 }
 
 /* Arrow */

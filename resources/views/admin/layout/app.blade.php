@@ -72,7 +72,7 @@
 
             // Apply Sidebar Palette
             var SB_PRESETS = {
-                midnight: { bg: '#0c0d12', light: false }, slate: { bg: '#1e2536', light: false },
+                midnight: { bg: '#ffffff', light: false }, slate: { bg: '#1e2536', light: false },
                 ocean: { bg: '#0a2540', light: false }, forest: { bg: '#0f2418', light: false },
                 indigo: { bg: '#1e1b4b', light: false }, white: { bg: '#ffffff', light: true }
             };

@@ -40,7 +40,9 @@ class Images
 
     public static function update($folder, $oldImagePath, $newImage)
     {
-        self::delete($oldImagePath);
+        if($oldImagePath) {
+            self::delete($oldImagePath);
+        }
 
         $fileName = time() . rand(100, 999) . '.' . $newImage->getClientOriginalExtension();
 
