@@ -1,6 +1,6 @@
 <div class="tl-actions">
     <!-- View -->
-    <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.employees.show', $row->id) }}" title="View">
+    <button class="tl-icon-btn side-offcanvas" data-url="{{ route('admin.employees.show', $row->id) }}" title="View">
         <i class="ri-eye-line"></i>
     </button>
 

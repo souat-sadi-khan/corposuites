@@ -2841,6 +2841,20 @@ transition: border-color .15s, box-shadow .15s;
     overflow-x:hidden;
 }
 
+.offcanvas-header > div:first-child {
+    min-width: 0;
+}
+
+.offcanvas-header .offcanvas-title {
+    margin-bottom: 2px;
+}
+
+.offcanvas-header p {
+    margin: 0;
+    font-size: 12px;
+    color: #6c757d;
+}
+
 .of-foot {
     background: var(--bg-base);
     position: sticky;
@@ -4154,4 +4168,255 @@ table tr th {
     font-size: 11px;
     color: #888;
     line-height: 16px;
+}
+
+/* =========================================================
+   Recent Activity Table
+   ========================================================= */
+
+.ractivity-tbl {
+    width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: var(--tx-1);
+    background: var(--bg-surface);
+    font-size: 13px;
+}
+
+/* Table Header */
+.ractivity-tbl thead th {
+    padding: 11px 14px;
+    background: var(--bg-hover);
+    color: var(--tx-2);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.ractivity-tbl thead th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.ractivity-tbl thead th:last-child {
+    border-top-right-radius: 8px;
+}
+
+
+/* Table Body */
+.ractivity-tbl tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border-lt);
+    color: var(--tx-2);
+    vertical-align: middle;
+    line-height: 1.4;
+    transition: var(--ease);
+}
+
+.ractivity-tbl tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* Row Hover */
+.ractivity-tbl tbody tr {
+    transition: var(--ease);
+}
+
+.ractivity-tbl tbody tr:hover td {
+    background: var(--bg-hover);
+}
+
+
+/* Primary Text */
+.ractivity-tbl .ractivity-primary {
+    color: var(--tx-1);
+    font-weight: 600;
+}
+
+.ractivity-tbl .ractivity-secondary {
+    display: block;
+    margin-top: 2px;
+    color: var(--tx-3);
+    font-size: 11px;
+}
+
+
+/* Avatar */
+.ractivity-tbl .ractivity-avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 1px solid var(--border);
+    background: var(--bg-hover);
+}
+
+
+/* Avatar + Content */
+.ractivity-tbl .ractivity-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 180px;
+}
+
+
+/* Activity Icon */
+.ractivity-tbl .ractivity-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--accent-s);
+    color: var(--accent);
+    font-size: 15px;
+}
+
+
+/* Activity Title */
+.ractivity-tbl .ractivity-title {
+    color: var(--tx-1);
+    font-weight: 500;
+}
+
+.ractivity-tbl .ractivity-description {
+    margin-top: 2px;
+    color: var(--tx-3);
+    font-size: 11px;
+}
+
+
+/* Status Badges */
+.ractivity-tbl .ractivity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.ractivity-tbl .ractivity-badge::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+
+/* Success */
+.ractivity-tbl .ractivity-badge.success {
+    color: var(--green);
+    background: var(--green-s);
+}
+
+/* Warning */
+.ractivity-tbl .ractivity-badge.warning {
+    color: var(--amber);
+    background: var(--amber-s);
+}
+
+/* Danger */
+.ractivity-tbl .ractivity-badge.danger {
+    color: var(--red);
+    background: var(--red-s);
+}
+
+/* Info */
+.ractivity-tbl .ractivity-badge.info {
+    color: var(--blue);
+    background: var(--blue-s);
+}
+
+
+/* Time */
+.ractivity-tbl .ractivity-time {
+    color: var(--tx-3);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+
+/* Action Button */
+.ractivity-tbl .ractivity-action {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--tx-3);
+    transition: var(--ease);
+}
+
+.ractivity-tbl .ractivity-action:hover {
+    color: var(--accent);
+    background: var(--accent-s);
+    border-color: var(--accent-m);
+}
+
+
+/* Right Alignment */
+.ractivity-tbl .text-right {
+    text-align: right;
+}
+
+
+/* Compact Version */
+.ractivity-tbl.compact thead th {
+    padding-top: 9px;
+    padding-bottom: 9px;
+}
+
+.ractivity-tbl.compact tbody td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+
+/* Responsive */
+.ractivity-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ractivity-table-wrap .ractivity-tbl {
+    min-width: 720px;
+}
+
+
+/* Scrollbar */
+.ractivity-table-wrap::-webkit-scrollbar {
+    height: 5px;
+}
+
+.ractivity-table-wrap::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ractivity-table-wrap::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.ractivity-table-wrap::-webkit-scrollbar-thumb:hover {
+    background: var(--tx-3);
 }
