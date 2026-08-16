@@ -24,7 +24,7 @@ class DesignationController extends Controller
     }
 
     /**
-     * Display a modal for how to use the employee statuses.
+     * Display a modal for how to use the employee department.
      */
     public function howTo()
     {

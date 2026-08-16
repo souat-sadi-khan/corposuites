@@ -2826,7 +2826,7 @@ transition: border-color .15s, box-shadow .15s;
 .custom-offcanvas .offcanvas-body{
     height:calc(100vh - 104px);
     overflow:hidden;
-    padding:20px;
+    padding:0px 10px;
     background: var(--bg-surface);
     overflow-y:scroll;
 }

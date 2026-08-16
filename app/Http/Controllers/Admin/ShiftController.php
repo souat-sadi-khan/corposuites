@@ -23,6 +23,14 @@ class ShiftController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee shift.
+     */
+    public function howTo()
+    {
+        return view('admin.shifts.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -57,6 +65,9 @@ class ShiftController extends Controller
                 })
                 ->addColumn('timing', function ($row) {
                     return \Carbon\Carbon::parse($row->start_time)->format('h:i A') . ' - ' . \Carbon\Carbon::parse($row->end_time)->format('h:i A');
+                })
+                ->addColumn('employees', function($row) {
+                    return $row->employees ? $row->employees->count() : 0;
                 })
                 ->addColumn('action', function ($row) {
                     return view('admin.shifts.action', compact('row'))->render();

@@ -31,6 +31,7 @@ var DataTableShifts = function () {
             columns: [
                 { data: 'id', visible: false },
                 { data: 'name' },
+                { data: 'employees' },
                 { data: 'timing' },
                 { data: 'status_badge' },
                 {

@@ -760,6 +760,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('employment-statuses', EmploymentStatusController::class)->except(['show']);
 
     // HRM - Shifts
+    Route::get('shifts/how-to', [ShiftController::class, 'howTo'])->name('shifts.how.to');
     Route::post('shifts/status/{id}', [ShiftController::class, 'updateStatus'])->name('shifts.status');
     Route::resource('shifts', ShiftController::class)->except(['show']);
 
