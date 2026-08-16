@@ -25,7 +25,7 @@ class EmergencyContactController extends Controller
     }
 
     /**
-     * Display a modal for how to use the employee documents.
+     * Display a modal for how to use the employee emmergency contacts.
      */
     public function howTo()
     {

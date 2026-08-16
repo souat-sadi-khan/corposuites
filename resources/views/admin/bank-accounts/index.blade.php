@@ -36,6 +36,11 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.bank-accounts.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.bank-accounts.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
@@ -50,8 +55,8 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Bank</th>
                         <th>Employee</th>
+                        <th>Bank</th>
                         <th>Branch / IFSC</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>

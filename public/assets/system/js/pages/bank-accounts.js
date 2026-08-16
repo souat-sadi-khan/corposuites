@@ -34,8 +34,8 @@ var DataTableBankAccounts = function () {
             },
             columns: [
                 { data: 'id', visible: false },
-                { data: 'bank_name' },
                 { data: 'employee_name' },
+                { data: 'bank_name' },
                 { data: 'branch_ifsc' },
                 { data: 'status_badge' },
                 {

@@ -805,6 +805,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('emergency-contacts', EmergencyContactController::class)->except(['show']);
 
     // HRM - Bank Accounts
+    Route::get('bank-accounts/how-to', [BankAccountController::class, 'howTo'])->name('bank-accounts.how.to');
     Route::post('bank-accounts/status/{id}', [BankAccountController::class, 'updateStatus'])->name('bank-accounts.status');
     Route::resource('bank-accounts', BankAccountController::class)->except(['show']);
 

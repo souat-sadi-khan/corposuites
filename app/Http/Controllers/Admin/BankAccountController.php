@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BankAccountRequest;
 use App\Models\BankAccount;
@@ -21,6 +22,14 @@ class BankAccountController extends Controller
     public function __construct(BankAccountService $bankAccountService)
     {
         $this->bankAccountService = $bankAccountService;
+    }
+
+    /**
+     * Display a modal for how to use the employee emmergency contacts.
+     */
+    public function howTo()
+    {
+        return view('admin.bank-accounts.doc');
     }
 
     /**
@@ -65,10 +74,23 @@ class BankAccountController extends Controller
                 })
                 ->addColumn('bank_name', function ($row) {
                     $primary = $row->is_primary ? ' <span class="badge bg-success-subtle text-success">Primary</span>' : '';
-                    return '<b class="tl-name-txt">' . $row->bank_name . '</b>' . $primary . '<br><small>' . $row->account_number . '</small>';
+                    return '<b class="tl-name-txt">' . $row->bank_name . '</b>' . $primary . '<br><small>Account Number: ' . $row->account_number . '</small>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('branch_ifsc', function ($row) {
                     return ($row->branch_name ?? '-') . '<br><small>' . ($row->ifsc_swift_code ?? '-') . '</small>';
