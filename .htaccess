@@ -1,0 +1,27 @@
+RewriteEngine On
+
+# If the request URI is not already starting with /public, apply the rule
+# RewriteCond %{REQUEST_URI} !^/public/
+
+# Rewrite URL to include the /public directory without showing it in the URL
+RewriteRule ^(.*)$ /public/$1 [L,QSA]
+
+Header always unset X-Powered-By
+Header always unset Server
+Header always unset Strict-Transport-Security
+Header always unset X-XSS-Protection
+Header always unset X-Content-Type-Options
+
+# Optionally, you can add the following to prevent access to sensitive files
+<Files .env>
+    Order Deny,Allow
+    Deny from all
+</Files>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+</IfModule>

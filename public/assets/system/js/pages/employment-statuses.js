@@ -31,7 +31,7 @@ var DataTableEmploymentStatuses = function () {
             columns: [
                 { data: 'id', visible: false },
                 { data: 'name' },
-                // { data: 'description', defaultContent: '-' },
+                { data: 'employee_count', defaultContent: '0' },
                 { data: 'status_badge' },
                 {
                     data: 'action',

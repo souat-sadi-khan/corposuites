@@ -29,6 +29,11 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.employment-statuses.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.employment-statuses.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
@@ -44,7 +49,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        {{-- <th>Description</th> --}}
+                        <th>Employee Count</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>
                     </tr>

@@ -21,4 +21,9 @@ class EmploymentStatus extends Model
     {
         return $query->where('status', 1);
     }
+
+    public function employees()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }

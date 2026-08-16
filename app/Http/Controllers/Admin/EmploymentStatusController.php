@@ -23,6 +23,14 @@ class EmploymentStatusController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee statuses.
+     */
+    public function howTo()
+    {
+        return view('admin.employment-statuses.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -51,6 +59,9 @@ class EmploymentStatusController extends Controller
                 ->addColumn('status_badge', function ($row) {
                     $checked = $row->status ? 'checked' : '';
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.employment-statuses.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
+                })
+                ->addColumn('employee_count', function($row) {
+                    return $row->employees ? $row->employees->count() : 0;
                 })
                 ->addColumn('name', function($row) {
                     return '<b class="tl-name-txt">'. $row->name . '</b><br><small>'. $row->description . '</small>';

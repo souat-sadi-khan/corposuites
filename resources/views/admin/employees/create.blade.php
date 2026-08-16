@@ -7,19 +7,75 @@
     </div>
 
     <div class="offcanvas-body">
-        <div class="fm-grid">
-            <div class="fm-field fm-full">
-                <label>Photo</label>
-                <input type="file" class="form-control" name="photo" accept="image/*">
+        <div class="fm-grid fm-body">
+            <div class="row fm-full">
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Employee Type</label>
+                            <select name="employee_type_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($employeeTypes as $type)
+                                    <option data-desc="{{ $type->description }}" value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Employment Status</label>
+                            <select name="employment_status_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($employmentStatuses as $employmentStatus)
+                                    <option data-desc="{{ $employmentStatus->description }}" value="{{ $employmentStatus->id }}">{{ $employmentStatus->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Shift</label>
+                            <select name="shift_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($shifts as $shift)
+                                    <option data-desc="{{ $shift->description }}" value="{{ $shift->id }}">{{ $shift->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3 fm-field">
+                            <label>Department</label>
+                            <select name="department_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($departments as $department)
+                                    <option data-desc="{{ $shift->description }}" value="{{ $department->id }}">{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="fm-field">
+                            <label>Designation</label>
+                            <select name="designation_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
+                                <option value="">Select One</option>
+                                @foreach($designations as $designation)
+                                    <option data-desc="{{ $designation->description }}" value="{{ $designation->id }}">{{ $designation->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="fm-field fm-full">
+                        <label>Avatar</label>
+                        <input type="file" class="form-control dropify" name="photo" accept="image/*">
+                    </div>
+                </div>
             </div>
+            
             <div class="fm-field">
                 <label>Employee Code <span class="req">*</span></label>
                 <input type="text" class="form-control" name="employee_code" placeholder="e.g., EMP-0001" required autocomplete="off">
             </div>
+
             <div class="fm-field">
                 <label>Date of Joining <span class="req">*</span></label>
                 <input type="date" class="form-control" name="date_of_joining" required>
             </div>
+
             <div class="fm-field">
                 <label>First Name <span class="req">*</span></label>
                 <input type="text" class="form-control" name="first_name" required autocomplete="off">
@@ -49,58 +105,14 @@
                 <label>Date of Birth</label>
                 <input type="date" class="form-control" name="date_of_birth">
             </div>
-            <div class="fm-field">
-                <label>Employee Type</label>
-                <select name="employee_type_id" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
-                    <option value="">Select One</option>
-                    @foreach($employeeTypes as $type)
-                        <option data-desc="{{ $type->description }}" value="{{ $type->id }}">{{ $type->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Employment Status</label>
-                <select name="employment_status_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($employmentStatuses as $employmentStatus)
-                        <option value="{{ $employmentStatus->id }}">{{ $employmentStatus->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Shift</label>
-                <select name="shift_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($shifts as $shift)
-                        <option value="{{ $shift->id }}">{{ $shift->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Department</label>
-                <select name="department_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field">
-                <label>Designation</label>
-                <select name="designation_id" class="form-select select">
-                    <option value="">Select</option>
-                    @foreach($designations as $designation)
-                        <option value="{{ $designation->id }}">{{ $designation->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+            
             <div class="fm-field fm-full">
                 <label>Address</label>
                 <textarea class="form-control" name="address" rows="2"></textarea>
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>

@@ -440,7 +440,8 @@ function _componentRemoteOffcanvasLoadAfterAjax() {
                     $('#sideForm .offcanvas-content').html(response);
 
                     $('#offcanvas-loader').hide();
-
+                    _componentDropify();
+                    
                     _componentSelectOffCanvas();
                     if (typeof initFormPlugins === 'function') {
                         initFormPlugins(offcanvasEl);

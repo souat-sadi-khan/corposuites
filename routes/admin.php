@@ -755,6 +755,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('employee-types', EmployeeTypeController::class)->except(['show']);
 
     // HRM - Employment Statuses
+    Route::get('employment-statuses/how-to', [EmploymentStatusController::class, 'howTo'])->name('employment-statuses.how.to');
     Route::post('employment-statuses/status/{id}', [EmploymentStatusController::class, 'updateStatus'])->name('employment-statuses.status');
     Route::resource('employment-statuses', EmploymentStatusController::class)->except(['show']);
 
