@@ -2,7 +2,7 @@
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Add Promotion</h5>
-            <p>Record a designation/salary promotion. Leave "From Designation" blank to auto-fill from the employee's current record.</p>
+            <p>Record a designation/salary promotion.</p>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
@@ -11,10 +11,10 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" id="employee_id" class="form-select select" required data-placeholder="Select Employee">
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->department ? $employee->department->name : 'Unassigned Department' }}" value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
@@ -24,7 +24,9 @@
             </div>
             <div class="fm-field">
                 <label>To Designation <span class="req">*</span></label>
-                <input type="text" class="form-control" name="to_designation" required autocomplete="off">
+                <select name="to_designation" id="to_designation" class="form-control select" required data-placeholder="Select Designation">
+                    <option value="">Select Designation</option>
+                </select>
             </div>
             <div class="fm-field">
                 <label>From Salary</label>
@@ -40,7 +42,7 @@
             </div>
             <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>

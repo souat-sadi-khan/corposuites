@@ -119,3 +119,60 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.draw();
     });
 });
+
+$(document).on('change', '#employee_id', function() {
+    let employeeId = $(this).val();
+    let $fromDesignation = $('input[name="from_designation"]');
+    let $toDesignation = $('#to_designation');
+
+    if (!employeeId) {
+        $fromDesignation.val('').prop('readonly', false);
+        $toDesignation.html('<option value="">Select Employee First</option>').trigger('change');
+        return;
+    }
+
+    $.ajax({
+        url: '/admin/employees/find/' + employeeId,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.status) {
+                let employee = response.data;
+
+                let designationName = employee.designation ? employee.designation.name : '';
+                $fromDesignation.val(designationName).prop('readonly', true);
+
+                let departmentId = employee.department ? employee.department.id : null;
+
+                if (departmentId) {
+                    $.ajax({
+                        url: '/admin/designations/by-department/' + departmentId,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(designations) {
+                            let options = '<option value="">Select Designation</option>';
+                            $.each(designations, function(index, des) {
+                                options += '<option data-desc="'+ des.description +'" value="' + des.id + '">' + des.name + '</option>';
+                            });
+                            $toDesignation.html(options).trigger('change');
+                        },
+                        error: function() {
+                            $toDesignation.html('<option value="">Error loading designations</option>').trigger('change');
+                        }
+                    });
+                } else {
+                    $toDesignation.html('<option value="">No Department Assigned</option>').trigger('change');
+                }
+
+            } else {
+                console.log(response.message);
+                $fromDesignation.val('').prop('readonly', false);
+                $toDesignation.html('<option value="">Select Employee First</option>').trigger('change');
+            }
+        },
+        error: function() {
+            $fromDesignation.val('').prop('readonly', false);
+            $toDesignation.html('<option value="">Select Employee First</option>').trigger('change');
+        }
+    });
+});

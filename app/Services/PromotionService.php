@@ -15,11 +15,13 @@ class PromotionService
         if ($employee) {
             $data['from_designation'] = $data['from_designation'] ?: $employee->designation?->name;
 
-            $toDesignation = Designation::where('name', $data['to_designation'])->first();
+            $toDesignation = Designation::where('id', $data['to_designation'])->first();
 
             if ($toDesignation) {
                 $employee->update(['designation_id' => $toDesignation->id]);
             }
+
+            $data['to_designation'] = $toDesignation->name;
         }
 
         return Promotion::create($data);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PromotionRequest;
 use App\Models\Employee;
@@ -21,6 +22,14 @@ class PromotionController extends Controller
     public function __construct(PromotionService $promotionService)
     {
         $this->promotionService = $promotionService;
+    }
+
+    /**
+     * Display a modal for how to use the employee promotion.
+     */
+    public function howTo()
+    {
+        return view('admin.promotions.doc');
     }
 
     /**
@@ -63,7 +72,20 @@ class PromotionController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.promotions.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('designation_change', function ($row) {
                     return ($row->from_designation ?? '-') . ' <i class="ri-arrow-right-line"></i> <b>' . $row->to_designation . '</b>';
@@ -79,7 +101,7 @@ class PromotionController extends Controller
                 ->addColumn('action', function ($row) {
                     return view('admin.promotions.action', compact('row'))->render();
                 })
-                ->rawColumns(['status_badge', 'employee_name', 'designation_change', 'action'])
+                ->rawColumns(['status_badge', 'salary_change', 'employee_name', 'designation_change', 'action'])
                 ->make(true);
         }
 

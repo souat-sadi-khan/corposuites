@@ -826,6 +826,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('transfers', TransferController::class)->except(['show']);
 
     // HRM - Promotions
+    Route::get('promotions/how-to', [PromotionController::class, 'howTo'])->name('promotions.how.to');
     Route::post('promotions/status/{id}', [PromotionController::class, 'updateStatus'])->name('promotions.status');
     Route::resource('promotions', PromotionController::class)->except(['show']);
 

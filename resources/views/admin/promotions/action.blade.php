@@ -1,8 +1,8 @@
 <div class="tl-actions">
     <!-- Edit -->
-    <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.promotions.edit', $row->id) }}" title="Edit">
+    {{-- <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.promotions.edit', $row->id) }}" title="Edit">
         <i class="ri-pencil-line"></i>
-    </button>
+    </button> --}}
 
     <!-- Delete -->
     <button class="tl-icon-btn danger" id="delete_item" data-id="{{ $row->id }}" data-url="{{ route('admin.promotions.destroy', $row->id) }}" data-del="1" title="Delete">

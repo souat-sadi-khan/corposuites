@@ -4642,3 +4642,11 @@ table tr th {
     font-size: 12px;
     font-weight: 500;
 }
+
+.select2-container--default .select2-results__option--selected {
+    background-color: var(--accent-s);
+}
+
+[data-theme="dark"] .select2-container--default .select2-results__option--selected {
+    background-color: var(--accent-s);
+}

@@ -12,7 +12,7 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" class="form-select select" required data-placeholder="Select Employee">
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
                         <option value="{{ $employee->id }}" {{ old('employee_id', $promotion->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
