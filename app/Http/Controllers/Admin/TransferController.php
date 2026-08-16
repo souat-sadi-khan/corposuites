@@ -26,6 +26,14 @@ class TransferController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee transfer.
+     */
+    public function howTo()
+    {
+        return view('admin.transfers.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
