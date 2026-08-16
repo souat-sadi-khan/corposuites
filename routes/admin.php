@@ -800,6 +800,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('employee-documents', EmployeeDocumentController::class)->except(['show']);
 
     // HRM - Emergency Contacts
+    Route::get('emergency-contacts/how-to', [EmergencyContactController::class, 'howTo'])->name('emergency-contacts.how.to');
     Route::post('emergency-contacts/status/{id}', [EmergencyContactController::class, 'updateStatus'])->name('emergency-contacts.status');
     Route::resource('emergency-contacts', EmergencyContactController::class)->except(['show']);
 

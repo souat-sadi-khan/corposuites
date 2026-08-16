@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmergencyContactRequest;
 use App\Models\EmergencyContact;
@@ -21,6 +22,14 @@ class EmergencyContactController extends Controller
     public function __construct(EmergencyContactService $emergencyContactService)
     {
         $this->emergencyContactService = $emergencyContactService;
+    }
+
+    /**
+     * Display a modal for how to use the employee documents.
+     */
+    public function howTo()
+    {
+        return view('admin.emergency-contacts.doc');
     }
 
     /**
@@ -65,10 +74,23 @@ class EmergencyContactController extends Controller
                 })
                 ->addColumn('name', function ($row) {
                     $primary = $row->is_primary ? ' <span class="badge bg-success-subtle text-success">Primary</span>' : '';
-                    return '<b class="tl-name-txt">' . $row->name . '</b>' . $primary . '<br><small>' . $row->relationship . '</small>';
+                    return '<b class="tl-name-txt">' . $row->name . '</b>' . $primary . '<br><small>Relation: ' . $row->relationship . '</small>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('contact', function ($row) {
                     return $row->phone . ($row->alternate_phone ? '<br><small>' . $row->alternate_phone . '</small>' : '');

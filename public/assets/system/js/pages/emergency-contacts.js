@@ -34,8 +34,8 @@ var DataTableEmergencyContacts = function () {
             },
             columns: [
                 { data: 'id', visible: false },
-                { data: 'name' },
                 { data: 'employee_name' },
+                { data: 'name' },
                 { data: 'contact' },
                 { data: 'status_badge' },
                 {

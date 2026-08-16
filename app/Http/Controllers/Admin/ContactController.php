@@ -24,6 +24,14 @@ class ContactController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee documents.
+     */
+    public function howTo()
+    {
+        return view('admin.contacts.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
