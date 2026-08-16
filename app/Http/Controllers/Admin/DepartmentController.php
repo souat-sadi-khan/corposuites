@@ -55,6 +55,9 @@ class DepartmentController extends Controller
                     $checked = $row->status ? 'checked' : '';
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.departments.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
+                ->addColumn('designation', function($row) {
+                    return $row->designations ? $row->designations->count() : 0;
+                })
                 ->addColumn('employees', function($row) {
                     return $row->employees ? $row->employees->count() : 0;
                 })

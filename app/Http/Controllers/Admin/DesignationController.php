@@ -23,6 +23,14 @@ class DesignationController extends Controller
         $this->designationService = $designationService;
     }
 
+    /**
+     * Display a modal for how to use the employee statuses.
+     */
+    public function howTo()
+    {
+        return view('admin.designations.doc');
+    }
+
     public function index(Request $request)
     {
         if ($request->ajax()) {
@@ -50,8 +58,11 @@ class DesignationController extends Controller
                     $checked = $row->status ? 'checked' : '';
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.designations.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
+                ->addColumn('employees', function($row) {
+                    return $row->employees ? $row->employees->count() : 0;
+                })
                 ->addColumn('name', function ($row) {
-                    return '<b class="tl-name-txt">' . $row->name . '</b><br><small>' . ($row->department->name ?? 'No Department') . '</small>';
+                    return '<b class="tl-name-txt">' . $row->name . '</b><br><small> Department: ' . ($row->department->name ?? 'No Department') . '</small>';
                 })
                 ->addColumn('action', function ($row) {
                     return view('admin.designations.action', compact('row'))->render();

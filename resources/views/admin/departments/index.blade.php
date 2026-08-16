@@ -38,6 +38,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Designations</th>
                         <th>Employees</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>

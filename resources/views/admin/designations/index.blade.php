@@ -21,6 +21,10 @@
 
         <div class="tl-spacer"></div>
 
+        <button id="openModal" data-url="{{ route('admin.designations.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <button id="openModal" data-url="{{ route('admin.designations.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i> Add Designation
         </button>
@@ -33,6 +37,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
+                        <th>Employees</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>
                     </tr>

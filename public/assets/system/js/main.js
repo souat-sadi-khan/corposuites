@@ -54,7 +54,8 @@ function _componentSelectOffCanvas() {
 function _componentSelect2Modal() {
     $('.select').select2({
         width: '100%',
-        dropdownParent: $('#modal_remote')
+        dropdownParent: $('#modal_remote'),
+        templateResult: _selectOptionTemplate
     });
 }
 

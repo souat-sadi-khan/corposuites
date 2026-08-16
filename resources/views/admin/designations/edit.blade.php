@@ -11,10 +11,10 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Department</label>
-                <select name="department_id" class="form-select select">
+                <select name="department_id" class="form-select select" data-placeholder="Select Department" data-minimum-results-for-search="Infinity">
                     <option value="">No Department</option>
                     @foreach($departments as $department)
-                        <option value="{{ $department->id }}" {{ old('department_id', $designation->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                        <option data-desc="{{ $department->description }}" value="{{ $department->id }}" {{ old('department_id', $designation->department_id) == $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                     @endforeach
                 </select>
             </div>

@@ -31,6 +31,7 @@ var DataTableDesignations = function () {
             columns: [
                 { data: 'id', visible: false },
                 { data: 'name' },
+                { data: 'employees' },
                 { data: 'status_badge' },
                 { data: 'action', orderable: false, searchable: false, className: 'text-end' }
             ],

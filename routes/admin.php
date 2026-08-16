@@ -881,6 +881,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('departments', DepartmentController::class)->except(['show']);
 
     // HRM - Designations
+    Route::get('designations/how-to', [DesignationController::class, 'howTo'])->name('designations.how.to');
     Route::post('designations/status/{id}', [DesignationController::class, 'updateStatus'])->name('designations.status');
     Route::resource('designations', DesignationController::class)->except(['show']);
 

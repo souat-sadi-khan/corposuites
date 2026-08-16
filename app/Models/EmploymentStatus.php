@@ -24,6 +24,6 @@ class EmploymentStatus extends Model
 
     public function employees()
     {
-        return $this->belongsTo(Employee::class);
+        return $this->hasMany(Employee::class);
     }
 }

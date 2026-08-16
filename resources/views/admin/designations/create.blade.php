@@ -9,18 +9,20 @@
     <div class="modal-body fm-modal-body fm-body">
         <div class="fm-grid">
             <div class="fm-field fm-full">
-                <label>Department</label>
-                <select name="department_id" class="form-select select">
-                    <option value="">No Department</option>
-                    @foreach($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="fm-field fm-full">
                 <label>Name <span class="req">*</span></label>
                 <input type="text" class="form-control" name="name" required autocomplete="off">
             </div>
+            
+            <div class="fm-field fm-full">
+                <label>Department</label>
+                <select name="department_id" class="form-select select" data-placeholder="No Department" data-minimum-results-for-search="Infinity">
+                    <option value="">No Department</option>
+                    @foreach($departments as $department)
+                        <option data-desc="{{ $department->description }}" value="{{ $department->id }}">{{ $department->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            
             <div class="fm-field fm-full">
                 <label>Description</label>
                 <textarea class="form-control" name="description" rows="3"></textarea>
