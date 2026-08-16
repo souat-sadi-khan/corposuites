@@ -25,7 +25,7 @@ class BankAccountController extends Controller
     }
 
     /**
-     * Display a modal for how to use the employee emmergency contacts.
+     * Display a modal for how to use the employee bank accounts.
      */
     public function howTo()
     {

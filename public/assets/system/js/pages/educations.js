@@ -34,8 +34,8 @@ var DataTableEducations = function () {
             },
             columns: [
                 { data: 'id', visible: false },
-                { data: 'degree' },
                 { data: 'employee_name' },
+                { data: 'degree' },
                 { data: 'duration' },
                 { data: 'status_badge' },
                 {

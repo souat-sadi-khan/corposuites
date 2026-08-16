@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EducationRequest;
 use App\Models\Education;
@@ -21,6 +22,14 @@ class EducationController extends Controller
     public function __construct(EducationService $educationService)
     {
         $this->educationService = $educationService;
+    }
+
+    /**
+     * Display a modal for how to use the employee bank accounts.
+     */
+    public function howTo()
+    {
+        return view('admin.educations.doc');
     }
 
     /**
@@ -67,7 +76,20 @@ class EducationController extends Controller
                     return '<b class="tl-name-txt">' . $row->degree . '</b><br><small>' . $row->institution . '</small>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('duration', function ($row) {
                     return ($row->start_year ?? '-') . ' - ' . ($row->end_year ?? '-');

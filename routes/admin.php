@@ -810,6 +810,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('bank-accounts', BankAccountController::class)->except(['show']);
 
     // HRM - Education
+    Route::get('educations/how-to', [EducationController::class, 'howTo'])->name('educations.how.to');
     Route::post('educations/status/{id}', [EducationController::class, 'updateStatus'])->name('educations.status');
     Route::resource('educations', EducationController::class)->except(['show']);
 
