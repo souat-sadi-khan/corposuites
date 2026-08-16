@@ -34,8 +34,8 @@ var DataTableEmployeeDocuments = function () {
             },
             columns: [
                 { data: 'id', visible: false },
-                { data: 'title' },
                 { data: 'employee_name' },
+                { data: 'title' },
                 { data: 'expiry' },
                 { data: 'file_link' },
                 { data: 'status_badge' },

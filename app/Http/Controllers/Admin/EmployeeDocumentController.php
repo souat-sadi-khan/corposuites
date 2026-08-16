@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeeDocumentRequest;
 use App\Models\Employee;
@@ -21,6 +22,14 @@ class EmployeeDocumentController extends Controller
     public function __construct(EmployeeDocumentService $employeeDocumentService)
     {
         $this->employeeDocumentService = $employeeDocumentService;
+    }
+
+    /**
+     * Display a modal for how to use the employee documents.
+     */
+    public function howTo()
+    {
+        return view('admin.employee-documents.doc');
     }
 
     /**
@@ -66,7 +75,20 @@ class EmployeeDocumentController extends Controller
                     return '<b class="tl-name-txt">' . $row->title . '</b><br><small>' . ($row->description ?? '') . '</small>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('expiry', function ($row) {
                     return $row->expiry_date ? $row->expiry_date->format('d-m-Y') : '-';

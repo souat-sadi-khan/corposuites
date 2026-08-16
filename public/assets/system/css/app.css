@@ -2823,6 +2823,10 @@ transition: border-color .15s, box-shadow .15s;
     max-width: 100vw;
 }
 
+.mr-2 {
+    margin-right: 8px;
+}
+
 .custom-offcanvas .offcanvas-body{
     height:calc(100vh - 104px);
     overflow:hidden;
@@ -4116,3 +4120,38 @@ table tr th {
   .sel-opt-rich-desc { font-size: 11px; color: var(--tx-3); line-height: 1.4; margin-top: 1px; }
   .select2-results__option--highlighted .sel-opt-rich-name,
   .select2-results__option--highlighted .sel-opt-rich-desc { color: #fff; }
+
+  .sel-opt-rich {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.sel-opt-rich-avatar {
+    flex: 0 0 36px;
+}
+
+.sel-opt-rich-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.sel-opt-rich-info {
+    min-width: 0;
+}
+
+.sel-opt-rich-name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+}
+
+.sel-opt-rich-desc {
+    font-size: 11px;
+    color: #888;
+    line-height: 16px;
+}

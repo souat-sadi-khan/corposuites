@@ -30,10 +30,10 @@ class Images
     public static function show($path)
     {
         if ($path && file_exists(public_path($path))) {
-            return '<img src="' . asset($path) . '" alt="Image ' . $path . '" style="width:70px;">';
+            return '<img src="' . asset($path) . '" alt="Image ' . $path . '" style="width:50px;">';
         } else {
-            $placeholder = 'assets/images/placeholder.jpg';
-            return '<img src="' . asset($placeholder) . '" alt="Placeholder Image" style="width:70px;">';
+            $placeholder = 'assets/system/images/default-avatar.png';
+            return '<img src="' . asset($placeholder) . '" alt="Placeholder Image" style="width:50px;">';
         }
     }
 

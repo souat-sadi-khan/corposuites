@@ -795,6 +795,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('employees', EmployeeController::class);
 
     // HRM - Employee Documents
+    Route::get('employee-documents/how-to', [EmployeeDocumentController::class, 'howTo'])->name('employee-documents.how.to');
     Route::post('employee-documents/status/{id}', [EmployeeDocumentController::class, 'updateStatus'])->name('employee-documents.status');
     Route::resource('employee-documents', EmployeeDocumentController::class)->except(['show']);
 

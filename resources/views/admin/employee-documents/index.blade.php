@@ -36,6 +36,11 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.employee-documents.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.employee-documents.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
@@ -50,8 +55,8 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Document</th>
                         <th>Employee</th>
+                        <th>Document</th>
                         <th>Expiry</th>
                         <th>File</th>
                         <th>Status</th>

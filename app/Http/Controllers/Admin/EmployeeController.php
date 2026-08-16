@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeeRequest;
 use App\Models\Department;
@@ -63,7 +64,20 @@ class EmployeeController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.employees.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('name', function ($row) {
-                    return '<b class="tl-name-txt">' . $row->full_name . '</b><br><small>' . $row->employee_code . '</small>';
+                    $avatar = Images::show($row->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('contact', function ($row) {
                     return $row->email . '<br><small>' . ($row->phone ?? '-') . '</small>';

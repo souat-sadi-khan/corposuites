@@ -19,19 +19,36 @@ function _selectOptionTemplate(option) {
         return option.text;
     }
 
-    var desc = $(option.element).data('desc');
-    if (!desc) {
-        return option.text;
+    var $option = $(option.element);
+
+    var logo = $option.attr('data-logo');
+    var desc = $option.attr('data-desc');
+
+    var $opt = $('<div class="sel-opt-rich"></div>');
+
+    // Avatar
+    if (logo) {
+        $opt.append(
+            '<div class="sel-opt-rich-avatar">' +
+                '<img class="sel-opt-rich-img" src="' + logo + '" alt="">' +
+            '</div>'
+        );
     }
 
-    var $opt = $(
-        '<div class="sel-opt-rich">' +
-            '<div class="sel-opt-rich-name"></div>' +
-            '<div class="sel-opt-rich-desc"></div>' +
-        '</div>'
+    // Info
+    var $info = $('<div class="sel-opt-rich-info"></div>');
+
+    $info.append(
+        $('<div class="sel-opt-rich-name"></div>').text(option.text)
     );
-    $opt.find('.sel-opt-rich-name').text(option.text);
-    $opt.find('.sel-opt-rich-desc').text(desc);
+
+    if (desc) {
+        $info.append(
+            $('<div class="sel-opt-rich-desc"></div>').text(desc)
+        );
+    }
+
+    $opt.append($info);
 
     return $opt;
 }
