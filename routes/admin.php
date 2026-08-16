@@ -765,6 +765,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('shifts', ShiftController::class)->except(['show']);
 
     // HRM - Holidays
+    Route::get('holidays/how-to', [HolidayController::class, 'howTo'])->name('holidays.how.to');
     Route::get('holidays/calendar', [HolidayController::class, 'calendar'])->name('holidays.calendar');
     Route::get('holidays/calendar-events', [HolidayController::class, 'calendarEvents'])->name('holidays.calendar-events');
     Route::post('holidays/status/{id}', [HolidayController::class, 'updateStatus'])->name('holidays.status');

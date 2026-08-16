@@ -23,6 +23,14 @@ class HolidayController extends Controller
     }
 
     /**
+     * Display a modal for how to use the employee shift.
+     */
+    public function howTo()
+    {
+        return view('admin.holidays.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)

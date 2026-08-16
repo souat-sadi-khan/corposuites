@@ -2,15 +2,19 @@
 
 @section('content')
     <div class="tl-toolbar">
+        <div class="tl-filter-wrap">
+            
+        </div>
+
         <div class="tl-spacer"></div>
 
-        <a href="{{ route('admin.holidays.index') }}" class="btn-nx-outline">
+        <a href="{{ route('admin.holidays.index') }}" class="btn-nx-primary">
             <i class="ri-list-check-2 me-1"></i>
             List View
         </a>
     </div>
 
-    <div class="nx-card tl-card">
+    <div class="nx-card tl-card p-2">
         <div id="holidaysCalendar" data-url="{{ route('admin.holidays.calendar-events') }}"></div>
     </div>
 @endsection

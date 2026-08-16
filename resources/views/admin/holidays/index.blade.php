@@ -29,6 +29,11 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.holidays.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Calendar View -->
         <a href="{{ route('admin.holidays.calendar') }}" class="btn-nx-outline">
             <i class="ri-calendar-line"></i>
