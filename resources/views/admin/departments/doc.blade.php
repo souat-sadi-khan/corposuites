@@ -1,14 +1,14 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.employee-types.store') }}">
     <div class="modal-header fm-modal-head">
         <div>
-            <h5 class="modal-title">Employment Status</h5>
+            <h5 class="modal-title">Employee Department</h5>
             <p>How to use </p>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
 
     <div class="modal-body fm-modal-body fm-body">
-        <p><strong>Employment Statuses</strong> is used to define an employee’s current employment condition, such as Active, On Leave, Suspended, Resigned, Terminated, or Retired. It helps HR accurately track whether an employee is currently working or no longer active.</p>
+        <p><strong>Departments</strong> is used to organize employees into different functional areas of the company, such as HR, Finance, Sales, Marketing, IT, and Operations. It helps management clearly identify where each employee works within the organization.</p>
 
         <table class="table table-bordered">
             <thead>
@@ -21,21 +21,21 @@
                 <tr>
                     <td>
                         <strong>Name</strong> <br>
-                        <small>The name of the employment status, such as Active, Resigned, or Terminated.</small>
+                        <small>The name of the department, such as Human Resources, Finance, Sales, or IT.</small>
                     </td>
                     <td class="text-center"><i class="ri-checkbox-circle-line text-success"></i></td>
                 </tr>
                 <tr>
                     <td>
                         <strong>Description</strong> <br>
-                        <small>A short explanation of what the employment status represents.</small>
+                        <small>A short explanation of the department and its primary responsibilities.</small>
                     </td>
                     <td class="text-center"><i class="ri-close-line text-danger"></i></td>
                 </tr>
             </tbody>
         </table>
 
-        <p>Create the required statuses and assign the appropriate status to each employee based on their current employment condition. Statuses can be updated when an employee’s situation changes. Before deleting a status, make sure it is not assigned to any employee to avoid incorrect or incomplete employee records.</p>
+        <p>Create the required departments and assign the appropriate department to each employee. Departments can be updated when the organizational structure changes. Before deleting a department, make sure no employees are assigned to it and that it is not required for existing HR records.</p>
 
     </div>
 

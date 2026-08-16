@@ -22,6 +22,14 @@ class DepartmentController extends Controller
         $this->departmentService = $departmentService;
     }
 
+    /**
+     * Display a modal for how to use the employee statuses.
+     */
+    public function howTo()
+    {
+        return view('admin.departments.doc');
+    }
+
     public function index(Request $request)
     {
         if ($request->ajax()) {
@@ -46,6 +54,9 @@ class DepartmentController extends Controller
                 ->addColumn('status_badge', function ($row) {
                     $checked = $row->status ? 'checked' : '';
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.departments.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
+                })
+                ->addColumn('employees', function($row) {
+                    return $row->employees ? $row->employees->count() : 0;
                 })
                 ->addColumn('name', function ($row) {
                     return '<b class="tl-name-txt">' . $row->name . '</b><br><small>' . ($row->description ?? '') . '</small>';

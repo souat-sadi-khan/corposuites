@@ -27,4 +27,9 @@ class Department extends Model
     {
         return $query->where('status', 1);
     }
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
 }
