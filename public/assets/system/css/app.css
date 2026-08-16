@@ -4420,3 +4420,225 @@ table tr th {
 .ractivity-table-wrap::-webkit-scrollbar-thumb:hover {
     background: var(--tx-3);
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+    PERMISSION ASSIGNER (token-based, dark/light safe)
+═══════════════════════════════════════════════════════════ */
+.perm-assign { display: flex; flex-direction: column; gap: 12px; padding: 4px 2px 8px; }
+
+/* ── Sticky toolbar: search + master toggle + counter ── */
+.perm-toolbar {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 14px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+.perm-search { position: relative; flex: 1 1 220px; min-width: 180px; }
+.perm-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--tx-3); font-size: 15px; }
+.perm-search input {
+    width: 100%; padding: 9px 12px 9px 34px;
+    background: var(--bg-base); color: var(--tx-1);
+    border: 1px solid var(--border); border-radius: 9px;
+    font-size: 13px; outline: none; transition: var(--ease);
+}
+.perm-search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-s); }
+.perm-count {
+    font-size: 12px; font-weight: 700; color: var(--tx-2);
+    padding: 6px 12px; border-radius: 20px;
+    background: var(--accent-s); color: var(--accent);
+    white-space: nowrap;
+}
+
+/* ── Master select-all switch ── */
+.perm-switch { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; }
+.perm-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.perm-switch .track {
+    width: 38px; height: 21px; border-radius: 20px; flex: 0 0 auto;
+    background: var(--border); position: relative; transition: var(--ease);
+}
+.perm-switch .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: #fff; box-shadow: var(--shadow-xs); transition: var(--ease);
+}
+.perm-switch input:checked + .track { background: var(--accent); }
+.perm-switch input:checked + .track::after { transform: translateX(17px); }
+.perm-switch input:indeterminate + .track { background: var(--accent-m); }
+.perm-switch input:indeterminate + .track::after { transform: translateX(8px); }
+.perm-switch .switch-label { font-size: 12.5px; font-weight: 700; color: var(--tx-1); }
+
+/* ── Module card ── */
+.perm-module {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+}
+.perm-module:hover { box-shadow: var(--shadow-sm); }
+.perm-module.perm-hidden-row { display: none; }
+.perm-module-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 15px; cursor: pointer; user-select: none;
+}
+.perm-module-head .perm-switch { flex: 0 0 auto; }
+.perm-module-title { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.perm-module-name { font-size: 13.5px; font-weight: 700; color: var(--tx-1); }
+.perm-module-meta { font-size: 11.5px; color: var(--tx-3); }
+.perm-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    background: var(--bg-hover); color: var(--tx-2); white-space: nowrap;
+}
+.perm-badge.is-active { background: var(--accent-s); color: var(--accent); }
+.perm-chevron { font-size: 20px; color: var(--tx-3); transition: transform .25s; flex: 0 0 auto; }
+.perm-module.collapsed .perm-chevron { transform: rotate(-90deg); }
+
+/* ── Body + permission chips ── */
+.perm-module-body {
+    padding: 4px 15px 15px;
+    display: flex; flex-wrap: wrap; gap: 9px;
+    border-top: 1px solid var(--border-lt);
+    padding-top: 13px;
+}
+.perm-module.collapsed .perm-module-body { display: none; }
+
+.perm-chip {
+    position: relative; display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 13px 7px 11px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--bg-base);
+    color: var(--tx-2); font-size: 12.5px; font-weight: 600;
+    cursor: pointer; user-select: none; transition: var(--ease);
+}
+.perm-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.perm-chip .tick {
+    width: 16px; height: 16px; border-radius: 5px; flex: 0 0 auto;
+    border: 1.5px solid var(--tx-3); background: transparent;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: var(--ease);
+}
+.perm-chip .tick i { font-size: 12px; color: #fff; opacity: 0; transition: opacity .15s; }
+.perm-chip:hover { border-color: var(--accent); color: var(--tx-1); }
+.perm-chip.is-checked {
+    background: var(--accent-s); border-color: var(--accent); color: var(--accent);
+}
+.perm-chip.is-checked .tick { background: var(--accent); border-color: var(--accent); }
+.perm-chip.is-checked .tick i { opacity: 1; }
+.perm-chip input:focus-visible + .tick { box-shadow: 0 0 0 3px var(--accent-s); }
+.perm-chip.perm-hidden-row { display: none; }
+
+/* ── Empty search state ── */
+.perm-empty {
+    display: none; text-align: center; padding: 30px 10px;
+    color: var(--tx-3); font-size: 13px;
+}
+.perm-empty i { font-size: 30px; display: block; margin-bottom: 6px; }
+.perm-empty.show { display: block; }
+
+@media (max-width: 576px) {
+    .perm-module-body { gap: 7px; }
+    .perm-chip { flex: 1 1 auto; justify-content: flex-start; }
+}
+/* ═══════════════════════════════════════════════════════════
+    PERMISSION ACCORDION
+═══════════════════════════════════════════════════════════ */
+#permissionAccordion .accordion-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+    transition: var(--ease);
+}
+#permissionAccordion .accordion-item:hover {
+    box-shadow: var(--shadow-sm);
+}
+
+#permissionAccordion .accordion-header {
+    margin: 0;
+}
+
+#permissionAccordion .accordion-button {
+    background: var(--bg-surface);
+    color: var(--tx-1);
+    font-size: 12.5px;
+    padding: 12px 16px;
+    box-shadow: none;
+    transition: background .15s, color .15s;
+}
+#permissionAccordion .accordion-button:not(.collapsed) {
+    background: var(--accent-s);
+    color: var(--accent);
+    box-shadow: none;
+}
+#permissionAccordion .accordion-button:hover {
+    background: var(--bg-hover);
+}
+#permissionAccordion .accordion-button:not(.collapsed):hover {
+    background: var(--accent-m);
+}
+#permissionAccordion .accordion-button:focus {
+    box-shadow: none;
+    border-color: transparent;
+}
+
+/* Bootstrap's default caret — recolor to match theme */
+#permissionAccordion .accordion-button::after {
+    filter: none;
+    transition: transform .2s ease;
+}
+#permissionAccordion .accordion-button:not(.collapsed)::after {
+    filter: invert(35%) sepia(60%) saturate(1800%) hue-rotate(220deg);
+}
+
+#permissionAccordion .accordion-button .fw-semibold {
+    color: inherit;
+    font-weight: 600;
+}
+
+/* Module count badge */
+#permissionAccordion .accordion-button .badge {
+    background: var(--accent-s) !important;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 3px 9px;
+    border-radius: 99px;
+}
+#permissionAccordion .accordion-button:not(.collapsed) .badge {
+    background: var(--accent-m) !important;
+    color: var(--accent);
+}
+
+#permissionAccordion .accordion-collapse {
+    border-top: 1px solid var(--border-lt);
+}
+
+#permissionAccordion .accordion-body {
+    background: var(--bg-base);
+}
+
+/* Individual permission pills */
+#permissionAccordion .accordion-body .border {
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    background: var(--bg-surface) !important;
+    transition: border-color .15s, box-shadow .15s;
+}
+#permissionAccordion .accordion-body .border:hover {
+    border-color: var(--accent-m) !important;
+    box-shadow: var(--shadow-xs);
+}
+
+#permissionAccordion .accordion-body .ri-checkbox-circle-fill {
+    color: var(--green) !important;
+    font-size: 15px;
+}
+
+#permissionAccordion .accordion-body .small {
+    color: var(--tx-2);
+    font-size: 12px;
+    font-weight: 500;
+}

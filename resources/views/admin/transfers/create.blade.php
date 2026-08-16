@@ -2,7 +2,7 @@
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Add Transfer</h5>
-            <p>Record a department/designation transfer. Leave "From" fields blank to auto-fill from the employee's current record.</p>
+            <p>Record transfer. Leave "From" blank to auto-fill.</p>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
@@ -11,36 +11,43 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" id="employee_id" class="form-select select" data-placeholder="Select Employee" required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field">
-                <label>From Department</label>
+                <label>Current Department</label>
                 <input type="text" class="form-control" name="from_department" placeholder="Current department" autocomplete="off">
             </div>
             <div class="fm-field">
                 <label>To Department</label>
-                <input type="text" class="form-control" name="to_department" autocomplete="off">
+                <select name="to_department" id="to_department" class="form-control select" data-placeholder="Select Department">
+                    <option value="">Select Department</option>
+                    @foreach ($departments as $department)
+                        <option data-desc="{{ $department->description }}" value="{{ $department->id }}">{{ $department->name }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="fm-field">
-                <label>From Designation</label>
+                <label>Current Designation</label>
                 <input type="text" class="form-control" name="from_designation" placeholder="Current designation" autocomplete="off">
             </div>
             <div class="fm-field">
                 <label>To Designation</label>
-                <input type="text" class="form-control" name="to_designation" autocomplete="off">
+                <select name="to_designation" id="to_designation" class="form-control select" data-placeholder="Select Department First">
+                    <option value="">Select Department First</option>
+                </select>
             </div>
             <div class="fm-field">
                 <label>Transfer Date <span class="req">*</span></label>
-                <input type="date" class="form-control" name="transfer_date" required>
+                <input type="date" value="{{ date('Y-m-d') }}" class="form-control" name="transfer_date" required>
             </div>
             <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>

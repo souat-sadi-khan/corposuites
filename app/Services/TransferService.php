@@ -17,13 +17,16 @@ class TransferService
             $data['from_department'] = $data['from_department'] ?: $employee->department?->name;
             $data['from_designation'] = $data['from_designation'] ?: $employee->designation?->name;
 
-            $toDepartment = $data['to_department'] ? Department::where('name', $data['to_department'])->first() : null;
-            $toDesignation = $data['to_designation'] ? Designation::where('name', $data['to_designation'])->first() : null;
+            $toDepartment = $data['to_department'] ? Department::where('id', $data['to_department'])->first() : null;
+            $toDesignation = $data['to_designation'] ? Designation::where('id', $data['to_designation'])->first() : null;
 
             $employee->update([
                 'department_id' => $toDepartment?->id ?? $employee->department_id,
                 'designation_id' => $toDesignation?->id ?? $employee->designation_id,
             ]);
+
+            $data['to_department'] = $toDepartment->name;
+            $data['to_designation'] = $toDesignation->name;
         }
 
         return Transfer::create($data);

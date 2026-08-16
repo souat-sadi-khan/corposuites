@@ -792,6 +792,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');
     Route::get('employees/{employee}/create-login', [EmployeeController::class, 'createLogin'])->name('employees.create-login');
     Route::post('employees/{employee}/create-login', [EmployeeController::class, 'storeLogin'])->name('employees.store-login');
+    Route::get('employees/find/{id}', [EmployeeController::class, 'findEmployee'])->name('employees.find');
     Route::resource('employees', EmployeeController::class);
 
     // HRM - Employee Documents
@@ -810,7 +811,7 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('bank-accounts', BankAccountController::class)->except(['show']);
 
     // HRM - Education
-    Route::get('educations/how-to', [EducationController::class, 'howTo'])->name('experiences.how.to');
+    Route::get('educations/how-to', [EducationController::class, 'howTo'])->name('educations.how.to');
     Route::post('educations/status/{id}', [EducationController::class, 'updateStatus'])->name('educations.status');
     Route::resource('educations', EducationController::class)->except(['show']);
 
@@ -892,6 +893,7 @@ Route::middleware(['isAdmin'])->group(function () {
     // HRM - Designations
     Route::get('designations/how-to', [DesignationController::class, 'howTo'])->name('designations.how.to');
     Route::post('designations/status/{id}', [DesignationController::class, 'updateStatus'])->name('designations.status');
+    Route::get('designations/by-department/{department}', [DesignationController::class, 'getByDepartment'])->name('designations.byDepartment');
     Route::resource('designations', DesignationController::class)->except(['show']);
 
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

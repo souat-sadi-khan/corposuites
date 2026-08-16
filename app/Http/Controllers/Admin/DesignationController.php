@@ -74,6 +74,19 @@ class DesignationController extends Controller
         return view('admin.designations.index');
     }
 
+    /**
+     * return all designations based on department
+     */
+    public function getByDepartment(string $departmentId)
+    {
+        $designations = Designation::where('department_id', $departmentId)
+            ->where('status', true) 
+            ->orderBy('name')
+            ->get(['id', 'description', 'name']);  
+
+        return response()->json($designations);
+    }
+
     public function create()
     {
         $departments = Department::active()->get();

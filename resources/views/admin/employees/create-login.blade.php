@@ -10,28 +10,36 @@
     <div class="modal-body fm-modal-body fm-body">
         <div class="fm-grid">
             <div class="fm-field fm-full">
-                <label>Email <span class="req">*</span></label>
-                <input type="email" class="form-control" name="email" value="{{ $employee->email }}" required autocomplete="off">
-            </div>
-            <div class="fm-field fm-full">
-                <label>Password <span class="req">*</span></label>
-                <input type="password" class="form-control" name="password" minlength="8" required autocomplete="new-password">
-            </div>
-            <div class="fm-field fm-full">
                 <label>Role <span class="req">*</span></label>
-                <select name="role_id" class="form-select select" required>
+                <select name="role_id" class="form-select select" data-placeholder="Select Role" required>
                     <option value="">Select Role</option>
                     @foreach($roles as $role)
-                        <option value="{{ $role->id }}">{{ $role->name }}</option>
+                        <option data-desc="{{ $role->notes }}" value="{{ $role->id }}">{{ $role->name }}</option>
                     @endforeach
                 </select>
             </div>
+
+            <div class="fm-field fm-full">
+                <label>Email <span class="req">*</span></label>
+                <input type="email" class="form-control" name="email" value="{{ $employee->email }}" required autocomplete="off">
+            </div>
+            
+            <div class="fm-field">
+                <label>Password <span class="req">*</span></label>
+                <input type="password" class="form-control" name="password" minlength="8" required autocomplete="new-password">
+            </div>
+
+            <div class="fm-field">
+                <label>Confirm Password <span class="req">*</span></label>
+                <input type="password" class="form-control" name="password_confirmation" minlength="8" required autocomplete="new-password">
+            </div>
+            
         </div>
     </div>
 
     <div class="modal-footer fm-modal-foot">
         <span class="fm-foot-note">
-            <i class="ri-information-line"></i> This creates an admin login account linked to this employee
+            <i class="ri-information-line"></i> This creates an admin login account <br> linked to this employee.
         </span>
         <div class="d-flex gap-2">
             <button type="button" class="btn-nx-outline" data-bs-dismiss="modal">

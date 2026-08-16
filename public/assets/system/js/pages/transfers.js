@@ -119,3 +119,62 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.draw();
     });
 });
+
+$(document).on('change', '#employee_id', function() {
+    let employee_id = $(this).val();
+
+    if (!employee_id) {
+        $('input[name="from_department"]').val('').prop('readonly', false);
+        $('input[name="from_designation"]').val('').prop('readonly', false);
+        return;
+    }
+
+    $.ajax({
+        url: '/admin/employees/find/' + employee_id, 
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.status) {
+                var employee = response.data;
+
+                $('input[name="from_department"]').val(employee.department_name).prop('readonly', true);
+                $('input[name="from_designation"]').val(employee.designation_name).prop('readonly', true);
+            } else {
+                console.log(response.message);
+                $('input[name="from_department"]').val('').prop('readonly', false);
+                $('input[name="from_designation"]').val('').prop('readonly', false);
+            }
+        },
+        error: function(xhr, status, error) {
+            $('input[name="from_department"]').val('').prop('readonly', false);
+            $('input[name="from_designation"]').val('').prop('readonly', false);
+        }
+    });
+});
+
+$(document).on('change', '#to_department', function() {
+    let departmentId = $(this).val();
+    let $designationSelect = $('#to_designation');
+
+    if (!departmentId) {
+        $designationSelect.html('<option value="">Select Department First</option>').trigger('change');
+        return;
+    }
+
+    // AJAX কল
+    $.ajax({
+        url: '/admin/designations/by-department/' + departmentId,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            let options = '<option value="">Select Designation</option>';
+            $.each(response, function(index, designation) {
+                options += '<option data-desc="'+ designation.description +'" value="' + designation.id + '">' + designation.name + '</option>';
+            });
+            $designationSelect.html(options).trigger('change'); 
+        },
+        error: function(xhr, status, error) {
+            alert('ডিজাইনেশন লোড করতে সমস্যা হয়েছে।');
+        }
+    });
+});

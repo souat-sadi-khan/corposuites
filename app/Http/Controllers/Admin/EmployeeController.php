@@ -65,6 +65,10 @@ class EmployeeController extends Controller
                 })
                 ->addColumn('name', function ($row) {
                     $avatar = Images::show($row->photo);
+                    $roleName = 'Unassigned';
+                    if($row->admin) {
+                        $roleName = $row->admin->roles->pluck('name')->implode(', ');
+                    }
 
                     return '
                         <div class="d-flex align-items-center">
@@ -74,7 +78,8 @@ class EmployeeController extends Controller
                             <div>
                                 <b class="tl-name-txt">' . e($row->full_name) . '</b>
                                 <br>
-                                <small>' . e($row->employee_code) . '</small>
+                                <small>' . e($row->employee_code) . '</small> | 
+                                <small>Role: '. $roleName .'</small>
                             </div>
                         </div>
                     ';
@@ -160,6 +165,25 @@ class EmployeeController extends Controller
         $designations = Designation::active()->get();
 
         return view('admin.employees.edit', compact('employee', 'employeeTypes', 'employmentStatuses', 'shifts', 'departments', 'designations'));
+    }
+
+    public function findEmployee(string $id)
+    {
+        $employee = Employee::find($id);
+        if(!$employee) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Employee not found'
+            ]);
+        }
+
+        $employee->department_name = $employee->department ? $employee->department->name : 'Not Assigned';
+        $employee->designation_name = $employee->designation ? $employee->designation->name : 'Not Assigned';
+
+        return response()->json([
+            'status' => true,
+            'data' => $employee
+        ]);
     }
 
     /**
@@ -287,7 +311,7 @@ class EmployeeController extends Controller
         $validator = Validator::make($request->all(), [
             'role_id' => 'required|exists:roles,id',
             'email' => 'required|email|max:150|unique:admins,email',
-            'password' => 'required|min:8|string|max:20',
+            'password' => 'required|confirmed|min:8|string|max:20',
         ]);
 
         if ($validator->fails()) {

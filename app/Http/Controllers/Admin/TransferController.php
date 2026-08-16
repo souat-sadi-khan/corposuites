@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\TransferRequest;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Transfer;
 use App\Services\TransferService;
@@ -64,7 +66,20 @@ class TransferController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.transfers.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('department_change', function ($row) {
                     return ($row->from_department ?? '-') . ' <i class="ri-arrow-right-line"></i> ' . ($row->to_department ?? '-');
@@ -91,8 +106,9 @@ class TransferController extends Controller
     public function create()
     {
         $employees = Employee::active()->get();
+        $departments = Department::active()->get();
 
-        return view('admin.transfers.create', compact('employees'));
+        return view('admin.transfers.create', compact('employees', 'departments'));
     }
 
     /**
