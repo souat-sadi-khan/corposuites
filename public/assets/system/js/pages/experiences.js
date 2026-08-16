@@ -34,8 +34,8 @@ var DataTableExperiences = function () {
             },
             columns: [
                 { data: 'id', visible: false },
-                { data: 'company_name' },
                 { data: 'employee_name' },
+                { data: 'company_name' },
                 { data: 'duration' },
                 { data: 'status_badge' },
                 {

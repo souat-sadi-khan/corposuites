@@ -25,7 +25,7 @@ class EducationController extends Controller
     }
 
     /**
-     * Display a modal for how to use the employee bank accounts.
+     * Display a modal for how to use the employee education.
      */
     public function howTo()
     {

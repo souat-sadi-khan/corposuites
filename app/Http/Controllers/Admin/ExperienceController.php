@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ExperienceRequest;
 use App\Models\Employee;
@@ -21,6 +22,14 @@ class ExperienceController extends Controller
     public function __construct(ExperienceService $experienceService)
     {
         $this->experienceService = $experienceService;
+    }
+
+    /**
+     * Display a modal for how to use the employee experience.
+     */
+    public function howTo()
+    {
+        return view('admin.experiences.doc');
     }
 
     /**
@@ -67,7 +76,20 @@ class ExperienceController extends Controller
                     return '<b class="tl-name-txt">' . $row->company_name . '</b><br><small>' . $row->designation . '</small>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('duration', function ($row) {
                     $start = $row->start_date ? $row->start_date->format('M Y') : '-';
