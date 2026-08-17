@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeeDocumentRequest;
+use App\Models\AdminProfile;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
 use App\Services\EmployeeDocumentService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -104,6 +106,67 @@ class EmployeeDocumentController extends Controller
         }
 
         return view('admin.employee-documents.index');
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function myDocuments(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = EmployeeDocument::query()->with('employee')->where('employee_id', Auth::guard('admin')->user()->employee_id);
+
+            // Filter by status
+            if ($request->status) {
+                $statuses = explode(',', $request->status);
+                $query->whereIn('status', $statuses);
+            }
+
+            // Filter by employee
+            if ($request->employee_id) {
+                $query->where('employee_id', $request->employee_id);
+            }
+
+            // Search
+            if ($request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhereHas('employee', function ($eq) use ($search) {
+                          $eq->where('first_name', 'like', "%{$search}%")
+                             ->orWhere('last_name', 'like', "%{$search}%")
+                             ->orWhere('employee_code', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            $query->orderBy('id', 'DESC');
+
+            return DataTables::eloquent($query)
+                ->addColumn('status_badge', function ($row) {
+                    $checked = $row->status ? 'checked' : '';
+                    return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.employee-documents.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
+                })
+                ->addColumn('title', function ($row) {
+                    return '<b class="tl-name-txt">' . $row->title . '</b><br><small>' . ($row->description ?? '') . '</small>';
+                })
+                ->addColumn('expiry', function ($row) {
+                    return $row->expiry_date ? $row->expiry_date->format('d-m-Y') : '-';
+                })
+                ->addColumn('file_link', function ($row) {
+                    return '<a href="' . asset('storage/' . $row->file_path) . '" target="_blank" class="tl-icon-btn" title="View File"><i class="ri-download-2-line"></i></a>';
+                })
+                ->addColumn('action', function ($row) {
+                    return view('admin.employee-documents.action', compact('row'))->render();
+                })
+                ->rawColumns(['status_badge', 'title', 'employee_name', 'file_link', 'action'])
+                ->make(true);
+        }
+
+        $profile = AdminProfile::where('admin_id', Auth::guard('admin')->user()->id)->first();
+        $admin = Auth::guard('admin')->user();
+
+        return view('admin.settings.employee-documents.index', compact('profile', 'admin'));
     }
 
     /**

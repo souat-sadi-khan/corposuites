@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeeRequest;
+use App\Models\AdminProfile;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
@@ -355,6 +356,14 @@ class EmployeeController extends Controller
                 $admin->avatar = $employee->photo;
             }
             $admin->save();
+
+            $adminProfile = new AdminProfile();
+            $adminProfile->admin_id = $admin->id;
+            if($employee->designation) {
+                $adminProfile->designation = $employee->designation->name;
+            }
+            $adminProfile->whatsapp = $employee->phone;
+            $adminProfile->save();
 
             $role = Role::findOrFail($request->role_id);
             $admin->assignRole($role);

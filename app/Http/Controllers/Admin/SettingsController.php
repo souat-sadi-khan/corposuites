@@ -301,6 +301,8 @@ class SettingsController extends Controller
             $skills = json_decode($profile->skills);
         }
 
+        $admin = Auth::guard('admin')->user();
+        
         $activities = ActivityLog::where('actor_type', 'user')
             ->where('actor_id', $adminId)
             ->whereIn('action', ['create','update','delete','login'])
@@ -308,7 +310,7 @@ class SettingsController extends Controller
             ->limit(15)
             ->get();
 
-        return view('admin.settings.profile', compact('profile','skills','activities'));
+        return view('admin.settings.profile', compact('profile', 'admin', 'skills','activities'));
     }
 
     public function editProfile()

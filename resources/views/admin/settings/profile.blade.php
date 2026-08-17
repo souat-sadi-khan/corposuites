@@ -1,4 +1,4 @@
-@extends('admin.layout.app', ['title' => 'My Profile', 'offcanvas' => '50%'])
+@extends('admin.layout.app', ['title' => 'My Profile', 'offcanvas' => '50%', 'modal' => 'lg'])
 
 @section('content')
     <div class="container-fluid p-0 profile-page">
@@ -44,6 +44,8 @@
                 </div>
             </div>
         </div>
+
+        @include('admin.settings._partials')
 
         <div class="pm-layout">
             <div class="pm-sidebar">
@@ -279,6 +281,7 @@
             _componentDropify();
             _ajaxFormHandler('.ajax_form');
             _componentRemoteOffcanvasLoadAfterAjax();
+            _componentRemoteModalLoadAfterAjax();
         });
     </script>
 @endpush

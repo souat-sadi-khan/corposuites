@@ -9,15 +9,19 @@
 
     <div class="modal-body fm-modal-body fm-body">
         <div class="fm-grid">
-            <div class="fm-field fm-full">
-                <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" data-placeholder="Select Employee" required>
-                    <option value="">Select Employee</option>
-                    @foreach($employees as $employee)
-                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
-                    @endforeach
-                </select>
-            </div>
+            @if(!Request::has('employee_id'))
+                <div class="fm-field fm-full">
+                    <label>Employee <span class="req">*</span></label>
+                    <select name="employee_id" class="form-select select" data-placeholder="Select Employee" required>
+                        <option value="">Select Employee</option>
+                        @foreach($employees as $employee)
+                            <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        @endforeach
+                    </select>
+                </div>
+            @else 
+                <input type="hidden" name="employee_id" value="{{ Request::get('employee_id') }}">
+            @endif 
             <div class="fm-field">
                 <label>Bank Name <span class="req">*</span></label>
                 <input type="text" class="form-control" name="bank_name" required autocomplete="off">

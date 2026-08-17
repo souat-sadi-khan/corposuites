@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\BankAccountRequest;
+use App\Models\AdminProfile;
 use App\Models\BankAccount;
 use App\Models\Employee;
 use App\Services\BankAccountService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -103,6 +105,66 @@ class BankAccountController extends Controller
         }
 
         return view('admin.bank-accounts.index');
+    }
+
+    /**
+     * Display a listing of the employee bank accounts.
+     */
+    public function myBankAccounts(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = BankAccount::query()->with('employee')->where('employee_id', Auth::guard('admin')->user()->employee_id);
+
+            // Filter by status
+            if ($request->status) {
+                $statuses = explode(',', $request->status);
+                $query->whereIn('status', $statuses);
+            }
+
+            // Filter by employee
+            if ($request->employee_id) {
+                $query->where('employee_id', $request->employee_id);
+            }
+
+            // Search
+            if ($request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('bank_name', 'like', "%{$search}%")
+                      ->orWhere('account_number', 'like', "%{$search}%")
+                      ->orWhereHas('employee', function ($eq) use ($search) {
+                          $eq->where('first_name', 'like', "%{$search}%")
+                             ->orWhere('last_name', 'like', "%{$search}%")
+                             ->orWhere('employee_code', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            $query->orderBy('id', 'DESC');
+
+            return DataTables::eloquent($query)
+                ->addColumn('status_badge', function ($row) {
+                    $checked = $row->status ? 'checked' : '';
+                    return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.bank-accounts.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
+                })
+                ->addColumn('bank_name', function ($row) {
+                    $primary = $row->is_primary ? ' <span class="badge bg-success-subtle text-success">Primary</span>' : '';
+                    return '<b class="tl-name-txt">' . $row->bank_name . '</b>' . $primary . '<br><small>Account Number: ' . $row->account_number . '</small>';
+                })
+                ->addColumn('branch_ifsc', function ($row) {
+                    return ($row->branch_name ?? '-') . '<br><small>' . ($row->ifsc_swift_code ?? '-') . '</small>';
+                })
+                ->addColumn('action', function ($row) {
+                    return view('admin.bank-accounts.action', compact('row'))->render();
+                })
+                ->rawColumns(['status_badge', 'bank_name', 'employee_name', 'branch_ifsc', 'action'])
+                ->make(true);
+        }
+
+        $profile = AdminProfile::where('admin_id', Auth::guard('admin')->user()->id)->first();
+        $admin = Auth::guard('admin')->user();
+
+        return view('admin.settings.bank-accounts.index', compact('profile', 'admin'));
     }
 
     /**

@@ -957,6 +957,7 @@ transition: border-color .15s, box-shadow .15s;
     border: 5px solid var(--bg-surface);
     box-shadow: var(--shadow-md);
     z-index: 9;
+    background: var(--bg-surface);
 }
 
 .pm-user-info {
@@ -4649,4 +4650,68 @@ table tr th {
 
 [data-theme="dark"] .select2-container--default .select2-results__option--selected {
     background-color: var(--accent-s);
+}
+
+/* ========================================
+   Custom Horizontal Tabs
+======================================== */
+
+.custom-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 0px;
+    margin: 0;
+    list-style: none;
+    border-radius: 8px;
+}
+
+/* Tab item */
+.custom-tabs .nav-item {
+    margin: 0;
+}
+
+/* Tab button */
+.custom-tabs .nav-link {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 8px 15px;
+
+    border: 0;
+    border-radius: 6px;
+
+    background: transparent;
+
+    color: #6b7280;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    transition: all .2s ease;
+
+    cursor: pointer;
+}
+
+/* Icon */
+.custom-tabs .nav-link i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.custom-tabs .nav-link:hover {
+    color: #374151;
+    background: rgba(255, 255, 255, .65);
+}
+
+.custom-tabs .nav-link.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
 }

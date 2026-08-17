@@ -798,26 +798,31 @@ Route::middleware(['isAdmin'])->group(function () {
     // HRM - Employee Documents
     Route::get('employee-documents/how-to', [EmployeeDocumentController::class, 'howTo'])->name('employee-documents.how.to');
     Route::post('employee-documents/status/{id}', [EmployeeDocumentController::class, 'updateStatus'])->name('employee-documents.status');
+    Route::get('profile/documents', [EmployeeDocumentController::class, 'myDocuments'])->name('profile.documents');
     Route::resource('employee-documents', EmployeeDocumentController::class)->except(['show']);
 
     // HRM - Emergency Contacts
     Route::get('emergency-contacts/how-to', [EmergencyContactController::class, 'howTo'])->name('emergency-contacts.how.to');
     Route::post('emergency-contacts/status/{id}', [EmergencyContactController::class, 'updateStatus'])->name('emergency-contacts.status');
+    Route::get('profile/emergency-contacts', [EmergencyContactController::class, 'myEmergencyContacts'])->name('profile.emergency-contacts');
     Route::resource('emergency-contacts', EmergencyContactController::class)->except(['show']);
 
     // HRM - Bank Accounts
     Route::get('bank-accounts/how-to', [BankAccountController::class, 'howTo'])->name('bank-accounts.how.to');
     Route::post('bank-accounts/status/{id}', [BankAccountController::class, 'updateStatus'])->name('bank-accounts.status');
+    Route::get('profile/bank-accounts', [BankAccountController::class, 'myBankAccounts'])->name('profile.bank-accounts');
     Route::resource('bank-accounts', BankAccountController::class)->except(['show']);
 
     // HRM - Education
     Route::get('educations/how-to', [EducationController::class, 'howTo'])->name('educations.how.to');
     Route::post('educations/status/{id}', [EducationController::class, 'updateStatus'])->name('educations.status');
+    Route::get('profile/educations', [EducationController::class, 'myEducations'])->name('profile.educations');
     Route::resource('educations', EducationController::class)->except(['show']);
 
     // HRM - Experience
     Route::get('experiences/how-to', [ExperienceController::class, 'howTo'])->name('experiences.how.to');
     Route::post('experiences/status/{id}', [ExperienceController::class, 'updateStatus'])->name('experiences.status');
+    Route::get('profile/experiences', [ExperienceController::class, 'myExperience'])->name('profile.experiences');
     Route::resource('experiences', ExperienceController::class)->except(['show']);
 
     // HRM - Transfers

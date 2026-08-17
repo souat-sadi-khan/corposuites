@@ -749,6 +749,10 @@ function _modalFormValidation() {
                         dataTableInstance.ajax.reload(null, false);
                     }
 
+                    if(response.load) {
+                        window.location.href="";
+                    }
+
                     // Optionally reset the form
                     if (response.reset) {
                         $form[0].reset();

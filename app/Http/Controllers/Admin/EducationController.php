@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EducationRequest;
+use App\Models\AdminProfile;
 use App\Models\Education;
 use App\Models\Employee;
 use App\Services\EducationService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -102,6 +104,65 @@ class EducationController extends Controller
         }
 
         return view('admin.educations.index');
+    }
+    
+    /**
+     * Display a listing of employee education.
+     */
+    public function myEducations(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = Education::query()->with('employee')->where('employee_id', Auth::guard('admin')->user()->employee_id);
+
+            // Filter by status
+            if ($request->status) {
+                $statuses = explode(',', $request->status);
+                $query->whereIn('status', $statuses);
+            }
+
+            // Filter by employee
+            if ($request->employee_id) {
+                $query->where('employee_id', $request->employee_id);
+            }
+
+            // Search
+            if ($request->search) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('degree', 'like', "%{$search}%")
+                      ->orWhere('institution', 'like', "%{$search}%")
+                      ->orWhereHas('employee', function ($eq) use ($search) {
+                          $eq->where('first_name', 'like', "%{$search}%")
+                             ->orWhere('last_name', 'like', "%{$search}%")
+                             ->orWhere('employee_code', 'like', "%{$search}%");
+                      });
+                });
+            }
+
+            $query->orderBy('id', 'DESC');
+
+            return DataTables::eloquent($query)
+                ->addColumn('status_badge', function ($row) {
+                    $checked = $row->status ? 'checked' : '';
+                    return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.educations.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
+                })
+                ->addColumn('degree', function ($row) {
+                    return '<b class="tl-name-txt">' . $row->degree . '</b><br><small>' . $row->institution . '</small>';
+                })
+                ->addColumn('duration', function ($row) {
+                    return ($row->start_year ?? '-') . ' - ' . ($row->end_year ?? '-');
+                })
+                ->addColumn('action', function ($row) {
+                    return view('admin.educations.action', compact('row'))->render();
+                })
+                ->rawColumns(['status_badge', 'degree', 'employee_name', 'action'])
+                ->make(true);
+        }
+
+        $profile = AdminProfile::where('admin_id', Auth::guard('admin')->user()->id)->first();
+        $admin = Auth::guard('admin')->user();
+
+        return view('admin.settings.educations.index', compact('profile', 'admin'));
     }
 
     /**
