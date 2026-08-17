@@ -15,7 +15,7 @@
                 <select name="employee_id" class="form-select select" required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ old('employee_id', $termination->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}" {{ old('employee_id', $termination->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
@@ -25,14 +25,14 @@
             </div>
             <div class="fm-field">
                 <label>Type <span class="req">*</span></label>
-                <select name="type" class="form-select" required>
+                <select name="type" class="form-select select" data-minimum-results-for-search="Infinity" required>
                     <option value="involuntary" {{ old('type', $termination->type) == 'involuntary' ? 'selected' : '' }}>Involuntary</option>
                     <option value="voluntary" {{ old('type', $termination->type) == 'voluntary' ? 'selected' : '' }}>Voluntary</option>
                 </select>
             </div>
             <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $termination->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $termination->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>

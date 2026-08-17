@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ResignationRequest;
 use App\Models\Employee;
@@ -21,6 +22,14 @@ class ResignationController extends Controller
     public function __construct(ResignationService $resignationService)
     {
         $this->resignationService = $resignationService;
+    }
+
+    /**
+     * Display a modal for how to use the employee resignation.
+     */
+    public function howTo()
+    {
+        return view('admin.resignations.doc');
     }
 
     /**
@@ -63,7 +72,20 @@ class ResignationController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.resignations.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('dates', function ($row) {
                     $resigned = $row->resignation_date ? $row->resignation_date->format('d-m-Y') : '-';

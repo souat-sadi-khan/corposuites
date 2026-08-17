@@ -70,6 +70,16 @@ class EmployeeController extends Controller
                         $roleName = $row->admin->roles->pluck('name')->implode(', ');
                     }
 
+                    $designation = 'N/A';
+
+                    if($row->designation) {
+                        $designation = $row->designation->name;
+                    }
+
+                    if($row->department) {
+                        $designation .= ', '. $row->department->name;
+                    }
+
                     return '
                         <div class="d-flex align-items-center">
                             <div class="mr-2 employee-avatar">
@@ -78,8 +88,9 @@ class EmployeeController extends Controller
                             <div>
                                 <b class="tl-name-txt">' . e($row->full_name) . '</b>
                                 <br>
-                                <small>' . e($row->employee_code) . '</small> | 
-                                <small>Role: '. $roleName .'</small>
+                                <small>' . e($row->employee_code) . '</small> ~ 
+                                <small>Role: <b> '. $roleName .'</b></small> <br>
+                                <small><b>'. $designation .'</b></small>
                             </div>
                         </div>
                     ';
@@ -339,6 +350,10 @@ class EmployeeController extends Controller
             $admin->email = $request->email;
             $admin->password = Hash::make($request->password);
             $admin->status = true;
+            $admin->phone = $employee->phone;
+            if($employee->photo) {
+                $admin->avatar = $employee->photo;
+            }
             $admin->save();
 
             $role = Role::findOrFail($request->role_id);

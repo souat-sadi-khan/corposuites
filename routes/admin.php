@@ -831,10 +831,12 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('promotions', PromotionController::class)->except(['show']);
 
     // HRM - Resignations
+    Route::get('resignations/how-to', [ResignationController::class, 'howTo'])->name('resignations.how.to');
     Route::post('resignations/status/{id}', [ResignationController::class, 'updateStatus'])->name('resignations.status');
     Route::resource('resignations', ResignationController::class)->except(['show']);
 
     // HRM - Terminations
+    Route::get('terminations/how-to', [TerminationController::class, 'howTo'])->name('terminations.how.to');
     Route::post('terminations/status/{id}', [TerminationController::class, 'updateStatus'])->name('terminations.status');
     Route::resource('terminations', TerminationController::class)->except(['show']);
 
