@@ -810,6 +810,7 @@ Route::middleware(['isAdmin'])->group(function () {
     // HRM - Salary Components
     Route::get('salary-components/{salaryComponent}/details', [HrmDetailExportController::class, 'component'])->name('salary-components.details');
     Route::get('salary-components/{salaryComponent}/export', [HrmDetailExportController::class, 'componentExport'])->name('salary-components.export');
+    Route::get('salary-components/{salaryComponent}/print', [HrmDetailExportController::class, 'componentPrint'])->name('salary-components.print');
     Route::get('salary-components/how-to', [SalaryComponentController::class, 'howTo'])->name('salary-components.how.to');
     Route::post('salary-components/status/{id}', [SalaryComponentController::class, 'updateStatus'])->name('salary-components.status');
     Route::resource('salary-components', SalaryComponentController::class)->except(['show']);

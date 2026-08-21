@@ -19,13 +19,7 @@ var DataTableSalaryComponents = function () {
                 url: $('#salaryComponentTable').data('url'),
                 data: function (d) {
                     d.search = $('#salaryComponentSearch').val();
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
-                    });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
+                    applyComponentAdvFiltersToRequest(d);
                 }
             },
             columns: [
@@ -72,6 +66,11 @@ var DataTableSalaryComponents = function () {
     };
 }();
 
+$('.as-select').select2({
+    width: '100%',
+    dropdownParent: $('#componentAdvSearchModal')
+});
+
 // =====================================================
 // Pagination Info
 // =====================================================
@@ -102,18 +101,234 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.page('next').draw('page');
     });
 
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
-    });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
-    });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
-        dataTableInstance.draw();
-    });
+    // Advanced Search
+    initComponentAdvSearch();
 });
+
+
+// =====================================================
+// Advanced Search — state, chips, apply/reset
+// =====================================================
+
+var componentAdvFilters = {};
+
+function initComponentAdvSearch() {
+
+    if (!$('#componentAdvSearchModal').length) {
+        return;
+    }
+
+    $('#advSearchApply').on('click', function () {
+        applyComponentAdvFilters(true);
+    });
+
+    $('#advSearchReset').on('click', function () {
+        resetComponentAdvFieldsUI();
+    });
+
+    $(document).on('click', '.adv-chip-remove', function () {
+
+        var key = $(this).data('key');
+
+        delete componentAdvFilters[key];
+
+        clearComponentAdvField(key);
+
+        renderComponentFilterChips();
+
+        if (dataTableInstance) {
+            dataTableInstance.draw();
+        }
+
+    });
+
+    $(document).on('click', '#advClearAllChips', function () {
+
+        componentAdvFilters = {};
+
+        resetComponentAdvFieldsUI();
+
+        renderComponentFilterChips();
+
+        if (dataTableInstance) {
+            dataTableInstance.draw();
+        }
+
+    });
+}
+
+function clearComponentAdvField(key) {
+
+    switch (key) {
+
+        case 'type':
+            $('#advType').val('');
+            break;
+
+        case 'calculation_type':
+            $('#advCalculationType').val('');
+            break;
+
+        case 'value_range':
+            $('#advValueMin, #advValueMax').val('');
+            break;
+
+        case 'is_taxable':
+            $('#advTaxable').val('');
+            break;
+
+        case 'status':
+            $('#advStatus').val('');
+            break;
+    }
+}
+
+function resetComponentAdvFieldsUI() {
+
+    $('#advType, #advCalculationType, #advTaxable, #advStatus').val('');
+    $('#advValueMin, #advValueMax').val('');
+}
+
+function collectComponentAdvFilters() {
+
+    var filters = {};
+
+    var $type = $('#advType');
+
+    if ($type.val()) {
+        filters.type = {
+            value: $type.val(),
+            label: 'Type: ' + $type.find('option:selected').text()
+        };
+    }
+
+    var $calcType = $('#advCalculationType');
+
+    if ($calcType.val()) {
+        filters.calculation_type = {
+            value: $calcType.val(),
+            label: 'Calculation: ' + $calcType.find('option:selected').text()
+        };
+    }
+
+    var valueMin = $('#advValueMin').val();
+    var valueMax = $('#advValueMax').val();
+
+    if (valueMin !== '' || valueMax !== '') {
+        filters.value_range = {
+            value: { min: valueMin, max: valueMax },
+            label: 'Value: ' + (valueMin !== '' ? valueMin : '0') + ' - ' + (valueMax !== '' ? valueMax : '∞')
+        };
+    }
+
+    var $taxable = $('#advTaxable');
+
+    if ($taxable.val() !== '') {
+        filters.is_taxable = {
+            value: $taxable.val(),
+            label: $taxable.find('option:selected').text()
+        };
+    }
+
+    var $status = $('#advStatus');
+
+    if ($status.val() !== '') {
+        filters.status = {
+            value: $status.val(),
+            label: 'Status: ' + $status.find('option:selected').text()
+        };
+    }
+
+    return filters;
+}
+
+function renderComponentFilterChips() {
+
+    var $bar = $('#advSearchChipsBar');
+    var $chips = $('#advSearchChips');
+    var keys = Object.keys(componentAdvFilters);
+
+    $chips.empty();
+
+    if (!keys.length) {
+        $bar.hide();
+        $('#advSearchBadge').hide();
+        return;
+    }
+
+    keys.forEach(function (key) {
+
+        var filter = componentAdvFilters[key];
+
+        var $remove = $('<button type="button" class="adv-chip-remove"></button>')
+            .attr('data-key', key)
+            .html('<i class="ri-close-line"></i>');
+
+        var $chip = $('<span class="adv-chip"></span>')
+            .attr('data-key', key)
+            .append($('<span></span>').text(filter.label))
+            .append($remove);
+
+        $chips.append($chip);
+    });
+
+    $chips.append(
+        $('<button type="button" class="adv-chip-clear-all" id="advClearAllChips"></button>')
+            .html('<i class="ri-close-circle-line"></i> Clear all')
+    );
+
+    $bar.show();
+
+    $('#advSearchBadge').text(keys.length).show();
+}
+
+function applyComponentAdvFilters(closeModal) {
+
+    componentAdvFilters = collectComponentAdvFilters();
+
+    renderComponentFilterChips();
+
+    if (dataTableInstance) {
+        dataTableInstance.draw();
+    }
+
+    if (closeModal && typeof bootstrap !== 'undefined') {
+
+        var modalEl = document.getElementById('componentAdvSearchModal');
+        var instance = bootstrap.Modal.getInstance(modalEl);
+
+        if (instance) {
+            instance.hide();
+        }
+    }
+}
+
+function applyComponentAdvFiltersToRequest(d) {
+
+    if (componentAdvFilters.type) {
+        d.type = componentAdvFilters.type.value;
+    }
+
+    if (componentAdvFilters.calculation_type) {
+        d.calculation_type = componentAdvFilters.calculation_type.value;
+    }
+
+    if (componentAdvFilters.value_range) {
+
+        if (componentAdvFilters.value_range.value.min !== '') {
+            d.value_min = componentAdvFilters.value_range.value.min;
+        }
+
+        if (componentAdvFilters.value_range.value.max !== '') {
+            d.value_max = componentAdvFilters.value_range.value.max;
+        }
+    }
+
+    if (componentAdvFilters.is_taxable) {
+        d.is_taxable = componentAdvFilters.is_taxable.value;
+    }
+
+    if (componentAdvFilters.status) {
+        d.status = componentAdvFilters.status.value;
+    }
+}

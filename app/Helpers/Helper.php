@@ -474,6 +474,30 @@ if (!function_exists('format_number')) {
 }
 
 /**
+ * Format an amount using the Currency Settings
+ * configured under Settings -> Localization.
+ */
+if (!function_exists('format_currency')) {
+    function format_currency($amount, $decimal = 2)
+    {
+        $number = format_number($amount, $decimal);
+
+        $showCode = (bool) get_settings('show_currency_code', false);
+
+        if ($showCode) {
+            return get_settings('currency', 'USD') . ' ' . $number;
+        }
+
+        $symbol = get_settings('currency_symbol', '$');
+        $position = get_settings('currency_position', 'before');
+
+        return $position === 'after'
+            ? $number . $symbol
+            : $symbol . $number;
+    }
+}
+
+/**
  * Detect browser language
  */
 if (!function_exists('detect_browser_language')) {

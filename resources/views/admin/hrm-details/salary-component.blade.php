@@ -1,62 +1,31 @@
-<div class="offcanvas-header">
-    <div>
-        <h5 class="offcanvas-title">{{ $salaryComponent->name }}</h5>
-        <p>Component history</p>
-    </div>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-</div>
-
-<div class="offcanvas-body px-3">
-
-    <div class="row g-2 mb-4">
-        <div class="col-4">
-            <div class="border rounded p-2 text-center">
-                <div class="fs-5 fw-semibold">{{ $summary['total_entries'] }}</div>
-                <div class="text-muted small">Entries</div>
-            </div>
-        </div>
-        <div class="col-4">
-            <div class="border rounded p-2 text-center">
-                <div class="fs-5 fw-semibold">{{ $summary['employee_count'] }}</div>
-                <div class="text-muted small">Employees</div>
-            </div>
-        </div>
-        <div class="col-4">
-            <div class="border rounded p-2 text-center">
-                <div class="fs-5 fw-semibold">{{ number_format($summary['total_amount'], 2) }}</div>
-                <div class="text-muted small">Total Amount</div>
-            </div>
-        </div>
-    </div>
-
-    <form class="row g-2 mb-3 salary-component-filter-form" data-base-url="{{ route('admin.salary-components.details', $salaryComponent) }}">
-        <div class="col">
-            <label class="form-label small text-muted mb-1">From</label>
-            <input type="date" name="from" value="{{ request('from') }}" class="form-control form-control-sm">
-        </div>
-        <div class="col">
-            <label class="form-label small text-muted mb-1">To</label>
-            <input type="date" name="to" value="{{ request('to') }}" class="form-control form-control-sm">
-        </div>
-        <div class="col-auto d-flex align-items-end">
-            <button type="submit" class="btn-nx-primary btn-sm">
-                <i class="ri-filter-3-line"></i> Filter
-            </button>
-        </div>
-    </form>
-
-    <div class="d-flex gap-2 mb-3">
-        <a class="btn-nx-outline btn-sm" href="{{ route('admin.salary-components.export', $salaryComponent) }}?{{ http_build_query(request()->only('from', 'to')) }}">
-            <i class="ri-file-text-line"></i> CSV
-        </a>
-        <a class="btn-nx-outline btn-sm" href="{{ route('admin.salary-components.export', $salaryComponent) }}?format=excel&{{ http_build_query(request()->only('from', 'to')) }}">
-            <i class="ri-file-excel-2-line"></i> Excel
-        </a>
-        <button type="button" onclick="window.print()" class="btn-nx-outline btn-sm">
-            <i class="ri-printer-line"></i> Print
-        </button>
-    </div>
-
+<x-history-offcanvas
+    :title="$salaryComponent->name"
+    subtitle="Component history"
+    :stats="[
+        ['value' => $summary['total_entries'], 'label' => 'Entries'],
+        ['value' => $summary['employee_count'], 'label' => 'Employees'],
+        ['value' => format_currency($summary['total_amount']), 'label' => 'Total Amount', 'accent' => true],
+    ]"
+    :filter-action="route('admin.salary-components.details', $salaryComponent)"
+    :export-links="[
+        [
+            'url' => route('admin.salary-components.export', $salaryComponent) . '?' . http_build_query(request()->only('from', 'to')),
+            'label' => 'CSV',
+            'icon' => 'ri-file-text-line',
+        ],
+        [
+            'url' => route('admin.salary-components.export', $salaryComponent) . '?' . http_build_query(array_merge(request()->only('from', 'to'), ['format' => 'excel'])),
+            'label' => 'Excel',
+            'icon' => 'ri-file-excel-2-line',
+        ],
+        [
+            'url' => route('admin.salary-components.print', $salaryComponent) . '?' . http_build_query(request()->only('from', 'to')),
+            'label' => 'PDF',
+            'icon' => 'ri-file-pdf-2-line',
+            'target' => '_blank',
+        ],
+    ]"
+>
     <table class="ractivity-tbl w-100">
         <thead>
             <tr>
@@ -78,7 +47,7 @@
                         </div>
                     </td>
                     <td>{{ $row->salaryStructure?->effective_date?->format('d M Y') }}</td>
-                    <td class="text-end fw-semibold">{{ number_format($row->amount, 2) }}</td>
+                    <td class="text-end fw-semibold">{{ format_currency($row->amount) }}</td>
                 </tr>
             @empty
                 <tr>
@@ -92,31 +61,4 @@
             @endforelse
         </tbody>
     </table>
-</div>
-
-<script>
-    (function () {
-        $(document)
-            .off('submit.salaryComponentFilter')
-            .on('submit.salaryComponentFilter', '.salary-component-filter-form', function (e) {
-                e.preventDefault();
-
-                var $form = $(this);
-                var url = $form.data('base-url') + '?' + $form.serialize();
-
-                $('#offcanvas-loader').show();
-                $('#sideForm .offcanvas-content').css('opacity', 0.4);
-
-                $.get(url)
-                    .done(function (res) {
-                        $('#sideForm .offcanvas-content').html(res);
-                    })
-                    .fail(function () {
-                        $('#sideForm .offcanvas-content').css('opacity', 1);
-                    })
-                    .always(function () {
-                        $('#offcanvas-loader').hide();
-                    });
-            });
-    })();
-</script>
+</x-history-offcanvas>

@@ -487,6 +487,30 @@ function _componentRemoteOffcanvasLoadAfterAjax() {
 }
 
 /* =========================
+    HISTORY OFFCANVAS — reusable date-range filter
+    (resources/views/components/history-offcanvas.blade.php)
+========================= */
+
+$(document).on('submit', '.hoc-filter-form', function (e) {
+
+    e.preventDefault();
+
+    var $form = $(this);
+    var url = $form.data('base-url') + '?' + $form.serialize();
+
+    $('#sideForm .offcanvas-content').addClass('hoc-loading');
+
+    $.get(url)
+        .done(function (res) {
+            $('#sideForm .offcanvas-content').html(res);
+        })
+        .fail(function () {
+            $('#sideForm .offcanvas-content').removeClass('hoc-loading');
+        });
+
+});
+
+/* =========================
     DELETE HANDLER
 ========================= */
 

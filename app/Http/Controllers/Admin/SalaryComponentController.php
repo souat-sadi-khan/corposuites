@@ -44,6 +44,30 @@ class SalaryComponentController extends Controller
                 $query->whereIn('status', $statuses);
             }
 
+            // Filter by type (earning / deduction)
+            if ($request->type) {
+                $query->where('type', $request->type);
+            }
+
+            // Filter by calculation type (fixed / percentage)
+            if ($request->calculation_type) {
+                $query->where('calculation_type', $request->calculation_type);
+            }
+
+            // Filter by taxable
+            if ($request->filled('is_taxable')) {
+                $query->where('is_taxable', $request->is_taxable);
+            }
+
+            // Filter by value range
+            if ($request->filled('value_min')) {
+                $query->where('value', '>=', $request->value_min);
+            }
+
+            if ($request->filled('value_max')) {
+                $query->where('value', '<=', $request->value_max);
+            }
+
             // Search
             if ($request->search) {
                 $search = $request->search;
@@ -62,7 +86,13 @@ class SalaryComponentController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.salary-components.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('name', function ($row) {
-                    return '<b class="tl-name-txt">' . $row->name . '</b><br><small>' . $row->description . '</small>';
+                    $sub = 'Code: ' . $row->code;
+
+                    if ($row->description) {
+                        $sub .= ' &middot; ' . e($row->description);
+                    }
+
+                    return '<b class="tl-name-txt">' . e($row->name) . '</b><br><small>' . $sub . '</small>';
                 })
                 ->addColumn('type_badge', function ($row) {
                     return $row->type === 'earning'
@@ -72,7 +102,7 @@ class SalaryComponentController extends Controller
                 ->addColumn('value_formatted', function ($row) {
                     return $row->calculation_type === 'percentage'
                         ? number_format($row->value, 2) . ' %'
-                        : number_format($row->value, 2);
+                        : format_currency($row->value);
                 })
                 ->addColumn('action', function ($row) {
                     return view('admin.salary-components.action', compact('row'))->render();
