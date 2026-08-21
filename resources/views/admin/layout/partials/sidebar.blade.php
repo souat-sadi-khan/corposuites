@@ -260,6 +260,11 @@
                     Languages
                 </a>
 
+                <a href="{{ route('admin.settings.company') }}">
+                    <i class="ri-building-4-line"></i>
+                    Company
+                </a>
+
                 <a href="{{ route('admin.settings.branding') }}">
                     <i class="ri-palette-line"></i>
                     Branding
@@ -290,7 +295,7 @@
                     Localization
                 </a>
             '>
-                <div class="nav-row {{ Request::is('admin/profile') || Request::is('admin/edit-password') || Request::is('admin/edit-profile') || Request::is('admin/settings') || Request::is('admin/languages') || Request::is('admin/branding') || Request::is('admin/appearance') || Request::is('admin/email/providers*') || Request::is('admin/email/sender-identities') || Request::is('admin/localization') || Request::is('admin/email/email-templates') ? 'is-active is-open' : '' }}"
+                <div class="nav-row {{ Request::is('admin/profile') || Request::is('admin/edit-password') || Request::is('admin/edit-profile') || Request::is('admin/settings') || Request::is('admin/languages') || Request::is('admin/company') || Request::is('admin/branding') || Request::is('admin/appearance') || Request::is('admin/email/providers*') || Request::is('admin/email/sender-identities') || Request::is('admin/localization') || Request::is('admin/email/email-templates') ? 'is-active is-open' : '' }}"
                     data-target="sub-settings">
 
                     <i class="ri-settings-3-line n-icon"></i>
@@ -304,7 +309,7 @@
                 </div>
 
                 <div class="nav-sub"
-                    style="display: {{ Request::is('admin/profile') || Request::is('admin/edit-profile') || Request::is('admin/edit-password') || Request::is('admin/settings') || Request::is('admin/languages') || Request::is('admin/branding') || Request::is('admin/email/providers*') || Request::is('admin/email/sender-identities') || Request::is('admin/appearance') ? 'block' || Request::is('admin/localization') || Request::is('admin/email/email-templates') : 'none' }}"
+                    style="display: {{ Request::is('admin/profile') || Request::is('admin/edit-profile') || Request::is('admin/edit-password') || Request::is('admin/settings') || Request::is('admin/languages') || Request::is('admin/company') || Request::is('admin/branding') || Request::is('admin/email/providers*') || Request::is('admin/email/sender-identities') || Request::is('admin/appearance') ? 'block' || Request::is('admin/localization') || Request::is('admin/email/email-templates') : 'none' }}"
                     id="sub-settings">
 
                     <!-- General -->
@@ -428,6 +433,21 @@
 
                     </div>
 
+                    <!-- Company -->
+                    <div class="nav-item-wrap">
+
+                        <a href="{{ route('admin.settings.company') }}"
+                            class="nav-row {{ Request::is('admin/company') ? 'is-active' : '' }}"
+                            data-page="Company">
+
+                            <i class="ri-building-4-line n-icon"></i>
+
+                            <span class="n-lbl">
+                                Company
+                            </span>
+                        </a>
+                    </div>
+
                     <!-- Branding -->
                     <div class="nav-item-wrap">
 
@@ -482,7 +502,7 @@
         <!-- Document Management -->
         <div class="nav-item-wrap" data-flyout="" data-flyout-title="Document Management">
             <a href="{{ route('admin.dms.index') }}" class="nav-row {{ Request::is('admin/dms*') ? 'is-active' : '' }}" data-page="Document Management">
-                <i style="color:#FFD700;" class="ri-folders-line n-icon"></i>
+                <i class="ri-folders-line n-icon"></i>
                 <span class="n-lbl">Documents</span>
             </a>
         </div>

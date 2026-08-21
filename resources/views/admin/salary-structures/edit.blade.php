@@ -20,12 +20,21 @@
                 </select>
             </div>
             <div class="fm-field">
+                <label>Pay Type <span class="req">*</span></label>
+                <select name="pay_type" class="form-select select salary-pay-type" data-minimum-results-for-search="Infinity">
+                    <option value="monthly" {{ old('pay_type', $salaryStructure->pay_type) == 'monthly' ? 'selected' : '' }}>Monthly</option>
+                    <option value="daily" {{ old('pay_type', $salaryStructure->pay_type) == 'daily' ? 'selected' : '' }}>Daily</option>
+                    <option value="commission" {{ old('pay_type', $salaryStructure->pay_type) == 'commission' ? 'selected' : '' }}>Commission-based</option>
+                </select>
+            </div>
+            <div class="fm-field">
                 <label>Effective Date <span class="req">*</span></label>
                 <input type="date" class="form-control" name="effective_date" value="{{ old('effective_date', $salaryStructure->effective_date?->format('Y-m-d')) }}" required>
             </div>
             <div class="fm-field">
-                <label>Basic Salary <span class="req">*</span></label>
-                <input type="number" step="0.01" class="form-control" name="basic_salary" min="0" value="{{ old('basic_salary', $salaryStructure->basic_salary) }}" required>
+                <label class="salary-basic-label">Basic Salary <span class="req">*</span></label>
+                <input type="number" step="0.01" class="form-control salary-basic-input" name="basic_salary" min="0" value="{{ old('basic_salary', $salaryStructure->basic_salary) }}" required>
+                <small class="text-muted salary-basic-help"></small>
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>

@@ -16,7 +16,7 @@ use RuntimeException;
 
 class WorkflowEngineService
 {
-    public function __construct(protected WorkflowNotifier $notifier)
+    public function __construct(protected WorkflowNotifier $notifier, protected ApprovalDelegationService $delegations)
     {
     }
 
@@ -75,7 +75,14 @@ class WorkflowEngineService
             throw new RuntimeException('Invalid workflow action: ' . $action);
         }
 
-        $currentStep = $instance->currentStep;
+        if ($instance->current_status !== 'pending') {
+            throw new RuntimeException('This workflow instance is no longer pending.');
+        }
+
+        $currentStep = $instance->currentStep()->with('approvers')->first();
+        if (!$currentStep || !$this->canActOnStep($currentStep, $approverAdminId)) {
+            throw new RuntimeException('You are not an approver for the current workflow step.');
+        }
 
         WorkflowInstanceApproval::create([
             'workflow_instance_id' => $instance->id,
@@ -104,6 +111,38 @@ class WorkflowEngineService
 
         // 'on_hold' / 'commented' — logged only, no status change.
         return $instance->fresh();
+    }
+
+    protected function canActOnStep(WorkflowStep $step, int $adminId): bool
+    {
+        $admin = \App\Models\Admin::find($adminId);
+        if (!$admin) {
+            return false;
+        }
+
+        foreach ($step->approvers as $approver) {
+            if ($approver->approver_type === 'admin' && (int) $approver->approver_id === $adminId) {
+                return true;
+            }
+
+            if ($approver->approver_type === 'admin'
+                && $this->delegations->effectiveApproverId((int) $approver->approver_id) === $adminId) {
+                return true;
+            }
+
+            if ($approver->approver_type === 'role' && $admin->roles()->whereKey($approver->approver_id)->exists()) {
+                return true;
+            }
+
+            if ($approver->approver_type === 'role'
+                && \App\Models\Admin::role((string) \Spatie\Permission\Models\Role::find($approver->approver_id)?->name)
+                    ->get()
+                    ->contains(fn ($roleAdmin) => $this->delegations->effectiveApproverId((int) $roleAdmin->id) === $adminId)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function handleApproval(WorkflowInstance $instance, ?WorkflowStep $currentStep): WorkflowInstance

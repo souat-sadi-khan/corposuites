@@ -46,6 +46,28 @@ class EmployeeController extends Controller
                 $query->whereIn('status', $statuses);
             }
 
+            foreach ([
+                'employee_type_id', 'employment_status_id', 'shift_id',
+                'department_id', 'designation_id', 'gender',
+            ] as $filter) {
+                if ($request->filled($filter)) {
+                    $query->where($filter, $request->input($filter));
+                }
+            }
+
+            if ($request->filled('joining_from')) {
+                $query->whereDate('date_of_joining', '>=', $request->input('joining_from'));
+            }
+            if ($request->filled('joining_to')) {
+                $query->whereDate('date_of_joining', '<=', $request->input('joining_to'));
+            }
+            if ($request->filled('birth_from')) {
+                $query->whereDate('date_of_birth', '>=', $request->input('birth_from'));
+            }
+            if ($request->filled('birth_to')) {
+                $query->whereDate('date_of_birth', '<=', $request->input('birth_to'));
+            }
+
             // Search
             if ($request->search) {
                 $search = $request->search;
@@ -109,7 +131,13 @@ class EmployeeController extends Controller
                 ->make(true);
         }
 
-        return view('admin.employees.index');
+        return view('admin.employees.index', [
+            'employeeTypes' => EmployeeType::orderBy('name')->get(),
+            'employmentStatuses' => EmploymentStatus::orderBy('name')->get(),
+            'shifts' => Shift::orderBy('name')->get(),
+            'departments' => Department::orderBy('name')->get(),
+            'designations' => Designation::with('department')->orderBy('name')->get(),
+        ]);
     }
 
     /**

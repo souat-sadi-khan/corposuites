@@ -1,4 +1,4 @@
-<form class="ajax-form" method="POST" action="{{ route('admin.leave-requests.update', $leaveRequest->id) }}">
+<form class="ajax-form" method="POST" action="{{ route('admin.leave-requests.update', $leaveRequest->id) }}" enctype="multipart/form-data">
     @method('PATCH')
     <div class="modal-header fm-modal-head">
         <div>
@@ -29,12 +29,35 @@
                 </select>
             </div>
             <div class="fm-field">
-                <label>Start Date <span class="req">*</span></label>
-                <input type="date" class="form-control" name="start_date" value="{{ old('start_date', $leaveRequest->start_date?->format('Y-m-d')) }}" required>
+                <label>Duration <span class="req">*</span></label>
+                <select name="duration_type" class="form-select select" id="durationType" data-minimum-results-for-search="Infinity">
+                    <option value="full_day" {{ old('duration_type', $leaveRequest->duration_type) == 'full_day' ? 'selected' : '' }}>Full Day</option>
+                    <option value="half_day" {{ old('duration_type', $leaveRequest->duration_type) == 'half_day' ? 'selected' : '' }}>Half Day</option>
+                </select>
+            </div>
+            <div class="fm-field" id="halfDaySessionWrap" style="{{ old('duration_type', $leaveRequest->duration_type) == 'half_day' ? '' : 'display:none;' }}">
+                <label>Half-Day Session</label>
+                <select name="half_day_session" class="form-select select" data-minimum-results-for-search="Infinity">
+                    <option value="first_half" {{ old('half_day_session', $leaveRequest->half_day_session) == 'first_half' ? 'selected' : '' }}>First Half</option>
+                    <option value="second_half" {{ old('half_day_session', $leaveRequest->half_day_session) == 'second_half' ? 'selected' : '' }}>Second Half</option>
+                </select>
             </div>
             <div class="fm-field">
+                <label>Start Date <span class="req">*</span></label>
+                <input type="date" class="form-control" name="start_date" id="startDate" value="{{ old('start_date', $leaveRequest->start_date?->format('Y-m-d')) }}" required>
+            </div>
+            <div class="fm-field" id="endDateWrap">
                 <label>End Date <span class="req">*</span></label>
-                <input type="date" class="form-control" name="end_date" value="{{ old('end_date', $leaveRequest->end_date?->format('Y-m-d')) }}" required>
+                <input type="date" class="form-control" name="end_date" id="endDate" value="{{ old('end_date', $leaveRequest->end_date?->format('Y-m-d')) }}" required>
+            </div>
+            <div class="fm-field fm-full">
+                <label>Attachment</label>
+                <input type="file" class="form-control" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                @if($leaveRequest->attachment)
+                    <small class="text-muted">Current: <a href="{{ asset($leaveRequest->attachment) }}" target="_blank">view file</a>. Upload to replace.</small>
+                @else
+                    <small class="text-muted">Required for some leave types (e.g. medical). Max 4MB.</small>
+                @endif
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>

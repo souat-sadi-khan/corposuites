@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PayrollRequest;
 use App\Models\Employee;
 use App\Models\Payroll;
+use App\Models\SalaryStructure;
 use App\Services\PayrollService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class PayrollController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Payroll::query()->with('employee');
+            $query = Payroll::query()->with('employee', 'salaryStructure');
 
             // Filter by status
             if ($request->status) {
@@ -66,7 +67,11 @@ class PayrollController extends Controller
                     return \Carbon\Carbon::create($row->year, $row->month, 1)->format('F Y');
                 })
                 ->addColumn('salary_summary', function ($row) {
-                    return 'Net: ' . number_format($row->net_salary, 2) . '<br><small>Earnings: ' . number_format($row->total_earnings, 2) . ' / Deductions: ' . number_format($row->total_deductions, 2) . '</small>';
+                    $payTypeBadge = $row->salaryStructure
+                        ? '<span class="badge bg-secondary-subtle text-secondary me-1">' . $row->salaryStructure->pay_type_label . '</span>'
+                        : '';
+
+                    return $payTypeBadge . 'Net: ' . number_format($row->net_salary, 2) . '<br><small>Earnings: ' . number_format($row->total_earnings, 2) . ' / Deductions: ' . number_format($row->total_deductions, 2) . '</small>';
                 })
                 ->addColumn('payment_badge', function ($row) {
                     return $row->payment_status === 'paid'
@@ -90,7 +95,17 @@ class PayrollController extends Controller
     {
         $employees = Employee::active()->get();
 
-        return view('admin.payrolls.create', compact('employees'));
+        // The latest active salary structure per employee, keyed by employee_id,
+        // so the form can show/require the Sales Amount field only for employees
+        // on a commission-based structure — same "active, latest effective_date"
+        // resolution PayrollService::create() uses to pick the structure.
+        $employeePayTypes = SalaryStructure::active()
+            ->orderByDesc('effective_date')
+            ->get()
+            ->groupBy('employee_id')
+            ->map(fn ($structures) => $structures->first()->pay_type);
+
+        return view('admin.payrolls.create', compact('employees', 'employeePayTypes'));
     }
 
     /**

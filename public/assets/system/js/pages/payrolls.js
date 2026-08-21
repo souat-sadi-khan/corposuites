@@ -76,6 +76,35 @@ var DataTablePayrolls = function () {
 }();
 
 // =====================================================
+// Commission Sales Amount Field (shown only for
+// employees on a commission-based salary structure)
+// =====================================================
+function togglePayrollCommissionField($form) {
+    var $select = $form.find('[name="employee_id"]');
+    var payType = $select.find('option:selected').data('pay-type');
+    var $field = $form.find('.payroll-commission-field');
+    var $input = $field.find('[name="commission_sales_amount"]');
+
+    if (payType === 'commission') {
+        $field.show();
+        $input.prop('required', true);
+    } else {
+        $field.hide();
+        $input.prop('required', false).val('');
+    }
+}
+
+$(document).on('change', '[name="employee_id"]', function () {
+    togglePayrollCommissionField($(this).closest('form'));
+});
+
+$(document).on('shown.bs.modal', '#modal_remote', function () {
+    $(this).find('form.ajax-form').each(function () {
+        togglePayrollCommissionField($(this));
+    });
+});
+
+// =====================================================
 // Mark as Paid
 // =====================================================
 function bindMarkPaidButtons() {

@@ -11,7 +11,8 @@ class Attendance extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 'attendance_date', 'check_in', 'check_out', 'attendance_status', 'remarks', 'status'
+        'employee_id', 'leave_request_id', 'attendance_date', 'check_in', 'check_out', 'check_in_latitude', 'check_in_longitude', 'check_out_latitude', 'check_out_longitude', 'check_in_source', 'check_out_source', 'attendance_status', 'remarks',
+        'leave_original_status', 'leave_original_remarks', 'status'
     ];
 
     protected $casts = [

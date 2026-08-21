@@ -14,7 +14,7 @@
                 <select name="employee_id" class="form-select select" required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option value="{{ $employee->id }}" data-pay-type="{{ $employeePayTypes[$employee->id] ?? 'monthly' }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
@@ -29,6 +29,11 @@
             <div class="fm-field">
                 <label>Year <span class="req">*</span></label>
                 <input type="number" class="form-control" name="year" min="1950" max="2100" value="{{ date('Y') }}" required>
+            </div>
+            <div class="fm-field payroll-commission-field fm-full" style="display:none;">
+                <label>Sales Amount <span class="req">*</span></label>
+                <input type="number" step="0.01" min="0" class="form-control" name="commission_sales_amount" placeholder="Total sales this period">
+                <small class="text-muted">This employee is on a commission-based salary structure. Commission is calculated as a percentage of this amount.</small>
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>

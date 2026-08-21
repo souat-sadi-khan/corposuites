@@ -9,6 +9,7 @@
     @endif
 
     <div class="tl-toolbar">
+        <a href="{{ route('admin.attendances.monthly') }}" class="btn-nx-outline"><i class="ri-calendar-2-line"></i> Monthly Report</a>
         <div class="tl-search">
             <i class="ri-search-line"></i>
             <input type="text" id="attendanceSearch" placeholder="Search Attendance">
@@ -53,6 +54,7 @@
                         <th>Employee</th>
                         <th>Date</th>
                         <th>Timing</th>
+                        <th>Location</th>
                         <th>Attendance</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>

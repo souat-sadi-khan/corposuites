@@ -36,6 +36,12 @@
 
         <div class="tl-spacer"></div>
 
+        <!-- Generate Balances (auto-allocate from policy) -->
+        <button id="generateBalances" data-url="{{ route('admin.leave-balances.generate') }}" data-employee-id="{{ request('employee_id') }}" class="btn-nx-outline">
+            <i class="ri-magic-line"></i>
+            Generate Balances
+        </button>
+
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.leave-balances.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>

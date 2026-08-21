@@ -1,4 +1,5 @@
 <div class="tl-actions">
+    <button class="tl-icon-btn side-offcanvas" data-url="{{ route('admin.master-details.show', ['type' => 'department', 'id' => $row->id]) }}" data-width="680px" title="Details"><i class="ri-information-line"></i></button>
     <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.departments.edit', $row->id) }}" title="Edit">
         <i class="ri-pencil-line"></i>
     </button>

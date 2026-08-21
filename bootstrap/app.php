@@ -29,6 +29,13 @@ return Application::configure(basePath: dirname(__DIR__))
             CheckIfInstalled::class,
             LanguageMiddleware::class,
         ]);
+
+        // The attendance device-punch endpoint authenticates itself via a
+        // shared secret header (X-Attendance-Token), not a browser session —
+        // a physical biometric device has no CSRF token to send.
+        $middleware->validateCsrfTokens(except: [
+            'admin/attendance-device/punch',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

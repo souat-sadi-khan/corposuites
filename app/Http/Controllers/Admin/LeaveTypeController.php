@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\LeaveTypeRequest;
+use App\Models\Designation;
+use App\Models\EmployeeType;
 use App\Models\LeaveType;
 use App\Services\LeaveTypeService;
 use App\Traits\ActivityLogger;
@@ -83,7 +85,10 @@ class LeaveTypeController extends Controller
      */
     public function create()
     {
-        return view('admin.leave-types.create');
+        $employeeTypes = EmployeeType::where('status', 1)->orderBy('name')->get();
+        $designations = Designation::where('status', 1)->orderBy('name')->get();
+
+        return view('admin.leave-types.create', compact('employeeTypes', 'designations'));
     }
 
     /**
@@ -130,7 +135,10 @@ class LeaveTypeController extends Controller
      */
     public function edit(LeaveType $leaveType)
     {
-        return view('admin.leave-types.edit', compact('leaveType'));
+        $employeeTypes = EmployeeType::where('status', 1)->orderBy('name')->get();
+        $designations = Designation::where('status', 1)->orderBy('name')->get();
+
+        return view('admin.leave-types.edit', compact('leaveType', 'employeeTypes', 'designations'));
     }
 
     /**

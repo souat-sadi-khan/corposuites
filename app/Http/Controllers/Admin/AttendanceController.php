@@ -73,6 +73,9 @@ class AttendanceController extends Controller
                     $out = $row->check_out ? \Carbon\Carbon::parse($row->check_out)->format('h:i A') : '-';
                     return $in . ' - ' . $out;
                 })
+                ->addColumn('location', function ($row) {
+                    return $this->locationBadges($row);
+                })
                 ->addColumn('attendance_status_badge', function ($row) {
                     $map = [
                         'present' => 'success',
@@ -88,11 +91,54 @@ class AttendanceController extends Controller
                 ->addColumn('action', function ($row) {
                     return view('admin.attendances.action', compact('row'))->render();
                 })
-                ->rawColumns(['status_badge', 'employee_name', 'attendance_status_badge', 'action'])
+                ->rawColumns(['status_badge', 'employee_name', 'location', 'attendance_status_badge', 'action'])
                 ->make(true);
         }
 
         return view('admin.attendances.index');
+    }
+
+    /**
+     * Turns the raw check_in/check_out lat/long columns into something an
+     * admin can actually read at a glance: a "View on map" link per punch
+     * (opens Google Maps, no API key/package needed for that), plus — when
+     * an office location is configured in HRM Settings — a small distance
+     * badge so it's obvious whether a punch happened near the office or not.
+     */
+    private function locationBadges(Attendance $row): string
+    {
+        $officeLat = get_settings('hrm_office_latitude');
+        $officeLng = get_settings('hrm_office_longitude');
+        $hasOffice = $officeLat !== null && $officeLat !== '' && $officeLng !== null && $officeLng !== '';
+
+        $punch = function (?float $lat, ?float $lng, string $label) use ($hasOffice, $officeLat, $officeLng) {
+            if ($lat === null || $lng === null) {
+                return '<div class="small text-muted">' . $label . ': —</div>';
+            }
+
+            $mapUrl = "https://www.google.com/maps?q={$lat},{$lng}";
+            $link = '<a href="' . $mapUrl . '" target="_blank" rel="noopener" class="small">'
+                . '<i class="ri-map-pin-2-line"></i> ' . $label . '</a>';
+
+            if (!$hasOffice) {
+                return '<div>' . $link . '</div>';
+            }
+
+            $distance = \App\Http\Controllers\Admin\AttendancePortalController::distanceInMeters(
+                (float) $officeLat, (float) $officeLng, $lat, $lng
+            );
+            $radius = (float) get_settings('hrm_geofence_radius_meters', 200);
+            $withinRange = $distance <= $radius;
+            $distanceLabel = $distance >= 1000 ? round($distance / 1000, 1) . 'km' : round($distance) . 'm';
+            $badgeColor = $withinRange ? 'success' : 'danger';
+
+            return '<div>' . $link
+                . ' <span class="badge bg-' . $badgeColor . '-subtle text-' . $badgeColor . '">' . $distanceLabel . ' from office</span>'
+                . '</div>';
+        };
+
+        return $punch($row->check_in_latitude, $row->check_in_longitude, 'In')
+            . $punch($row->check_out_latitude, $row->check_out_longitude, 'Out');
     }
 
     /**

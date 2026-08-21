@@ -62,13 +62,15 @@ class HrmMenuSeeder extends Seeder
         $this->menu($hrmModule->id, 'hrm.attendance-adjustments', $attendance->id, 'Attendance Adjustments', 'ri-time-zone-line', 'admin.attendance-adjustments.index', 2);
         $this->menu($hrmModule->id, 'hrm.leave-balances', $attendance->id, 'Leave Balances', 'ri-donut-chart-line', 'admin.leave-balances.index', 3);
         $this->menu($hrmModule->id, 'hrm.leave-requests', $attendance->id, 'Leave Requests', 'ri-mail-send-line', 'admin.leave-requests.index', 4);
+        $this->menu($hrmModule->id, 'hrm.leave-calendar', $attendance->id, 'Leave Calendar', 'ri-calendar-2-line', 'admin.leave-requests.calendar', 5);
 
         // Group: Payroll & Finance
         $payroll = $this->group($hrmModule->id, 'hrm.group.payroll', 'Payroll & Finance', 'ri-hand-coin-line', 5);
         $this->menu($hrmModule->id, 'hrm.salary-structures', $payroll->id, 'Salary Structures', 'ri-file-list-line', 'admin.salary-structures.index', 1);
-        $this->menu($hrmModule->id, 'hrm.payrolls', $payroll->id, 'Payroll', 'ri-hand-coin-line', 'admin.payrolls.index', 2);
-        $this->menu($hrmModule->id, 'hrm.expense-claims', $payroll->id, 'Expense Claims', 'ri-receipt-line', 'admin.expense-claims.index', 3);
-        $this->menu($hrmModule->id, 'hrm.employee-loans', $payroll->id, 'Employee Loans', 'ri-safe-2-line', 'admin.employee-loans.index', 4);
+        $this->menu($hrmModule->id, 'hrm.salary-templates', $payroll->id, 'Salary Templates', 'ri-file-copy-2-line', 'admin.salary-templates.index', 2);
+        $this->menu($hrmModule->id, 'hrm.payrolls', $payroll->id, 'Payroll', 'ri-hand-coin-line', 'admin.payrolls.index', 3);
+        $this->menu($hrmModule->id, 'hrm.expense-claims', $payroll->id, 'Expense Claims', 'ri-receipt-line', 'admin.expense-claims.index', 4);
+        $this->menu($hrmModule->id, 'hrm.employee-loans', $payroll->id, 'Employee Loans', 'ri-safe-2-line', 'admin.employee-loans.index', 5);
 
         // Group: Performance
         $performance = $this->group($hrmModule->id, 'hrm.group.performance', 'Performance', 'ri-line-chart-line', 6);
@@ -77,6 +79,10 @@ class HrmMenuSeeder extends Seeder
         // Group: Reports
         $reports = $this->group($hrmModule->id, 'hrm.group.reports', 'Reports', 'ri-bar-chart-box-line', 7);
         $this->menu($hrmModule->id, 'hrm.hr-reports', $reports->id, 'HR Reports', 'ri-bar-chart-box-line', 'admin.hr-reports.index', 1);
+        $this->menu($hrmModule->id, 'hrm.leave-reports', $reports->id, 'Leave Reports', 'ri-calendar-line', 'admin.leave-reports.index', 2);
+
+        // Bottom-level configuration entry for all HRM policies and integrations.
+        $this->menu($hrmModule->id, 'hrm.settings', null, 'HRM Settings', 'ri-settings-3-line', 'admin.hrm-settings.index', 8);
 
         Cache::forget('admin.module.menus');
     }

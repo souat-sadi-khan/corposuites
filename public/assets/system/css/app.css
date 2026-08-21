@@ -4715,3 +4715,9 @@ table tr th {
     border-color: var(--accent);
     box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
 }
+.select2-container--default .select2-selection--multiple .select2-selection__choice__display {
+    cursor: default;
+    padding-left: 15px;
+    padding-right: 5px;
+}
+

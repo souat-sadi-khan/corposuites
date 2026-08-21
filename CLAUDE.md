@@ -7803,3 +7803,126 @@ Notes
 
 - All test data created during live-browser verification (folders named `BrowserTestRoot`, `InsideApp`, `InsideBootstrap`, `InsideConfig`, `RetryFolder`, and an initial buggy `MyUploadedFolder` pair from before the async fix) was identified precisely by name and removed via `DmsService::deleteForever()` (so their physical uploaded files were cleaned up too, not just the DB rows) — confirmed afterward that every other row in `dms_items` belonged to the user's own real, concurrent use of the live application during this same session (the user was actively testing the exact same folders in parallel on a different port against the same database), and none of it was touched. The temporary local server was stopped and the admin account's password hash was restored to its exact original value, same as the previous session's methodology.
 - No HRM, Workflow Engine, CRM, Product Management, Sales, Purchase, Inventory, Accounting, Asset Management, Project Management, Support, Budget & Finance, or `main.js`/`app.blade.php` files were touched — every change was confined to the DMS module's own view and JS files.
+
+### 2026-08-29
+
+Completed
+
+- Multiple Salary Structure Templates (HRM Payroll — first item of a client-supplied "Payroll Configuration & Settings" requirements doc, tracked in `payroll.md` at the project root; this closes Module 1 of that doc)
+
+Scope decision
+
+- Requirements doc titled this feature "(Daily, Monthly, Commission-based)" — exactly 3 pay types, deliberately not a 4th "Hourly" type even though the doc's own example paragraph mentions an hourly rate; the module's own heading is the definitive scope, "Overtime Rules" (a separate, not-yet-built item in the same doc) is where hourly-rate mechanics belong instead.
+- **Reused the existing `SalaryStructure.basic_salary` column as a generic "rate" field rather than adding new columns per pay type** — its label and meaning switch client-side (and are documented server-side via a doc-comment) based on the new `pay_type` enum: Monthly = fixed monthly amount (unchanged), Daily = per-day rate, Commission = commission percentage (capped at 100 via `SalaryStructureRequest`). This kept the migration to a single new enum column and required no changes to `SalaryStructureService`'s existing gross-salary preview math, which already treats `basic_salary` as the base every percentage-type component is computed against.
+- **A salary structure template is inert unless Payroll actually uses it** — building `pay_type` with no corresponding change to `PayrollService` would have shipped a cosmetic field, violating this project's "complete the module fully, no placeholder code" rule. So `PayrollService::buildTotals()` was refactored to take a resolved `$periodBasic` figure instead of always reading `$structure->basic_salary` directly, with a new `resolvePeriodBasic()` that computes it per pay_type: Monthly passes the rate through unchanged; Daily multiplies the per-day rate by a new `workedDays()` helper (present/late = 1 day, half_day = 0.5, absent/on_leave = 0, counted via `Attendance.attendance_status` within the same `payPeriod()` window `unpaidLeaveDeduction()` already resolves); Commission multiplies the rate% against a sales figure supplied at payroll-generation time.
+- **Commission needs a per-payroll-run input that has no natural home on the structure itself** (the sales figure varies every period, a structure is closer to a standing template) — added `payrolls.commission_sales_amount` (nullable, only meaningful for commission-based employees) rather than putting it on `SalaryStructure`. `PayrollRequest::withValidator()` looks up the employee's active structure (same "active, latest effective_date" resolution `PayrollService::create()` itself uses) and requires the field only when that structure's `pay_type` is `commission`, naming the reason in the error message.
+- Percentage-type salary components (e.g. "House Rent = 40% of Basic") are now calculated against the *resolved period basic* (`$periodBasic`), not the raw structure rate — so a Daily/Commission employee's percentage-based allowances scale with what they actually earned that period, not an abstract per-day/per-percent number.
+- Added a `pay_type_badge` column to both the Salary Structures list and the Payroll list (the latter as a small badge inline with the existing salary summary), plus a "Pay Type" filter dropdown on Salary Structures — small, natural additions now that more than one template shape exists, consistent with how every other module in this project surfaces a newly-added classification field.
+- Added a "How To" documentation modal for Salary Structures (`salary-structures/how-to`), following the exact `salary-components`/`bank-accounts` `doc.blade.php` + `howTo()` controller action + `#openModal` toolbar-button pattern already established elsewhere in HRM — Salary Structures previously had no such page.
+
+Database
+
+- Added `2026_08_29_096000_add_pay_type_to_salary_structures_table` — `pay_type` enum (`monthly`/`daily`/`commission`) default `monthly`, positioned after `employee_id`.
+- Added `2026_08_29_096001_add_commission_sales_amount_to_payrolls_table` — `commission_sales_amount` nullable decimal(12,2), positioned after `year`.
+
+Models
+
+- `SalaryStructure` — added `pay_type` to `$fillable`, `public const PAY_TYPES`, and a `pay_type_label` accessor ("Monthly"/"Daily"/"Commission-based").
+- `Payroll` — added `commission_sales_amount` to `$fillable` and cast to `decimal:2`.
+
+Services
+
+- `PayrollService` — added `resolvePeriodBasic()` and `workedDays()` (both described above); `buildTotals()` now takes the resolved period-basic figure as a parameter instead of reading `$structure->basic_salary` directly. `unpaidLeaveDeduction()`/`payPeriod()` were not touched — `workedDays()` reuses the same `payPeriod()` window.
+- `SalaryStructureService` — unchanged; its gross-salary preview math already worked generically against whatever `basic_salary` represents.
+
+Requests
+
+- `SalaryStructureRequest` — added `pay_type` (`Rule::in(SalaryStructure::PAY_TYPES)`); `basic_salary`'s rule array conditionally adds `max:100` only when `pay_type === 'commission'`.
+- `PayrollRequest` — added `commission_sales_amount` (`nullable|numeric|min:0`) plus a `withValidator()` closure requiring it when the employee's active salary structure is commission-based (described above).
+
+Controllers
+
+- `SalaryStructureController` — added `howTo()`; `index()` adds a `pay_type` AJAX filter and the `pay_type_badge` column; `salary_summary` column now labels the rate figure "Rate"/"Rate (%)"/"Basic" per pay_type.
+- `PayrollController` — `create()` now also loads `$employeePayTypes` (employee_id → pay_type, using the same "active, latest effective_date" resolution as `PayrollService::create()`) so the form knows which employees need the Sales Amount field; `index()` eager-loads `salaryStructure` and adds the pay-type badge to `salary_summary`.
+
+Views
+
+- Added `resources/views/admin/salary-structures/doc.blade.php` — the new "How To" modal.
+- Updated `salary-structures/{create,edit}.blade.php` — added the Pay Type dropdown; the Basic Salary field's label/help text and `max` attribute now update client-side per pay_type (`salary-structures.js`'s new `updateSalaryPayTypeUi()`).
+- Updated `salary-structures/index.blade.php` — added the "How To" toolbar button, a Pay Type filter dropdown, and the Pay Type column.
+- Updated `payrolls/create.blade.php` — the employee `<option>` now carries `data-pay-type`; added a `.payroll-commission-field` Sales Amount input, hidden/required-toggled by `payrolls.js` based on the selected employee's pay type.
+
+JS
+
+- `salary-structures.js` — added `updateSalaryPayTypeUi()` (bound to the pay-type select's `change` event and the existing `shown.bs.modal` handler) and the Pay Type filter's `change` binding.
+- `payrolls.js` — added `togglePayrollCommissionField()`, bound to the employee select's `change` event and a new `shown.bs.modal` handler (Payroll's create form has no prior modal-shown handler, since it previously had no conditional fields).
+
+Notes
+
+- Ran `php artisan migrate` — both new migrations applied successfully.
+- Verified end-to-end: `php -l` on all 10 new/modified PHP files (all clean); `php artisan route:list --name=salary-structures` confirms the new `admin.salary-structures.how.to` route alongside the original 7. Ran a full tinker lifecycle test through the real services (not raw `Model::create()` bypassing service logic): created one salary structure per pay type; confirmed `pay_type_label` renders correctly for all three; created realistic `Attendance` rows (2×present, 1×late, 1×half_day, 1×absent) for the Daily employee and confirmed `PayrollService::create()` resolved exactly **3.5 worked days × 50 = 175.00** as that period's basic pay; confirmed the Commission employee's payroll, given a submitted sales amount of 5000 at a 10% rate, resolved to exactly **500.00**; confirmed the Monthly employee's payroll was unaffected (still exactly the structure's `basic_salary`); confirmed `PayrollRequest`'s validator correctly rejects generating payroll for the commission employee with no `commission_sales_amount`, naming the reason. Rendered all 6 touched views directly (`salary-structures` index/create/edit/doc, `payrolls` index/create) — all produced full HTML with no fatal Blade errors, only the same known unauthenticated-topbar warnings seen in every prior tinker-rendered-view test in this project. All test data (3 employees, 3 salary structures, 3 payrolls, 5 attendance rows) cleaned up afterward — zero rows remaining.
+- `payroll.md` (the requirements-tracking file at the project root) updated to mark Module 1 done.
+- No CRM, Product Management, Sales, Purchase, Inventory, Accounting, Asset Management, Project Management, Support, Budget & Finance, or DMS files were touched — changes were confined to the existing Salary Structures and Payroll modules within HRM.
+
+### 2026-08-29 (2)
+
+Completed
+
+- Bulk / per-employee-group Salary Template assignment (HRM Payroll — closes the last open item under Module 1 of `payroll.md`'s "Payroll Configuration & Settings" tracking doc: applying one pay structure to a whole group of employees at once, e.g. "10 of my 100 employees are all on the same salary")
+
+Scope decision
+
+- **A new master, `SalaryTemplate`, not a reused `SalaryStructure` row.** A template has no `employee_id` — it's a standing definition ("Retail Staff - Standard": Daily, $50/day, HRA 20%, Tax $15) an admin builds once and re-applies whenever needed, while a `SalaryStructure` is always one specific employee's actual assignment. Collapsing the two into one table (e.g. a nullable `employee_id`) would have blurred "the template" with "one employee's copy of it" and made the Salary Structures list (which is meant to show real, in-force employee pay) start showing template rows too.
+- **`salary_templates`/`salary_template_items` are a near-exact structural mirror of `salary_structures`/`salary_structure_items`** (same `pay_type` enum, same `basic_salary`-as-generic-rate-field convention from the previous session, same percentage/fixed component shape) — deliberately, so every rule already established for a salary structure (Daily = rate × worked days, Commission = rate% × sales amount, percentage components computed against the resolved basic) means the same thing on a template, with nothing new to learn.
+- **`SalaryTemplateService` is a structural duplicate of `SalaryStructureService`'s create/update/delete/component-calculation logic**, per this project's own long-standing precedent of duplicating a service for a structurally-parallel entity rather than sharing one (e.g. `PurchaseInvoiceService` vs `SalesInvoiceService`) — extracting a shared base class for what is currently two ~180-line services would have been the over-engineering this project's rules warn against for a feature this size.
+- **The actual bulk-assignment step goes *through* `SalaryStructureService::create()`, not around it.** `SalaryTemplateService::assignToEmployees()` builds one `components` array from the template's items (component id + amount) and calls the existing structure service's `create()` once per selected employee_id — so every already-shipped rule for a manually-created structure (percentage components recalculated fresh against each employee's own basic_salary via the component definition, gross_salary computed the same way) applies automatically to a bulk-assigned one too, with zero duplicated calculation logic between "one employee at a time" and "many employees at once."
+- **Applying a template always creates a brand-new `SalaryStructure` per employee — it never edits or removes an employee's existing one(s).** This matches exactly how manually adding a second salary structure for an employee already behaves (no structure is ever auto-deactivated; `PayrollService` always just picks whichever active structure has the latest `effective_date`), so bulk-assigning a template is indistinguishable, from the employee's side, from an admin manually creating that same structure by hand — just done for many employees in one action instead of one.
+- **The employee picker is a searchable Select2 multi-select, not a checkbox list** — a deliberate departure from RFQ Management's own precedent of using plain checkboxes for its (few) vendor picks; that reasoning explicitly doesn't extend to a list that can run into the hundreds of employees, where a scrollable checkbox block would be unusable and a searchable multi-select is the better fit (the exact same `.select` + `dropdownParent: $('#modal_remote')` Select2 plumbing every other remote-modal dropdown in this project already uses — multi-select needed no new JS wiring at all, since Select2 auto-detects the underlying `<select multiple>`).
+- **The "Assign to Employees" action is reached from the Salary Templates list itself** (a new icon button per row, `ri-group-line`), opening a remote modal that shows the template's pay type/rate/component summary read-only before picking employees — the same "cross-link from the master list" pattern already established elsewhere in this project (e.g. Price Tiers ↔ Product Prices), rather than a separate standalone page.
+- Added a "How To" documentation modal for Salary Templates (`salary-templates/how-to`), matching the identical `doc.blade.php` + `howTo()` + `#openModal` toolbar-button pattern used for Salary Structures in the previous session, explaining both the template fields and the assign flow.
+- Added "Salary Templates" as a new HRM sidebar entry (Payroll & Finance group, directly below Salary Structures) via `HrmMenuSeeder`.
+
+Database
+
+- Added `2026_08_29_097000_create_salary_templates_table` — creates both `salary_templates` (`name` unique, `pay_type` enum, `basic_salary`/`gross_salary` decimal, `description` nullable, `status`) and `salary_template_items` (`salary_template_id`/`salary_component_id` both `cascadeOnDelete`, `amount`, unique on the pair) in one migration, the same "master + items in a single file" convention this project uses throughout (e.g. `project_budgets`/`project_budget_items`).
+
+Models
+
+- Added `SalaryTemplate` — `public const PAY_TYPES`, `items(): HasMany`, `scopeActive()`, and a `pay_type_label` accessor (identical shape to `SalaryStructure`'s own).
+- Added `SalaryTemplateItem` — mirrors `SalaryStructureItem` exactly, just pointed at `SalaryTemplate`.
+
+Services
+
+- Added `SalaryTemplateService` — `create()`/`update()`/`delete()`/`syncItems()`/`calculateGross()`/`calculateComponentAmount()` are a structural copy of `SalaryStructureService`'s equivalents; `assignToEmployees(SalaryTemplate $template, array $employeeIds, string $effectiveDate, bool $status)` is the new logic described above, constructor-injecting `SalaryStructureService` so the bulk path reuses the exact same per-employee creation rules rather than reimplementing them.
+
+Requests
+
+- Added `SalaryTemplateRequest` — mirrors `SalaryStructureRequest` (unique `name` instead of an `employee_id`, same conditional `max:100` on `basic_salary` when `pay_type === 'commission'`, same `components.*` shape).
+- Added `SalaryTemplateAssignRequest` — `employee_ids` required array `min:1` (each `exists:employees,id`), `effective_date` required date, `status` required boolean.
+
+Controllers
+
+- Added `SalaryTemplateController` — standard CRUD (`index`/`create`/`store`/`edit`/`update`/`destroy`/`updateStatus`) plus `howTo()`, `assignForm()` (loads the template with its items and every active employee), and `assign()` (validates via `SalaryTemplateAssignRequest`, calls the service inside the usual `DB::beginTransaction()`/`commit()`/`rollBack()` shape, logs one activity entry summarizing the template id, employee ids, and the resulting structure ids).
+
+Views
+
+- Added `resources/views/admin/salary-templates/{index,create,edit,action,doc,assign}.blade.php`. `index`/`create`/`edit` mirror the Salary Structures screens (minus the employee field, plus Name/Description); `action.blade.php` adds the new "Assign to Employees" icon ahead of Edit/Delete; `assign.blade.php` is the new bulk-assignment form — a read-only template summary, the multi-select employee picker, an effective date, and a status field.
+
+JS
+
+- Added `public/assets/system/js/pages/salary-templates.js` — a renamed adaptation of `salary-structures.js`'s component-row builder, pay-type label/help toggle, and DataTable/filter logic (`.salary-template-*` class prefix throughout to avoid any collision with `salary-structures.js`'s identical-looking classes, since both scripts are loaded globally). No new JS was needed for `assign.blade.php`'s multi-select — Select2 auto-detects the `<select multiple>` attribute through the existing global `_componentSelect2Modal()` initializer.
+
+Permissions
+
+- Added `salary-template.view/create/edit/delete` plus a custom-verb `salary-template.assign` (the same "distinct permission for a non-CRUD action" precedent already used by `payroll.mark-paid`/`ticket.escalate`) to `RolePermissionSeeder.php`, directly after the `salary-structure.*` block. Inserted live via `Permission::firstOrCreate(...)` and synced onto "Super Admin" via tinker per established precedent (the seeder is still not idempotent and was not re-run wholesale).
+
+Menu
+
+- Extended `HrmMenuSeeder.php` (existing file, not duplicated) with "Salary Templates" as a new child of the existing "Payroll & Finance" group, order `2`, directly below "Salary Structures"; Payroll/Expense Claims/Employee Loans were each bumped one order slot to keep sibling values unique. Re-ran `php artisan db:seed --class=HrmMenuSeeder` — safe, `updateOrCreate` throughout; confirmed via tinker that the new "Salary Templates" row landed at `order = 2` under the same parent as "Salary Structures" (`order = 1`), with the unrelated "Salary Components" masters entry untouched.
+
+Notes
+
+- Ran `php artisan migrate` — the new migration applied successfully, creating both tables with their FK constraints and composite unique index intact.
+- Verified end-to-end: `php -l` on all 10 new/modified PHP files (all clean); `php artisan route:list --name=salary-templates` shows all 10 routes (7 standard + `how-to`/`assign-form`/`assign`) with the correct `{salaryTemplate}`/`{salary_template}` bindings; full-project `route:list` still resolves all 1,199 routes with no conflicts. Ran a full lifecycle test through the real services: created a Daily-pay-type template (rate 50) with a 20%-of-basic HRA component and a fixed $15 tax deduction, and confirmed the template itself computed `gross_salary = 45.00` (50 + 10 − 15) exactly; confirmed `SalaryTemplateAssignRequest` correctly rejects an empty `employee_ids` array; bulk-assigned the template to 3 real throwaway employees via `assignToEmployees()` and confirmed **all 3** received a new `SalaryStructure` with the exact same `pay_type`, `basic_salary`, `gross_salary`, and both components (HRA recalculated to 10.00, tax to 15.00) as the template — proving "select one template, every component gets added automatically" holds for an arbitrary number of employees in one call. Rendered all 5 new views directly (`index`/`create`/`edit`/`doc`/`assign`, including `assign.blade.php` against a real template with a real component) — all produced full HTML with no fatal Blade errors, only the same known unauthenticated-topbar warnings seen in every prior tinker-rendered-view test in this project. All test data (2 salary components, 1 template, 3 employees, 3 bulk-created salary structures) cleaned up afterward — zero rows remaining.
+- `payroll.md` updated — the bulk pay-type assignment checkbox under Module 1 is now marked done, closing out every item Module 1 originally listed.
+- No CRM, Product Management, Sales, Purchase, Inventory, Accounting, Asset Management, Project Management, Support, Budget & Finance, DMS, or Payroll module files were touched — this session's changes are confined to two new models/tables and the existing Salary Structures screen's sidebar neighborhood within HRM.

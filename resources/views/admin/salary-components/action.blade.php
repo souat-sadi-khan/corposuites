@@ -1,4 +1,5 @@
 <div class="tl-actions">
+    <button class="tl-icon-btn side-offcanvas" data-url="{{ route('admin.salary-components.details',$row) }}" data-width="800px" title="Component history"><i class="ri-information-line"></i></button>
     <!-- Edit -->
     <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.salary-components.edit', $row->id) }}" title="Edit">
         <i class="ri-pencil-line"></i>

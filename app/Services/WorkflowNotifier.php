@@ -12,6 +12,10 @@ class WorkflowNotifier
 {
     use ActivityLogger;
 
+    public function __construct(protected ApprovalDelegationService $delegations)
+    {
+    }
+
     /**
      * Fire all active notification triggers configured for the instance's
      * workflow definition that match the given event
@@ -46,12 +50,16 @@ class WorkflowNotifier
                     return [];
                 }
 
-                return WorkflowStepApprover::where('workflow_step_id', $instance->current_step_id)
+                $approverIds = WorkflowStepApprover::where('workflow_step_id', $instance->current_step_id)
                     ->get()
                     ->flatMap(fn ($approver) => $this->resolveStepApproverAdminIds($approver))
                     ->unique()
                     ->values()
                     ->all();
+
+                // Route around any approver who is away by substituting their
+                // active delegate for today (Phase E3).
+                return $this->delegations->mapApprovers($approverIds);
 
             case 'user':
                 return $trigger->notify_id ? [$trigger->notify_id] : [];

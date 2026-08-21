@@ -8,23 +8,9 @@
         </div>
 
         <div class="tl-filter-wrap">
-            <button class="tl-filter-btn" id="tlFilterBtn" title="Filter">
+            <button class="tl-filter-btn" id="employeeAdvancedFilterBtn" title="Advanced filters">
                 <i class="ri-equalizer-line"></i>
             </button>
-
-            <div class="tl-filter-dd" id="tlFilterDd">
-                <div class="tl-filter-dd-title">
-                    Filter by Status
-                </div>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="1" checked>
-                    Active
-                </label>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="0" checked>
-                    Inactive
-                </label>
-            </div>
         </div>
 
         <div class="tl-spacer"></div>
@@ -42,6 +28,23 @@
             <i class="ri-add-line"></i>
             Add Employee
         </button>
+    </div>
+
+    <div id="employeeAdvancedFilters" class="nx-card p-3 mb-3" style="display:none">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h6 class="mb-0">Advanced employee filters</h6><button type="button" id="clearEmployeeFilters" class="btn btn-sm btn-outline-secondary">Clear all</button></div>
+        <div class="row g-3">
+            <div class="col-md-3"><label class="form-label">Employment Type</label><select class="form-select employee-filter" name="employee_type_id"><option value="">All types</option>@foreach($employeeTypes as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
+            <div class="col-md-3"><label class="form-label">Employment Status</label><select class="form-select employee-filter" name="employment_status_id"><option value="">All statuses</option>@foreach($employmentStatuses as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
+            <div class="col-md-3"><label class="form-label">Record Status</label><select class="form-select employee-filter" name="status"><option value="">Active and inactive</option><option value="1">Active</option><option value="0">Inactive</option></select></div>
+            <div class="col-md-3"><label class="form-label">Shift</label><select class="form-select employee-filter" name="shift_id"><option value="">All shifts</option>@foreach($shifts as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
+            <div class="col-md-3"><label class="form-label">Department</label><select class="form-select employee-filter" name="department_id"><option value="">All departments</option>@foreach($departments as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
+            <div class="col-md-3"><label class="form-label">Designation</label><select class="form-select employee-filter" name="designation_id"><option value="">All designations</option>@foreach($designations as $item)<option value="{{ $item->id }}">{{ $item->name }}{{ $item->department ? ' — '.$item->department->name : '' }}</option>@endforeach</select></div>
+            <div class="col-md-3"><label class="form-label">Gender</label><select class="form-select employee-filter" name="gender"><option value="">All genders</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+            <div class="col-md-3"><label class="form-label">Joining date from</label><input class="form-control employee-filter" name="joining_from" type="date"></div>
+            <div class="col-md-3"><label class="form-label">Joining date to</label><input class="form-control employee-filter" name="joining_to" type="date"></div>
+            <div class="col-md-3"><label class="form-label">Birth date from</label><input class="form-control employee-filter" name="birth_from" type="date"></div>
+            <div class="col-md-3"><label class="form-label">Birth date to</label><input class="form-control employee-filter" name="birth_to" type="date"></div>
+        </div>
     </div>
 
     <!-- Table Card -->

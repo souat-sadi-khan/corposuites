@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SalaryStructureRequest;
+use App\Models\Department;
+use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\SalaryComponent;
 use App\Models\SalaryStructure;
@@ -25,6 +27,14 @@ class SalaryStructureController extends Controller
     }
 
     /**
+     * "How to use" documentation modal.
+     */
+    public function howTo()
+    {
+        return view('admin.salary-structures.doc');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -41,6 +51,43 @@ class SalaryStructureController extends Controller
             // Filter by employee
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
+            }
+
+            // Filter by pay type
+            if ($request->pay_type) {
+                $query->where('pay_type', $request->pay_type);
+            }
+
+            // Filter by department (via employee)
+            if ($request->department_id) {
+                $query->whereHas('employee', function ($eq) use ($request) {
+                    $eq->where('department_id', $request->department_id);
+                });
+            }
+
+            // Filter by designation (via employee)
+            if ($request->designation_id) {
+                $query->whereHas('employee', function ($eq) use ($request) {
+                    $eq->where('designation_id', $request->designation_id);
+                });
+            }
+
+            // Filter by effective date range
+            if ($request->effective_date_from) {
+                $query->whereDate('effective_date', '>=', $request->effective_date_from);
+            }
+
+            if ($request->effective_date_to) {
+                $query->whereDate('effective_date', '<=', $request->effective_date_to);
+            }
+
+            // Filter by salary (basic_salary) range
+            if ($request->filled('salary_min')) {
+                $query->where('basic_salary', '>=', $request->salary_min);
+            }
+
+            if ($request->filled('salary_max')) {
+                $query->where('basic_salary', '<=', $request->salary_max);
             }
 
             // Search
@@ -66,17 +113,32 @@ class SalaryStructureController extends Controller
                 ->addColumn('effective_date_formatted', function ($row) {
                     return $row->effective_date ? $row->effective_date->format('d-m-Y') : '-';
                 })
+                ->addColumn('pay_type_badge', function ($row) {
+                    $map = ['monthly' => 'primary', 'daily' => 'info', 'commission' => 'warning'];
+                    $color = $map[$row->pay_type] ?? 'secondary';
+                    return '<span class="badge bg-' . $color . '-subtle text-' . $color . '">' . $row->pay_type_label . '</span>';
+                })
                 ->addColumn('salary_summary', function ($row) {
-                    return 'Basic: ' . number_format($row->basic_salary, 2) . '<br><small>Gross: ' . number_format($row->gross_salary, 2) . '</small>';
+                    $label = match ($row->pay_type) {
+                        'daily' => 'Rate',
+                        'commission' => 'Rate (%)',
+                        default => 'Basic',
+                    };
+
+                    return $label . ': ' . number_format($row->basic_salary, 2) . '<br><small>Gross: ' . number_format($row->gross_salary, 2) . '</small>';
                 })
                 ->addColumn('action', function ($row) {
                     return view('admin.salary-structures.action', compact('row'))->render();
                 })
-                ->rawColumns(['status_badge', 'employee_name', 'salary_summary', 'action'])
+                ->rawColumns(['status_badge', 'employee_name', 'pay_type_badge', 'salary_summary', 'action'])
                 ->make(true);
         }
 
-        return view('admin.salary-structures.index');
+        $employees = Employee::active()->orderBy('first_name')->get();
+        $departments = Department::active()->orderBy('name')->get();
+        $designations = Designation::active()->with('department')->orderBy('name')->get();
+
+        return view('admin.salary-structures.index', compact('employees', 'departments', 'designations'));
     }
 
     /**

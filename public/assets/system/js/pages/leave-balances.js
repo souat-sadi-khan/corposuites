@@ -117,4 +117,66 @@ document.addEventListener('DOMContentLoaded', function () {
     $('#tlFilterDd input').on('change', function () {
         dataTableInstance.draw();
     });
+
+    // Generate balances (auto-allocate from policy)
+    $('#generateBalances').on('click', function () {
+        var url = $(this).data('url');
+        var employeeId = $(this).data('employee-id');
+        var msg = employeeId
+            ? 'Generate leave balances for the selected employee for the current year?'
+            : 'Generate leave balances for ALL active employees for the current year?';
+        if (!confirm(msg)) return;
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                employee_id: employeeId || null
+            },
+            success: function (res) {
+                notifyBalance(res.status ? 'success' : 'error', res.message || 'Done.');
+                if (res.status) dataTableInstance.draw();
+            },
+            error: function (xhr) {
+                notifyBalance('error', xhr.responseJSON?.message || 'Something went wrong');
+            }
+        });
+    });
+
+    // Encash remaining balance
+    $(document).on('click', '.encash-balance', function () {
+        var url = $(this).data('url');
+        var remaining = $(this).data('remaining');
+        var input = prompt('Days to encash (max ' + remaining + '). Leave blank to encash all remaining:', '');
+        if (input === null) return; // cancelled
+
+        var data = { _token: $('meta[name="csrf-token"]').attr('content') };
+        if (input.trim() !== '') data.days = input.trim();
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+            success: function (res) {
+                notifyBalance(res.status ? 'success' : 'error', res.message || 'Done.');
+                if (res.status) dataTableInstance.draw();
+            },
+            error: function (xhr) {
+                notifyBalance('error', xhr.responseJSON?.message || 'Something went wrong');
+            }
+        });
+    });
 });
+
+function notifyBalance(type, msg) {
+    if (typeof Lobibox !== 'undefined') {
+        Lobibox.notify(type, {
+            size: 'mini', rounded: true, position: 'bottom right',
+            icon: type === 'success' ? 'ri-checkbox-circle-line' : 'ri-close-circle-line',
+            msg: msg
+        });
+    } else {
+        alert(msg);
+    }
+}

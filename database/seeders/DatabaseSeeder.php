@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
                 RolePermissionSeeder::class,
                 HrmMenuSeeder::class,
                 WorkflowMenuSeeder::class,
+                LeaveWorkflowSeeder::class,
                 CrmMenuSeeder::class,
                 ProductMenuSeeder::class,
                 SalesMenuSeeder::class,

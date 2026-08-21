@@ -31,6 +31,11 @@ class SettingsController extends Controller
         return view('admin.settings.branding');
     }
 
+    public function company()
+    {
+        return view('admin.settings.company');
+    }
+
     public function appearance()
     {
         return view('admin.settings.appearance');

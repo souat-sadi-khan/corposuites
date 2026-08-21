@@ -30,6 +30,7 @@ class WorkflowMenuSeeder extends Seeder
         $engine = $this->group($workflowModule->id, 'workflow.group.engine', 'Workflow Engine', 'ri-flow-chart', 1);
         $this->menu($workflowModule->id, 'workflow.workflow-templates', $engine->id, 'Workflow Templates', 'ri-git-branch-line', 'admin.workflow-templates.index', 1);
         $this->menu($workflowModule->id, 'workflow.workflow-definitions', $engine->id, 'Workflow Definitions', 'ri-node-tree', 'admin.workflow-definitions.index', 2);
+        $this->menu($workflowModule->id, 'workflow.approval-delegations', $engine->id, 'Approval Delegations', 'ri-user-shared-line', 'admin.approval-delegations.index', 3);
 
         Cache::forget('admin.module.menus');
     }

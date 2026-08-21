@@ -11,12 +11,15 @@ class LeaveBalance extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 'leave_type_id', 'year', 'allocated_days', 'used_days', 'status'
+        'employee_id', 'leave_type_id', 'year', 'allocated_days', 'used_days',
+        'carried_days', 'carry_expires_on', 'status'
     ];
 
     protected $casts = [
         'allocated_days' => 'decimal:2',
         'used_days' => 'decimal:2',
+        'carried_days' => 'decimal:2',
+        'carry_expires_on' => 'date',
         'status' => 'boolean',
     ];
 

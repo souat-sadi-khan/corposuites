@@ -7,10 +7,11 @@ use App\Events\WorkflowRejected;
 use App\Events\WorkflowResubmitted;
 use App\Models\LeaveRequest;
 use App\Services\LeaveRequestService;
+use App\Services\LeaveAttendanceService;
 
 class SyncLeaveRequestApproval
 {
-    public function __construct(protected LeaveRequestService $leaveRequestService)
+    public function __construct(protected LeaveRequestService $leaveRequestService, protected LeaveAttendanceService $leaveAttendanceService)
     {
     }
 
@@ -24,6 +25,7 @@ class SyncLeaveRequestApproval
 
         if ($leaveRequest) {
             $this->leaveRequestService->approve($leaveRequest);
+            $this->leaveAttendanceService->syncApprovedLeave($leaveRequest->fresh());
         }
     }
 

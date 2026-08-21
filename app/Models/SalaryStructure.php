@@ -11,8 +11,10 @@ class SalaryStructure extends Model
 {
     use HasFactory;
 
+    public const PAY_TYPES = ['monthly', 'daily', 'commission'];
+
     protected $fillable = [
-        'employee_id', 'effective_date', 'basic_salary', 'gross_salary', 'status'
+        'employee_id', 'pay_type', 'effective_date', 'basic_salary', 'gross_salary', 'status'
     ];
 
     protected $casts = [
@@ -33,5 +35,14 @@ class SalaryStructure extends Model
     public function scopeActive($query)
     {
         return $query->where('status', 1);
+    }
+
+    public function getPayTypeLabelAttribute(): string
+    {
+        return match ($this->pay_type) {
+            'daily' => 'Daily',
+            'commission' => 'Commission-based',
+            default => 'Monthly',
+        };
     }
 }

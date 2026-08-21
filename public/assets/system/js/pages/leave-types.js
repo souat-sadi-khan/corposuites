@@ -56,6 +56,9 @@ var DataTableLeaveTypes = function () {
                 if (typeof _componentRemoteModalLoadAfterAjax === 'function') {
                     _componentRemoteModalLoadAfterAjax();
                 }
+                if (typeof _componentRemoteOffcanvasLoadAfterAjax === 'function') {
+                    _componentRemoteOffcanvasLoadAfterAjax();
+                }
                 _componentSwitch();
             }
         });

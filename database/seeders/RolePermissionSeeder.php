@@ -60,6 +60,11 @@ class RolePermissionSeeder extends Seeder
             'workflow-notification-trigger.edit',
             'workflow-notification-trigger.delete',
 
+            'approval-delegation.view',
+            'approval-delegation.create',
+            'approval-delegation.edit',
+            'approval-delegation.delete',
+
             'employee-type.view',
             'employee-type.create',
             'employee-type.edit',
@@ -160,17 +165,26 @@ class RolePermissionSeeder extends Seeder
             'leave-balance.create',
             'leave-balance.edit',
             'leave-balance.delete',
+            'leave-balance.generate',
+            'leave-balance.encash',
 
             'leave-request.view',
             'leave-request.create',
             'leave-request.edit',
             'leave-request.delete',
             'leave-request.approve',
+            'leave-request.cancel',
 
             'salary-structure.view',
             'salary-structure.create',
             'salary-structure.edit',
             'salary-structure.delete',
+
+            'salary-template.view',
+            'salary-template.create',
+            'salary-template.edit',
+            'salary-template.delete',
+            'salary-template.assign',
 
             'payroll.view',
             'payroll.create',
@@ -195,6 +209,7 @@ class RolePermissionSeeder extends Seeder
             'performance-review.delete',
 
             'hr-report.view',
+            'leave-report.view',
 
             'department.view',
             'department.create',

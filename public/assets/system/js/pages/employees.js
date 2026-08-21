@@ -19,13 +19,11 @@ var DataTableEmployees = function () {
                 url: $('#employeeTable').data('url'),
                 data: function (d) {
                     d.search = $('#employeeSearch').val();
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
+                    $('#employeeAdvancedFilters .employee-filter').each(function () {
+                        if ($(this).val()) {
+                            d[$(this).attr('name')] = $(this).val();
+                        }
                     });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
                 }
             },
             columns: [
@@ -102,18 +100,14 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.page('next').draw('page');
     });
 
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
+    $('#employeeAdvancedFilterBtn').on('click', function () {
+        $('#employeeAdvancedFilters').slideToggle(150);
     });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
+    $('#employeeAdvancedFilters .employee-filter').on('change', function () {
+        dataTableInstance.draw();
     });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
+    $('#clearEmployeeFilters').on('click', function () {
+        $('#employeeAdvancedFilters .employee-filter').val('');
         dataTableInstance.draw();
     });
 });

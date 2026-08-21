@@ -37,6 +37,7 @@ var DataTableAttendances = function () {
                 { data: 'employee_name' },
                 { data: 'date_formatted' },
                 { data: 'timing' },
+                { data: 'location', orderable: false, searchable: false },
                 { data: 'attendance_status_badge' },
                 { data: 'status_badge' },
                 {

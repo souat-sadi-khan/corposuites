@@ -12,12 +12,13 @@ class Payroll extends Model
     use HasFactory;
 
     protected $fillable = [
-        'employee_id', 'salary_structure_id', 'month', 'year', 'basic_salary',
+        'employee_id', 'salary_structure_id', 'month', 'year', 'commission_sales_amount', 'basic_salary',
         'total_earnings', 'total_deductions', 'net_salary', 'payment_status', 'payment_date', 'status'
     ];
 
     protected $casts = [
         'payment_date' => 'date',
+        'commission_sales_amount' => 'decimal:2',
         'status' => 'boolean',
     ];
 

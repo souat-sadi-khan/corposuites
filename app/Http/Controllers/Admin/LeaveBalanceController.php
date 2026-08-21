@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\LeaveBalanceRequest;
 use App\Models\Employee;
 use App\Models\LeaveBalance;
 use App\Models\LeaveType;
+use App\Services\LeaveAccrualService;
 use App\Services\LeaveBalanceService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
@@ -18,10 +19,12 @@ class LeaveBalanceController extends Controller
     use ActivityLogger;
 
     protected $leaveBalanceService;
+    protected $leaveAccrualService;
 
-    public function __construct(LeaveBalanceService $leaveBalanceService)
+    public function __construct(LeaveBalanceService $leaveBalanceService, LeaveAccrualService $leaveAccrualService)
     {
         $this->leaveBalanceService = $leaveBalanceService;
+        $this->leaveAccrualService = $leaveAccrualService;
     }
 
     /**
@@ -219,6 +222,107 @@ class LeaveBalanceController extends Controller
                 'status' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Backfill (auto-allocate) leave balances for one employee or all active
+     * employees for a given year, based on each active leave type's accrual policy.
+     * Complements the automatic allocation that fires when a new employee is created.
+     */
+    public function generate(Request $request)
+    {
+        $request->validate([
+            'employee_id' => 'nullable|integer|exists:employees,id',
+            'year' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        $year = (int) ($request->input('year') ?: now()->year);
+        $created = 0;
+
+        DB::beginTransaction();
+
+        try {
+            $employees = $request->filled('employee_id')
+                ? Employee::where('id', $request->employee_id)->get()
+                : Employee::where('status', 1)->get();
+
+            foreach ($employees as $employee) {
+                $created += $this->leaveAccrualService->allocateForEmployee($employee, $year);
+            }
+
+            $this->logActivity([
+                'actor_type' => 'admin',
+                'actor_id' => auth()->guard('admin')->id(),
+                'module' => 'leave-balances',
+                'action' => 'generate',
+                'model' => 'LeaveBalance',
+                'model_id' => null,
+                'description' => "Auto-generated {$created} leave balance(s) for year {$year}.",
+                'new_data' => ['year' => $year, 'created' => $created],
+                'old_data' => null,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Generated {$created} leave balance(s) for {$year}.",
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Encash remaining balance for an encashable leave type (Phase C4).
+     */
+    public function encash(Request $request, LeaveBalance $leaveBalance)
+    {
+        $request->validate([
+            'days' => 'nullable|numeric|min:0.5',
+            'remarks' => 'nullable|string|max:500',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $encashment = $this->leaveAccrualService->encash(
+                $leaveBalance->employee,
+                $leaveBalance->leaveType,
+                $leaveBalance->year,
+                $request->filled('days') ? (float) $request->input('days') : null,
+                $request->input('remarks')
+            );
+
+            $this->logActivity([
+                'actor_type' => 'admin',
+                'actor_id' => auth()->guard('admin')->id(),
+                'module' => 'leave-balances',
+                'action' => 'encash',
+                'model' => 'LeaveEncashment',
+                'model_id' => $encashment->id,
+                'description' => "Encashed {$encashment->days} day(s) for employee #{$leaveBalance->employee_id}.",
+                'new_data' => $encashment->toArray(),
+                'old_data' => null,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'message' => "Encashed {$encashment->days} day(s) successfully.",
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
 

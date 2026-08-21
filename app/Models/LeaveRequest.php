@@ -14,13 +14,15 @@ class LeaveRequest extends Model implements Approvable
 
     protected $fillable = [
         'employee_id', 'leave_type_id', 'start_date', 'end_date',
-        'total_days', 'reason', 'approval_status', 'status'
+        'duration_type', 'half_day_session', 'total_days', 'reason',
+        'attachment', 'approval_status', 'cancellation_reason', 'cancelled_at', 'status'
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'total_days' => 'decimal:2',
+        'cancelled_at' => 'datetime',
         'status' => 'boolean',
     ];
 

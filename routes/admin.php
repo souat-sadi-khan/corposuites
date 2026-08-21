@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\LanguageController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\ModuleMenuController;
+use App\Http\Controllers\Admin\MasterDetailController;
 use App\Http\Controllers\Admin\EmployeeTypeController;
 use App\Http\Controllers\Admin\EmploymentStatusController;
 use App\Http\Controllers\Admin\ShiftController;
@@ -34,10 +35,15 @@ use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\ResignationController;
 use App\Http\Controllers\Admin\TerminationController;
 use App\Http\Controllers\Admin\AttendanceController;
+use App\Http\Controllers\Admin\AttendancePortalController;
+use App\Http\Controllers\Admin\HrmSettingsController;
+use App\Http\Controllers\Admin\HrmDetailExportController;
 use App\Http\Controllers\Admin\AttendanceAdjustmentController;
 use App\Http\Controllers\Admin\LeaveBalanceController;
 use App\Http\Controllers\Admin\LeaveRequestController;
+use App\Http\Controllers\Admin\LeaveReportController;
 use App\Http\Controllers\Admin\SalaryStructureController;
+use App\Http\Controllers\Admin\SalaryTemplateController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\ExpenseClaimController;
 use App\Http\Controllers\Admin\EmployeeLoanController;
@@ -50,6 +56,7 @@ use App\Http\Controllers\Admin\WorkflowTemplateController;
 use App\Http\Controllers\Admin\WorkflowDefinitionController;
 use App\Http\Controllers\Admin\WorkflowStatusController;
 use App\Http\Controllers\Admin\WorkflowNotificationTriggerController;
+use App\Http\Controllers\Admin\ApprovalDelegationController;
 use App\Http\Controllers\Admin\LeadSourceController;
 use App\Http\Controllers\Admin\LeadStatusController;
 use App\Http\Controllers\Admin\LeadController;
@@ -183,6 +190,18 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::post('login/post', [LoginController::class, 'login'])->name('login.post');
 
+// Physical/biometric attendance devices call this directly (no browser
+// session, no login) — authenticated by the shared "Attendance Device
+// Token" header instead (see AttendancePortalController::devicePunch()).
+// Deliberately kept OUTSIDE the isAdmin group below: that middleware
+// redirects anyone without an admin session to the login page, which
+// would make this endpoint unreachable by a real external device. Also
+// exempted from CSRF verification in bootstrap/app.php for the same
+// reason (a device has no CSRF token to send).
+Route::post('attendance-device/punch', [AttendancePortalController::class, 'devicePunch'])
+    ->middleware('throttle:60,1')
+    ->name('attendance-device.punch');
+
 Route::middleware(['isAdmin'])->group(function () {
     Route::get('search', [GlobalSearchController::class, 'search'])->name('search');
 
@@ -241,6 +260,10 @@ Route::middleware(['isAdmin'])->group(function () {
     // Workflow Engine - Workflow Notification Triggers
     Route::post('workflow-notification-triggers/status/{id}', [WorkflowNotificationTriggerController::class, 'updateStatus'])->name('workflow-notification-triggers.status');
     Route::resource('workflow-notification-triggers', WorkflowNotificationTriggerController::class)->except(['show']);
+
+    // Workflow Engine - Approval Delegations
+    Route::post('approval-delegations/status/{id}', [ApprovalDelegationController::class, 'updateStatus'])->name('approval-delegations.status');
+    Route::resource('approval-delegations', ApprovalDelegationController::class)->except(['show']);
 
     // CRM - Lead Sources
     Route::post('lead-sources/status/{id}', [LeadSourceController::class, 'updateStatus'])->name('lead-sources.status');
@@ -749,7 +772,13 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('finance-project-budgets/status/{id}', [FinanceProjectBudgetController::class, 'updateStatus'])->name('finance-project-budgets.status');
     Route::resource('finance-project-budgets', FinanceProjectBudgetController::class)->except(['show']);
 
+    // HRM - Master details offcanvas
+    Route::get('master-details/{type}/{id}', [MasterDetailController::class, 'show'])->name('master-details.show');
+
     // HRM - Employee Types
+    Route::get('hrm-settings', [HrmSettingsController::class, 'index'])->name('hrm-settings.index');
+    Route::put('hrm-settings', [HrmSettingsController::class, 'update'])->name('hrm-settings.update');
+    Route::get('hrm-settings/device-guide', [HrmSettingsController::class, 'deviceGuide'])->name('hrm-settings.device-guide');
     Route::get('employee-types/how-to', [EmployeeTypeController::class, 'howTo'])->name('employee-types.how.to');
     Route::post('employee-types/status/{id}', [EmployeeTypeController::class, 'updateStatus'])->name('employee-types.status');
     Route::resource('employee-types', EmployeeTypeController::class)->except(['show']);
@@ -772,11 +801,15 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('holidays', HolidayController::class)->except(['show']);
 
     // HRM - Leave Types
+    Route::get('leave-types/{leaveType}/details', [HrmDetailExportController::class, 'leaveType'])->name('leave-types.details');
+    Route::get('leave-types/{leaveType}/export', [HrmDetailExportController::class, 'leaveExport'])->name('leave-types.export');
     Route::get('leave-types/how-to', [LeaveTypeController::class, 'howTo'])->name('leave-types.how.to');
     Route::post('leave-types/status/{id}', [LeaveTypeController::class, 'updateStatus'])->name('leave-types.status');
     Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
 
     // HRM - Salary Components
+    Route::get('salary-components/{salaryComponent}/details', [HrmDetailExportController::class, 'component'])->name('salary-components.details');
+    Route::get('salary-components/{salaryComponent}/export', [HrmDetailExportController::class, 'componentExport'])->name('salary-components.export');
     Route::get('salary-components/how-to', [SalaryComponentController::class, 'howTo'])->name('salary-components.how.to');
     Route::post('salary-components/status/{id}', [SalaryComponentController::class, 'updateStatus'])->name('salary-components.status');
     Route::resource('salary-components', SalaryComponentController::class)->except(['show']);
@@ -846,6 +879,10 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('terminations', TerminationController::class)->except(['show']);
 
     // HRM - Attendance
+    Route::get('attendance-portal', [AttendancePortalController::class, 'portal'])->name('attendance-portal.index');
+    Route::post('attendance-portal/check-in', [AttendancePortalController::class, 'checkIn'])->name('attendance-portal.check-in');
+    Route::post('attendance-portal/check-out', [AttendancePortalController::class, 'checkOut'])->name('attendance-portal.check-out');
+    Route::get('attendance-monthly', [AttendancePortalController::class, 'monthly'])->name('attendances.monthly');
     Route::post('attendances/status/{id}', [AttendanceController::class, 'updateStatus'])->name('attendances.status');
     Route::resource('attendances', AttendanceController::class)->except(['show']);
 
@@ -857,17 +894,33 @@ Route::middleware(['isAdmin'])->group(function () {
 
     // HRM - Leave Balances
     Route::post('leave-balances/status/{id}', [LeaveBalanceController::class, 'updateStatus'])->name('leave-balances.status');
+    Route::post('leave-balances/generate', [LeaveBalanceController::class, 'generate'])->name('leave-balances.generate');
+    Route::post('leave-balances/{leaveBalance}/encash', [LeaveBalanceController::class, 'encash'])->name('leave-balances.encash');
     Route::resource('leave-balances', LeaveBalanceController::class)->except(['show']);
 
     // HRM - Leave Requests
+    Route::get('leave-requests/calendar', [LeaveRequestController::class, 'calendar'])->name('leave-requests.calendar');
+    Route::get('leave-requests/calendar-events', [LeaveRequestController::class, 'calendarEvents'])->name('leave-requests.calendar-events');
     Route::post('leave-requests/status/{id}', [LeaveRequestController::class, 'updateStatus'])->name('leave-requests.status');
     Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
     Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
+    Route::post('leave-requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel'])->name('leave-requests.cancel');
     Route::resource('leave-requests', LeaveRequestController::class)->except(['show']);
 
+    // HRM - Leave Reports (Phase F3)
+    Route::get('leave-reports', [LeaveReportController::class, 'index'])->name('leave-reports.index');
+
     // HRM - Salary Structures
+    Route::get('salary-structures/how-to', [SalaryStructureController::class, 'howTo'])->name('salary-structures.how.to');
     Route::post('salary-structures/status/{id}', [SalaryStructureController::class, 'updateStatus'])->name('salary-structures.status');
     Route::resource('salary-structures', SalaryStructureController::class)->except(['show']);
+
+    // HRM - Salary Templates (bulk-assignable salary templates for employee groups)
+    Route::get('salary-templates/how-to', [SalaryTemplateController::class, 'howTo'])->name('salary-templates.how.to');
+    Route::post('salary-templates/status/{id}', [SalaryTemplateController::class, 'updateStatus'])->name('salary-templates.status');
+    Route::get('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assignForm'])->name('salary-templates.assign-form');
+    Route::post('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assign'])->name('salary-templates.assign');
+    Route::resource('salary-templates', SalaryTemplateController::class)->except(['show']);
 
     // HRM - Payroll
     Route::post('payrolls/status/{id}', [PayrollController::class, 'updateStatus'])->name('payrolls.status');
@@ -948,6 +1001,7 @@ Route::middleware(['isAdmin'])->group(function () {
 
     Route::post('/system/optimize', [SettingsController::class, 'optimize'])->name('admin.system.optimize');
     Route::get('branding', [SettingsController::class, 'branding'])->name('settings.branding');
+    Route::get('company', [SettingsController::class, 'company'])->name('settings.company');
     Route::get('appearance', [SettingsController::class, 'appearance'])->name('settings.appearance');
     Route::get('localization', [SettingsController::class, 'localization'])->name('settings.localization');
     Route::get('settings', [SettingsController::class, 'index'])->name('settings');

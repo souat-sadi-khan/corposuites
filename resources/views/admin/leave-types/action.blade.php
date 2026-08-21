@@ -1,4 +1,5 @@
 <div class="tl-actions">
+    <button class="tl-icon-btn side-offcanvas" data-url="{{ route('admin.leave-types.details',$row) }}" data-width="800px" title="Leave history"><i class="ri-information-line"></i></button>
     <!-- Edit -->
     <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.leave-types.edit', $row->id) }}" title="Edit">
         <i class="ri-pencil-line"></i>

@@ -24,4 +24,17 @@ class TransferRequest extends FormRequest
             'status' => 'required|boolean',
         ];
     }
+
+    public function after(): array
+    {
+        return [function ($validator) {
+            $employee = \App\Models\Employee::find($this->input('employee_id'));
+            if (!$employee) return;
+            $currentDepartment = $employee->department?->name;
+            $currentDesignation = $employee->designation?->name;
+            if ($this->input('to_department') === $currentDepartment && $this->input('to_designation') === $currentDesignation) {
+                $validator->errors()->add('to_department', 'Choose a different department or designation; this employee is already assigned to the selected department and designation.');
+            }
+        }];
+    }
 }
