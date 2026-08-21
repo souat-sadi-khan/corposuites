@@ -15,15 +15,15 @@
 <div class="modal-body fm-modal-body">
 
     {{-- Role Information --}}
-    <div class="card border-0 bg-light mb-4">
+    <div class="card border-0 mb-4" style="background: var(--bg-surface); border: 1px solid var(--border) !important; border-radius: 12px;">
         <div class="card-body py-3">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h4 class="mb-1">
+                    <h4 class="mb-1" style="color: var(--tx-1);">
                         {{ $role->name }}
                     </h4>
 
-                    <div class="text-muted small">
+                    <div class="small" style="color: var(--tx-3);">
                         {{ $role->notes ?: 'No description available.' }}
                     </div>
                 </div>
@@ -39,35 +39,35 @@
                 @endif
             </div>
 
-            <hr>
+            <hr style="border-color: var(--border-lt);">
 
             <div class="row text-center g-3">
                 <div class="col-4">
-                    <div class="fw-bold fs-5">
+                    <div class="fw-bold fs-5" style="color: var(--tx-1);">
                         {{ $role->permissions->count() }}
                     </div>
 
-                    <small class="text-muted">
+                    <small style="color: var(--tx-3);">
                         Permissions
                     </small>
                 </div>
 
                 <div class="col-4">
-                    <div class="fw-bold">
+                    <div class="fw-bold" style="color: var(--tx-1);">
                         {{ $role->created_at->format('d M Y') }}
                     </div>
 
-                    <small class="text-muted">
+                    <small style="color: var(--tx-3);">
                         Created
                     </small>
                 </div>
 
                 <div class="col-4">
-                    <div class="fw-bold">
+                    <div class="fw-bold" style="color: var(--tx-1);">
                         {{ $role->updated_at->format('d M Y') }}
                     </div>
 
-                    <small class="text-muted">
+                    <small style="color: var(--tx-3);">
                         Updated
                     </small>
                 </div>
@@ -76,52 +76,87 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0 fw-semibold">
+        <h6 class="mb-0 fw-semibold" style="color: var(--tx-1);">
             Assigned Permissions
         </h6>
-        <span class="badge bg-primary rounded-pill">
-            {{ $role->permissions->count() }}
-        </span>
+
+        @if($role->permissions->count())
+            <span class="perm-count" style="position: static;">
+                {{ count($groupedPermissions) }} {{ Str::plural('module', count($groupedPermissions)) }} &middot; {{ $role->permissions->count() }} {{ Str::plural('permission', $role->permissions->count()) }}
+            </span>
+        @endif
     </div>
 
-    <div class="accordion" id="permissionAccordion">
-        @foreach(split_name($role->permissions) as $module => $permissions)
-            <div class="accordion-item mb-2 border rounded">
-                <h2 class="accordion-header">
-                    <button class="accordion-button {{ !$loop->first ? 'collapsed' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#module{{ $loop->index }}">
-                        <div class="d-flex justify-content-between w-100 me-3">
-                            <span class="fw-semibold">
-                                {{ $module }}
-                            </span>
+    @if(empty($groupedPermissions))
 
-                            <span class="badge bg-secondary">
-                                {{ count($permissions) }}
-                            </span>
-                        </div>
-                    </button>
-                </h2>
+        <div class="perm-view-empty">
+            <i class="ri-shield-cross-line"></i>
+            <span>This role has no permissions assigned yet.</span>
+        </div>
 
-                <div id="module{{ $loop->index }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}" data-bs-parent="#permissionAccordion">
+    @else
 
-                    <div class="accordion-body py-3">
-                        <div class="row g-2">
-                            @foreach($permissions as $permission)
-                                <div class="col-md-6">
-                                    <div class="border rounded px-3 py-2 bg-white d-flex align-items-center">
-                                        <i class="ri-checkbox-circle-fill text-success me-2"></i>
+        <div class="perm-view" id="permView">
 
-                                        <span class="small">
-                                            {{ toSpan($permission) }}
-                                        </span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+            @foreach($groupedPermissions as $moduleLabel => $menus)
+
+                @php
+                    $moduleTotal = collect($menus)->flatten()->count();
+                @endphp
+
+                <div class="perm-view-module {{ $loop->first ? '' : 'collapsed' }}">
+
+                    <div class="perm-view-module-head" data-role="perm-view-toggle">
+
+                        <span class="perm-view-module-name">
+                            {{ $moduleLabel }}
+                        </span>
+
+                        <span class="perm-badge is-active">
+                            {{ $moduleTotal }}
+                        </span>
+
+                        <i class="ri-arrow-down-s-line perm-chevron"></i>
+
                     </div>
+
+                    <div class="perm-view-module-body">
+
+                        @foreach($menus as $menuPrefix => $menuPermissions)
+
+                            <div class="perm-view-menu">
+
+                                <span class="perm-view-menu-name">
+                                    {{ toWord($menuPrefix) }}
+                                </span>
+
+                                <div class="perm-view-grid">
+
+                                    @foreach($menuPermissions as $permission)
+
+                                        <span class="perm-view-tag">
+                                            <i class="ri-checkbox-circle-fill"></i>
+                                            {{ \Illuminate\Support\Str::headline(\Illuminate\Support\Str::afterLast($permission->name, '.')) }}
+                                        </span>
+
+                                    @endforeach
+
+                                </div>
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
                 </div>
-            </div>
-        @endforeach
-    </div>
+
+            @endforeach
+
+        </div>
+
+    @endif
+
 </div>
 
 <div class="modal-footer fm-modal-foot">
@@ -135,3 +170,21 @@
         Close
     </button>
 </div>
+
+<script>
+(function () {
+    const root = document.getElementById('permView');
+    if (!root) {
+        return;
+    }
+
+    root.querySelectorAll('[data-role="perm-view-toggle"]').forEach(function (header) {
+        header.addEventListener('click', function () {
+            const module = header.closest('.perm-view-module');
+            if (module) {
+                module.classList.toggle('collapsed');
+            }
+        });
+    });
+})();
+</script>

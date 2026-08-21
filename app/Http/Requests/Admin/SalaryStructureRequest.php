@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Employee;
 use App\Models\SalaryStructure;
+use App\Services\MinimumWageComplianceService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -40,5 +42,36 @@ class SalaryStructureRequest extends FormRequest
         return [
             'basic_salary.max' => 'Commission rate cannot exceed 100%.',
         ];
+    }
+
+    /**
+     * Module 7 (Minimum Wage & Compliance): reject a rate that falls below
+     * the minimum wage configured for the employee's country/state, for
+     * monthly/daily pay types (commission has no fixed floor to check).
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $employeeId = $this->input('employee_id');
+            $payType = $this->input('pay_type');
+            $rate = $this->input('basic_salary');
+
+            if (! $employeeId || ! $payType || $rate === null) {
+                return;
+            }
+
+            $employee = Employee::find($employeeId);
+
+            if (! $employee) {
+                return;
+            }
+
+            $message = app(MinimumWageComplianceService::class)
+                ->violationMessage($employee, $payType, (float) $rate);
+
+            if ($message) {
+                $validator->errors()->add('basic_salary', $message);
+            }
+        });
     }
 }

@@ -98,6 +98,11 @@
                 </a>
             </li>
             <li>
+                <a class="dropdown-item" href="javascript:void(0)" id="openModal" data-url="{{ route('admin.employees.salary-certificate-form', $row->id) }}">
+                    <i class="ri-award-line me-2"></i> Salary Certificate
+                </a>
+            </li>
+            <li>
                 <a class="dropdown-item" href="{{ route('admin.expense-claims.index', ['employee_id' => $row->id]) }}">
                     <i class="ri-receipt-line me-2"></i> Expense Claims
                 </a>

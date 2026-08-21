@@ -7,11 +7,12 @@
             <input type="text" id="employeeSearch" placeholder="Search Employees">
         </div>
 
-        <div class="tl-filter-wrap">
-            <button class="tl-filter-btn" id="employeeAdvancedFilterBtn" title="Advanced filters">
-                <i class="ri-equalizer-line"></i>
-            </button>
-        </div>
+        <!-- Advanced Search -->
+        <button type="button" class="btn-nx-outline adv-search-btn" data-bs-toggle="modal" data-bs-target="#employeeAdvSearchModal" title="Advanced Search">
+            <i class="ri-filter-3-line"></i>
+            Advanced Search
+            <span class="adv-search-badge" id="advSearchBadge" style="display:none;">0</span>
+        </button>
 
         <div class="tl-spacer"></div>
 
@@ -30,21 +31,10 @@
         </button>
     </div>
 
-    <div id="employeeAdvancedFilters" class="nx-card p-3 mb-3" style="display:none">
-        <div class="d-flex justify-content-between align-items-center mb-3"><h6 class="mb-0">Advanced employee filters</h6><button type="button" id="clearEmployeeFilters" class="btn btn-sm btn-outline-secondary">Clear all</button></div>
-        <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">Employment Type</label><select class="form-select employee-filter" name="employee_type_id"><option value="">All types</option>@foreach($employeeTypes as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
-            <div class="col-md-3"><label class="form-label">Employment Status</label><select class="form-select employee-filter" name="employment_status_id"><option value="">All statuses</option>@foreach($employmentStatuses as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
-            <div class="col-md-3"><label class="form-label">Record Status</label><select class="form-select employee-filter" name="status"><option value="">Active and inactive</option><option value="1">Active</option><option value="0">Inactive</option></select></div>
-            <div class="col-md-3"><label class="form-label">Shift</label><select class="form-select employee-filter" name="shift_id"><option value="">All shifts</option>@foreach($shifts as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
-            <div class="col-md-3"><label class="form-label">Department</label><select class="form-select employee-filter" name="department_id"><option value="">All departments</option>@foreach($departments as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select></div>
-            <div class="col-md-3"><label class="form-label">Designation</label><select class="form-select employee-filter" name="designation_id"><option value="">All designations</option>@foreach($designations as $item)<option value="{{ $item->id }}">{{ $item->name }}{{ $item->department ? ' — '.$item->department->name : '' }}</option>@endforeach</select></div>
-            <div class="col-md-3"><label class="form-label">Gender</label><select class="form-select employee-filter" name="gender"><option value="">All genders</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
-            <div class="col-md-3"><label class="form-label">Joining date from</label><input class="form-control employee-filter" name="joining_from" type="date"></div>
-            <div class="col-md-3"><label class="form-label">Joining date to</label><input class="form-control employee-filter" name="joining_to" type="date"></div>
-            <div class="col-md-3"><label class="form-label">Birth date from</label><input class="form-control employee-filter" name="birth_from" type="date"></div>
-            <div class="col-md-3"><label class="form-label">Birth date to</label><input class="form-control employee-filter" name="birth_to" type="date"></div>
-        </div>
+    <!-- Active Advanced Search Filters -->
+    <div class="adv-search-chips" id="advSearchChipsBar" style="display:none;">
+        <span class="adv-search-chips-label"><i class="ri-price-tag-3-line"></i> Filters:</span>
+        <div id="advSearchChips" class="d-flex align-items-center gap-2 flex-wrap"></div>
     </div>
 
     <!-- Table Card -->
@@ -75,6 +65,138 @@
                 <button class="tl-page-btn" id="tlNext" title="Next page">
                     <i class="ri-arrow-right-s-line"></i>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Modal -->
+    <div class="modal fade" id="employeeAdvSearchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="nx-modal-box fm-modal-content">
+                <div class="modal-header fm-modal-head">
+                    <div>
+                        <h5 class="modal-title"><i class="ri-filter-3-line me-1"></i> Advanced Search</h5>
+                        <p>Combine any of the fields below to narrow down employees.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body fm-modal-body fm-body">
+                    <div class="fm-grid">
+
+                        <div class="adv-search-section"><i class="ri-briefcase-4-line"></i> Employment</div>
+
+                        <div class="fm-field">
+                            <label>Employee Type</label>
+                            <select id="advEmployeeType" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">All Types</option>
+                                @foreach($employeeTypes as $item)
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Employment Status</label>
+                            <select id="advEmploymentStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">All Statuses</option>
+                                @foreach($employmentStatuses as $item)
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Shift</label>
+                            <select id="advShift" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">All Shifts</option>
+                                @foreach($shifts as $item)
+                                    <option value="{{ $item->id }}">{{ $item->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Record Status</label>
+                            <select id="advRecordStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">Active and Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+
+                        <div class="adv-search-section"><i class="ri-organization-chart"></i> Organization</div>
+
+                        <div class="fm-field">
+                            <label>Department</label>
+                            <select id="advDepartment" class="form-select" data-placeholder="All Departments">
+                                <option value="">All Departments</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Designation</label>
+                            <select id="advDesignation" class="form-select" data-placeholder="All Designations">
+                                <option value="">All Designations</option>
+                                @foreach($designations as $designation)
+                                    <option value="{{ $designation->id }}">{{ $designation->name }}{{ $designation->department ? ' — '.$designation->department->name : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Gender</label>
+                            <select id="advGender" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">All Genders</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="adv-search-section"><i class="ri-calendar-2-line"></i> Joining Date Range</div>
+
+                        <div class="fm-field">
+                            <label>From</label>
+                            <input type="date" id="advJoiningFrom" class="form-control">
+                        </div>
+
+                        <div class="fm-field">
+                            <label>To</label>
+                            <input type="date" id="advJoiningTo" class="form-control">
+                        </div>
+
+                        <div class="adv-search-section"><i class="ri-cake-2-line"></i> Birth Date Range</div>
+
+                        <div class="fm-field">
+                            <label>From</label>
+                            <input type="date" id="advBirthFrom" class="form-control">
+                        </div>
+
+                        <div class="fm-field">
+                            <label>To</label>
+                            <input type="date" id="advBirthTo" class="form-control">
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer fm-modal-foot">
+                    <span class="fm-foot-note">
+                        <i class="ri-information-line"></i> Leave a field empty to skip that filter
+                    </span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn-nx-outline" id="advSearchReset">
+                            <i class="ri-refresh-line me-1"></i> Reset
+                        </button>
+                        <button type="button" class="btn-nx-primary" id="advSearchApply">
+                            <i class="ri-search-line me-1"></i> Apply Filters
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -69,7 +69,7 @@
     <!-- Advanced Search Modal -->
     <div class="modal fade" id="componentAdvSearchModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content fm-modal-content">
+            <div class="nx-modal-box fm-modal-content">
                 <div class="modal-header fm-modal-head">
                     <div>
                         <h5 class="modal-title"><i class="ri-filter-3-line me-1"></i> Advanced Search</h5>
@@ -98,6 +98,7 @@
                                 <option value="">All Calculation Types</option>
                                 <option value="fixed">Fixed</option>
                                 <option value="percentage">Percentage</option>
+                                <option value="per_occurrence">Per Occurrence</option>
                             </select>
                         </div>
 

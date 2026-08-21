@@ -107,7 +107,7 @@ var DataTableTeam = function () {
                 <div class="text-center py-4">
 
                     <img
-                    src="${window.location.origin}/assets/images/nothing-to-show.png"
+                    src="${window.location.origin}/assets/images/nothing-to-show.svg"
                     class="img-fluid mb-2"
                     style="max-width:150px">
 

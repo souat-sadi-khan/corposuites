@@ -20,7 +20,7 @@ class SalaryComponentRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', Rule::unique('salary_components', 'name')->ignore($id)],
             'code' => ['required', 'string', 'max:50', Rule::unique('salary_components', 'code')->ignore($id)],
             'type' => 'required|in:earning,deduction',
-            'calculation_type' => 'required|in:fixed,percentage',
+            'calculation_type' => 'required|in:fixed,percentage,per_occurrence',
             'value' => 'required|numeric|min:0',
             'is_taxable' => 'required|boolean',
             'description' => 'nullable|string|max:1000',

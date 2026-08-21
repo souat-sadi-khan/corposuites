@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\SalaryComponent;
 use App\Models\SalaryTemplate;
-use Illuminate\Support\Collection;
 
 class SalaryTemplateService
 {
-    public function __construct(private SalaryStructureService $salaryStructures)
-    {
+    public function __construct(
+        private SalaryStructureService $salaryStructures,
+        private MinimumWageComplianceService $minimumWageCompliance
+    ) {
     }
 
     public function create(array $data): SalaryTemplate
@@ -62,29 +64,65 @@ class SalaryTemplateService
      * recalculation against each employee's basic_salary, etc.) applies here
      * too, rather than duplicating that logic.
      *
-     * @return \Illuminate\Support\Collection<int, \App\Models\SalaryStructure>
+     * An employee whose location's configured minimum wage exceeds the
+     * template's rate is skipped rather than aborting the whole batch —
+     * there is no per-employee form here to surface a validation error
+     * against, so this is the bulk-action equivalent of
+     * SalaryStructureService::assignComponentToEmployees()'s own
+     * {updated, skipped} shape.
+     *
+     * @return array{created: \Illuminate\Support\Collection<int, \App\Models\SalaryStructure>, skipped: \Illuminate\Support\Collection<int, array>}
      */
     public function assignToEmployees(
         SalaryTemplate $salaryTemplate,
         array $employeeIds,
         string $effectiveDate,
         bool $status
-    ): Collection {
+    ): array {
         $components = $salaryTemplate->items->map(fn ($item) => [
             'salary_component_id' => $item->salary_component_id,
             'amount' => $item->amount,
         ])->all();
 
-        return collect($employeeIds)->map(function ($employeeId) use ($salaryTemplate, $components, $effectiveDate, $status) {
-            return $this->salaryStructures->create([
+        $employees = Employee::whereIn('id', $employeeIds)->get()->keyBy('id');
+
+        $created = collect();
+        $skipped = collect();
+
+        foreach ($employeeIds as $employeeId) {
+            $employee = $employees->get($employeeId);
+
+            $violation = $employee
+                ? $this->minimumWageCompliance->violationMessage(
+                    $employee,
+                    $salaryTemplate->pay_type,
+                    (float) $salaryTemplate->basic_salary
+                )
+                : null;
+
+            if ($violation) {
+                $skipped->push([
+                    'employee_id' => (int) $employeeId,
+                    'reason' => $violation,
+                ]);
+
+                continue;
+            }
+
+            $created->push($this->salaryStructures->create([
                 'employee_id' => $employeeId,
                 'pay_type' => $salaryTemplate->pay_type,
                 'effective_date' => $effectiveDate,
                 'basic_salary' => $salaryTemplate->basic_salary,
                 'status' => $status,
                 'components' => $components,
-            ]);
-        });
+            ]));
+        }
+
+        return [
+            'created' => $created,
+            'skipped' => $skipped,
+        ];
     }
 
     /**

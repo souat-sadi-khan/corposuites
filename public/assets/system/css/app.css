@@ -192,6 +192,7 @@ flex      : 1;
 overflow-y: auto;
 overflow-x: hidden;
 padding   : 8px 0 12px;
+position  : relative;
 /* Custom thin scrollbar for sidebar */
 scrollbar-width: thin;
 scrollbar-color: rgba(79,82,232,.30) transparent;
@@ -200,6 +201,37 @@ scrollbar-color: rgba(79,82,232,.30) transparent;
 .sb-nav::-webkit-scrollbar-track { background: transparent; }
 .sb-nav::-webkit-scrollbar-thumb { background: rgba(79,82,232,.30); border-radius: 99px; }
 .sb-nav::-webkit-scrollbar-thumb:hover { background: rgba(79,82,232,.55); }
+
+/* Collapsed sidebar: no visible scrollbar at all — the icon list is
+   scrolled with the up/down arrow buttons below instead. */
+.sidebar.sidebar-collapsed .sb-nav {
+scrollbar-width: none;
+-ms-overflow-style: none;
+}
+.sidebar.sidebar-collapsed .sb-nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Up / down scroll arrows — collapsed sidebar only, shown by JS
+   (theme.js) only when the icon list actually overflows. Sticky to
+   the top/bottom of the .sb-nav scroll container itself so they never
+   need to know the sidebar's own height. */
+.sb-nav-arrow {
+position   : sticky;
+left: 0; right: 0; width: 100%;
+height     : 20px;
+display    : none;
+align-items: center; justify-content: center;
+border     : none;
+background : var(--sb-bg);
+color      : var(--sb-tx-faint);
+font-size  : 15px;
+cursor     : pointer;
+z-index    : 3;
+transition : color .15s, background .15s;
+}
+.sb-nav-arrow-up   { top: 0; }
+.sb-nav-arrow-down { bottom: 0; }
+.sidebar.sidebar-collapsed.has-nav-arrows .sb-nav-arrow.is-visible { display: flex; }
+.sb-nav-arrow:hover { color: var(--accent); background: var(--sb-hover); }
 
 /* Section label */
 .sb-label {
@@ -261,6 +293,36 @@ border-left    : 2px solid transparent;
 }
 .sidebar.sidebar-collapsed .nav-row.is-active { border-left-color: var(--accent); }
 .sidebar.sidebar-collapsed .nav-row .n-icon   { width: auto; font-size: 19px; }
+
+/* ── Active PARENT (a section header whose current page lives inside
+     it) gets a distinct rounded "pill" treatment instead of the plain
+     full-width bar a current-page leaf link gets — so at a glance you
+     can tell "you're inside this section" apart from "this is the
+     exact page you're on". Built entirely on the --sb-* tokens, so it
+     already follows whichever sidebar palette / light-or-dark theme
+     is active. ── */
+.nav-row.is-active.is-open {
+background        : var(--sb-hover);
+color             : var(--sb-tx-hover);
+border-left-color : transparent;
+margin            : 2px 8px;
+width             : calc(100% - 16px);
+border-radius     : 9px;
+box-shadow        : inset 0 0 0 1px var(--sb-border);
+}
+.nav-row.is-active.is-open .n-icon  { color: var(--accent); }
+.nav-row.is-active.is-open::after {
+content      : "";
+position     : absolute;
+left: 6px; top: 8px; bottom: 8px;
+width        : 3px;
+border-radius: 3px;
+background   : var(--accent);
+}
+.sidebar.sidebar-collapsed .nav-row.is-active.is-open {
+margin: 2px 6px;
+width : calc(100% - 12px);
+}
 
 /* ── Sub-menu ── */
 .nav-sub {
@@ -2822,24 +2884,84 @@ transition: border-color .15s, box-shadow .15s;
 .custom-offcanvas{
     width: var(--offcanvas-width, 70%);
     max-width: 100vw;
+    height: 100vh;
 }
 
 .mr-2 {
     margin-right: 8px;
 }
 
-.custom-offcanvas .offcanvas-body{
-    height:calc(100vh - 104px);
-    overflow:hidden;
-    padding:0px 10px;
+/*
+ * The offcanvas shell (#sideForm) is always exactly 100vh and never
+ * scrolls itself. It only ever contains one direct .offcanvas-body
+ * (the "shell" body below), which is a fixed-height flex column that
+ * loads the real form markup — its own .offcanvas-header /
+ * .offcanvas-body / .offcanvas-footer — into .offcanvas-content via
+ * AJAX. Only that INNER .offcanvas-body (the real form body) scrolls;
+ * the header and footer stay pinned top/bottom. This same rule also
+ * covers the .of-head/.of-body/.of-foot and .hoc-header/.hoc-body
+ * conventions used by a few other offcanvas forms, since they all sit
+ * inside the same #sideForm > .offcanvas-content > <content> shape.
+ */
+#sideForm.offcanvas-end,
+.custom-offcanvas {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Outer shell body — never scrolls, just hosts the injected content */
+#sideForm > .offcanvas-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    overflow: hidden;
+    padding: 0 !important;
     background: var(--bg-surface);
-    overflow-y:scroll;
+    display: flex;
+    flex-direction: column;
 }
 
 .offcanvas-content{
-    height:100%;
-    overflow-y:auto;
-    overflow-x:hidden;
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* The injected content's own root (a <form> or a plain wrapper <div>)
+   must stretch to fill the shell and lay its header/body/footer out
+   in a column so only the middle section scrolls. */
+.offcanvas-content > form,
+.offcanvas-content > div {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#sideForm .offcanvas-header,
+#sideForm .of-head,
+#sideForm .hoc-header {
+    flex: 0 0 auto;
+}
+
+/* The REAL scrollable middle section of the injected form/content */
+.offcanvas-content .offcanvas-body,
+.offcanvas-content .of-body,
+.offcanvas-content .hoc-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 10px;
+}
+
+#sideForm .offcanvas-footer,
+#sideForm .of-foot {
+    flex: 0 0 auto;
 }
 
 .offcanvas-header > div:first-child {
@@ -4129,6 +4251,7 @@ table tr th {
 .si-green i  { color: var(--green); }
 .si-amber i  { color: var(--amber); }
 .si-purple i { color: var(--accent); }
+.si-red i    { color: var(--red); }
 
 /* Rich select2 option (bold title + small description, e.g. Role select) */
   .sel-opt-rich-name { font-weight: 600; color: var(--tx-1); font-size: 12.5px; line-height: 1.4; }
@@ -4507,6 +4630,37 @@ table tr th {
 }
 .perm-module.collapsed .perm-module-body { display: none; }
 
+/* Module body now holds a stack of per-menu blocks, not chips directly */
+.perm-module-body--menus { flex-direction: column; flex-wrap: nowrap; gap: 9px; }
+
+/* ── Menu block (one entity, e.g. "Employee", inside a module) ── */
+.perm-menu-block {
+    background: var(--bg-base);
+    border: 1px solid var(--border-lt);
+    border-radius: 9px;
+    padding: 10px 12px 11px;
+    transition: border-color .2s;
+}
+.perm-menu-block.has-selection { border-color: var(--accent-m); }
+.perm-menu-block.perm-hidden-row { display: none; }
+.perm-menu-head {
+    display: flex; align-items: center; gap: 9px;
+    margin-bottom: 8px;
+}
+.perm-menu-name { font-size: 12.5px; font-weight: 700; color: var(--tx-1); flex: 1 1 auto; }
+.perm-menu-badge {
+    font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 20px;
+    background: var(--bg-hover); color: var(--tx-3); white-space: nowrap;
+}
+.perm-menu-badge.is-active { background: var(--accent-s); color: var(--accent); }
+.perm-menu-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+
+/* Slightly smaller switch for the per-menu toggle */
+.perm-menu-switch .track { width: 30px; height: 17px; }
+.perm-menu-switch .track::after { width: 13px; height: 13px; }
+.perm-menu-switch input:checked + .track::after { transform: translateX(13px); }
+.perm-menu-switch input:indeterminate + .track::after { transform: translateX(6px); }
+
 .perm-chip {
     position: relative; display: inline-flex; align-items: center; gap: 7px;
     padding: 7px 13px 7px 11px; border-radius: 9px;
@@ -4541,8 +4695,53 @@ table tr th {
 
 @media (max-width: 576px) {
     .perm-module-body { gap: 7px; }
+    .perm-menu-grid { gap: 6px; }
     .perm-chip { flex: 1 1 auto; justify-content: flex-start; }
 }
+
+/* ═══════════════════════════════════════════════════════════
+    PERMISSION VIEWER (read-only "View Permission" modal)
+═══════════════════════════════════════════════════════════ */
+.perm-view { display: flex; flex-direction: column; gap: 10px; }
+.perm-view-empty {
+    text-align: center; padding: 30px 10px; color: var(--tx-3); font-size: 13px;
+}
+.perm-view-empty i { font-size: 30px; display: block; margin-bottom: 6px; }
+.perm-view-module {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.perm-view-module-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 15px; cursor: pointer; user-select: none;
+}
+.perm-view-module-name { font-size: 13.5px; font-weight: 700; color: var(--tx-1); flex: 1 1 auto; }
+.perm-view-module-body {
+    padding: 4px 15px 15px; border-top: 1px solid var(--border-lt);
+    display: flex; flex-direction: column; gap: 9px;
+}
+.perm-view-module.collapsed .perm-view-module-body { display: none; }
+.perm-view-module.collapsed .perm-chevron { transform: rotate(-90deg); }
+.perm-view-menu {
+    background: var(--bg-base); border: 1px solid var(--border-lt); border-radius: 9px;
+    padding: 9px 12px 10px; margin-top: 13px;
+}
+.perm-view-menu:first-child { margin-top: 0; }
+.perm-view-menu-name {
+    font-size: 12px; font-weight: 700; color: var(--tx-2);
+    text-transform: uppercase; letter-spacing: .03em;
+    display: block; margin-bottom: 8px;
+}
+.perm-view-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+.perm-view-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 11px; border-radius: 8px;
+    background: var(--accent-s); color: var(--accent);
+    font-size: 12px; font-weight: 600;
+}
+.perm-view-tag i { font-size: 13px; }
 /* ═══════════════════════════════════════════════════════════
     PERMISSION ACCORDION
 ═══════════════════════════════════════════════════════════ */
@@ -4863,6 +5062,37 @@ table tr th {
 }
 
 /* =====================================================
+   Standalone (non-remote) modal box.
+
+   The shared #modal_remote / #modal_remote .modal-content shell is
+   the only ".modal-content" the global remote-modal loader in
+   main.js is meant to touch — but it finds it via a page-wide,
+   unscoped `$('.modal-content')` selector. Any *other* modal built
+   directly into a page (e.g. an "Advanced Search" modal) must NOT
+   also use Bootstrap's own ".modal-content" class, or opening it
+   alongside a remote modal on the same page injects that remote
+   content into both boxes at once (two <form class="ajax-form">
+   elements at the same time), which is what broke Parsley
+   validation on the Salary Structures/Templates create forms.
+
+   Use ".nx-modal-box" instead — it reproduces the handful of
+   Bootstrap ".modal-content" rules a modal box actually needs
+   (flex column layout, full width, relative position) without
+   the colliding class name. Combine with ".fm-modal-content" for
+   the themed background/border/radius.
+===================================================== */
+
+.nx-modal-box {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-clip: padding-box;
+    outline: 0;
+}
+
+/* =====================================================
    Advanced Search — button, badge, chips, modal sections
    (reusable across any list page's "Advanced Search" modal)
 ===================================================== */
@@ -4979,6 +5209,66 @@ table tr th {
 
 .adv-search-section i {
     font-size: 13px;
+    color: var(--accent);
+}
+
+/* =====================================================
+   Salary Summary — reusable "calculation box" used by
+   Salary Structures / Salary Templates create-edit forms
+   and any screen (e.g. Bulk Assign) that needs to show a
+   quick pay breakdown. Page-local .salary-summary rules
+   (if any) take precedence since they render after this
+   stylesheet in the DOM — this is just the shared default.
+===================================================== */
+
+.salary-summary {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-surface);
+}
+
+.salary-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-lt);
+    font-size: 13px;
+}
+
+.salary-summary-row:last-child {
+    border-bottom: 0;
+}
+
+.salary-summary-row span {
+    color: var(--tx-2);
+}
+
+.salary-summary-row strong {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--tx-1);
+}
+
+.salary-summary-row small {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.salary-gross-row {
+    background: var(--accent-s);
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.salary-gross-row span {
+    color: var(--tx-1);
+    font-weight: 700;
+}
+
+.salary-gross-row strong {
+    font-size: 15px;
     color: var(--accent);
 }
 

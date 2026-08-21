@@ -274,12 +274,15 @@ class SalaryTemplateController extends Controller
         try {
             $salaryTemplate->load('items');
 
-            $created = $this->salaryTemplateService->assignToEmployees(
+            $result = $this->salaryTemplateService->assignToEmployees(
                 $salaryTemplate,
                 $request->validated('employee_ids'),
                 $request->validated('effective_date'),
                 (bool) $request->validated('status')
             );
+
+            $created = $result['created'];
+            $skipped = $result['skipped'];
 
             $this->logActivity([
                 'actor_type' => 'admin',
@@ -288,16 +291,27 @@ class SalaryTemplateController extends Controller
                 'action' => 'assign',
                 'model' => 'SalaryTemplate',
                 'model_id' => $salaryTemplate->id,
-                'description' => 'Salary template "' . $salaryTemplate->name . '" applied to ' . $created->count() . ' employee(s)',
-                'new_data' => ['employee_ids' => $request->validated('employee_ids'), 'salary_structure_ids' => $created->pluck('id')->all()],
+                'description' => 'Salary template "' . $salaryTemplate->name . '" applied to ' . $created->count() . ' employee(s)'
+                    . ($skipped->count() ? ', skipped ' . $skipped->count() . ' below the configured minimum wage' : ''),
+                'new_data' => [
+                    'employee_ids' => $request->validated('employee_ids'),
+                    'salary_structure_ids' => $created->pluck('id')->all(),
+                    'skipped' => $skipped->all(),
+                ],
                 'old_data' => null
             ]);
 
             DB::commit();
 
+            $message = 'Template applied to ' . $created->count() . ' employee(s) successfully.';
+
+            if ($skipped->count()) {
+                $message .= ' Skipped ' . $skipped->count() . ' employee(s) below the configured minimum wage for their location.';
+            }
+
             return response()->json([
                 'status' => true,
-                'message' => 'Template applied to ' . $created->count() . ' employee(s) successfully.'
+                'message' => $message
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

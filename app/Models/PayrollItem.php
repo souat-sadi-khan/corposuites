@@ -11,11 +11,12 @@ class PayrollItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'payroll_id', 'salary_component_id', 'type', 'amount'
+        'payroll_id', 'salary_component_id', 'type', 'amount', 'occurrence_count'
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'occurrence_count' => 'integer',
     ];
 
     public function payroll(): BelongsTo

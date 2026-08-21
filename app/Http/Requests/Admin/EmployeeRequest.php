@@ -28,6 +28,10 @@ class EmployeeRequest extends FormRequest
             'department_id' => 'nullable|exists:departments,id',
             'designation_id' => 'nullable|exists:designations,id',
             'address' => 'nullable|string|max:1000',
+            // Used to resolve the applicable Minimum Wage Rule (Module 7)
+            // for this employee's Salary Structure/Template pay rate.
+            'country' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
             'photo' => 'nullable|image|max:2048',
             'employee_type_id' => 'nullable|exists:employee_types,id',
             'employment_status_id' => 'nullable|exists:employment_statuses,id',

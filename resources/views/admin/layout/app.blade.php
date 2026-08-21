@@ -33,8 +33,12 @@
             var czSettings = JSON.parse(localStorage.getItem('nx-customizer') || '{}');
             var root = document.documentElement.style;
 
-            // Setup Default Fallbacks
-            var sidebarConfig = czSettings.sidebar || 'midnight';
+            // Setup Default Fallbacks (must match theme.js's own czSettings
+            // defaults exactly, or a first-time visitor with empty
+            // localStorage sees this pre-paint palette applied here, then
+            // a visibly different one re-applied a moment later by
+            // theme.js on DOMContentLoaded — i.e. a sidebar "flash").
+            var sidebarConfig = czSettings.sidebar || 'white';
             var headerConfig = czSettings.header || 'default';
             var accentConfig = czSettings.accent || '#4f52e8';
 
@@ -71,14 +75,19 @@
             root.setProperty('--accent-grad-2', shade(accentConfig, -10));
 
             // Apply Sidebar Palette
+            // NOTE: must stay byte-for-byte in sync with the SB_PRESETS map
+            // in theme.js (public/assets/system/js/theme.js) — this copy
+            // only exists so the correct sidebar colors can be painted
+            // before the very first frame (avoiding a flash of the wrong
+            // palette while theme.js is still loading/parsing).
             var SB_PRESETS = {
-                midnight: { bg: '#ffffff', light: false }, slate: { bg: '#1e2536', light: false },
+                midnight: { bg: '#0c0d12', light: false }, slate: { bg: '#1e2536', light: false },
                 ocean: { bg: '#0a2540', light: false }, forest: { bg: '#0f2418', light: false },
                 indigo: { bg: '#1e1b4b', light: false }, white: { bg: '#ffffff', light: true }
             };
             var sbTheme = sidebarConfig === 'custom' && czSettings.sidebarCustom
                 ? { bg: czSettings.sidebarCustom, light: isLightColor(czSettings.sidebarCustom) }
-                : (SB_PRESETS[sidebarConfig] || SB_PRESETS.midnight);
+                : (SB_PRESETS[sidebarConfig] || SB_PRESETS.white);
 
             var sbT = sbTheme.light
                 ? { tx: 'rgba(15,17,23,.55)', hover: 'rgba(15,17,23,.05)', active: 'rgba(79,82,232,.10)', activeTx: 'var(--accent)', border: 'rgba(15,17,23,.08)', label: 'rgba(15,17,23,.30)', strong: '#0f1117', txHover: 'rgba(15,17,23,.80)', faint: 'rgba(15,17,23,.30)' }

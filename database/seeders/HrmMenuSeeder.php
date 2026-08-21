@@ -71,6 +71,7 @@ class HrmMenuSeeder extends Seeder
         $this->menu($hrmModule->id, 'hrm.payrolls', $payroll->id, 'Payroll', 'ri-hand-coin-line', 'admin.payrolls.index', 3);
         $this->menu($hrmModule->id, 'hrm.expense-claims', $payroll->id, 'Expense Claims', 'ri-receipt-line', 'admin.expense-claims.index', 4);
         $this->menu($hrmModule->id, 'hrm.employee-loans', $payroll->id, 'Employee Loans', 'ri-safe-2-line', 'admin.employee-loans.index', 5);
+        $this->menu($hrmModule->id, 'hrm.minimum-wage-rules', $payroll->id, 'Minimum Wage Rules', 'ri-scales-3-line', 'admin.minimum-wage-rules.index', 6);
 
         // Group: Performance
         $performance = $this->group($hrmModule->id, 'hrm.group.performance', 'Performance', 'ri-line-chart-line', 6);
@@ -80,6 +81,7 @@ class HrmMenuSeeder extends Seeder
         $reports = $this->group($hrmModule->id, 'hrm.group.reports', 'Reports', 'ri-bar-chart-box-line', 7);
         $this->menu($hrmModule->id, 'hrm.hr-reports', $reports->id, 'HR Reports', 'ri-bar-chart-box-line', 'admin.hr-reports.index', 1);
         $this->menu($hrmModule->id, 'hrm.leave-reports', $reports->id, 'Leave Reports', 'ri-calendar-line', 'admin.leave-reports.index', 2);
+        $this->menu($hrmModule->id, 'hrm.payroll-compliance-report', $reports->id, 'Payroll Compliance Report', 'ri-shield-check-line', 'admin.payroll-compliance-report.index', 3);
 
         // Bottom-level configuration entry for all HRM policies and integrations.
         $this->menu($hrmModule->id, 'hrm.settings', null, 'HRM Settings', 'ri-settings-3-line', 'admin.hrm-settings.index', 8);

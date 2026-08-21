@@ -14,7 +14,13 @@
                 <select name="employee_id" class="form-select select" required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" data-pay-type="{{ $employeePayTypes[$employee->id] ?? 'monthly' }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option
+                            value="{{ $employee->id }}"
+                            data-pay-type="{{ $employeePayTypes[$employee->id] ?? 'monthly' }}"
+                            data-occurrence-components='@json($employeeOccurrenceComponents[$employee->id] ?? [])'
+                            {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
+                            {{ $employee->full_name }} ({{ $employee->employee_code }})
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -34,6 +40,11 @@
                 <label>Sales Amount <span class="req">*</span></label>
                 <input type="number" step="0.01" min="0" class="form-control" name="commission_sales_amount" placeholder="Total sales this period">
                 <small class="text-muted">This employee is on a commission-based salary structure. Commission is calculated as a percentage of this amount.</small>
+            </div>
+            <div class="fm-field fm-full payroll-occurrence-fields" style="display:none;">
+                <label>Occurrence Counts</label>
+                <div class="payroll-occurrence-rows"></div>
+                <small class="text-muted">This employee has one or more per-occurrence components. Enter how many times each happened this period (0 if it never happened).</small>
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>

@@ -60,7 +60,7 @@ var DataTableSalaryTemplates = function () {
             language: {
                 emptyTable: `
                     <div class="text-center py-4">
-                        <img src="${window.location.origin}/assets/images/nothing-to-show.png"
+                        <img src="${window.location.origin}/assets/images/nothing-to-show.svg"
                              class="img-fluid mb-2"
                              style="max-width:150px">
                         <p class="text-muted mb-0">
@@ -292,8 +292,11 @@ function _selectOptionTemplateSalaryTemplate(option) {
 
 $(document).on('click', '.salary-template-component-add', function () {
 
+    // The button lives in the modal footer (not the body), so it can't
+    // be found via .closest('.modal-body, .offcanvas-body') — walk up to
+    // the whole form instead, which wraps both the footer and the body.
     var container = $(this)
-        .closest('.modal-body, .offcanvas-body')
+        .closest('form')
         .find('.salary-template-component-rows');
 
     if (!container.length) {

@@ -46,7 +46,7 @@ var DataTableFollowUps = function () {
             language: {
                 emptyTable: `
                     <div class="text-center py-4">
-                        <img src="${window.location.origin}/assets/images/nothing-to-show.png" class="img-fluid mb-2" style="max-width:150px">
+                        <img src="${window.location.origin}/assets/images/nothing-to-show.svg" class="img-fluid mb-2" style="max-width:150px">
                         <p class="text-muted mb-0">No follow ups available</p>
                     </div>
                 `

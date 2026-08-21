@@ -1,5 +1,11 @@
 <div class="tl-actions">
     <button class="tl-icon-btn side-offcanvas" data-url="{{ route('admin.salary-components.details',$row) }}" data-width="800px" title="Component history"><i class="ri-information-line"></i></button>
+
+    <!-- Bulk Assign to Employees -->
+    <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.salary-components.bulk-assign-form', $row->id) }}" title="Bulk assign to employees">
+        <i class="ri-group-line text-primary"></i>
+    </button>
+
     <!-- Edit -->
     <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.salary-components.edit', $row->id) }}" title="Edit">
         <i class="ri-pencil-line"></i>

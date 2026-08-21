@@ -1,4 +1,9 @@
 <div class="tl-actions">
+    <!-- Download Payslip -->
+    <a class="tl-icon-btn" href="{{ route('admin.payrolls.payslip', $row->id) }}" target="_blank" title="Download Payslip">
+        <i class="ri-file-download-line"></i>
+    </a>
+
     @if($row->payment_status !== 'paid')
         <!-- Mark as Paid -->
         <button class="tl-icon-btn" id="markPaid" data-url="{{ route('admin.payrolls.mark-paid', $row->id) }}" title="Mark as Paid">

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\BulkAssignSalaryComponentRequest;
 use App\Http\Requests\Admin\SalaryComponentRequest;
+use App\Models\Employee;
 use App\Models\SalaryComponent;
 use App\Services\SalaryComponentService;
+use App\Services\SalaryStructureService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,10 +19,12 @@ class SalaryComponentController extends Controller
     use ActivityLogger;
 
     protected $salaryComponentService;
+    protected $salaryStructureService;
 
-    public function __construct(SalaryComponentService $salaryComponentService)
+    public function __construct(SalaryComponentService $salaryComponentService, SalaryStructureService $salaryStructureService)
     {
         $this->salaryComponentService = $salaryComponentService;
+        $this->salaryStructureService = $salaryStructureService;
     }
 
     /**
@@ -100,9 +105,11 @@ class SalaryComponentController extends Controller
                         : '<span class="badge bg-danger-subtle text-danger">Deduction</span>';
                 })
                 ->addColumn('value_formatted', function ($row) {
-                    return $row->calculation_type === 'percentage'
-                        ? number_format($row->value, 2) . ' %'
-                        : format_currency($row->value);
+                    return match ($row->calculation_type) {
+                        'percentage' => number_format($row->value, 2) . ' %',
+                        'per_occurrence' => format_currency($row->value) . ' / occurrence',
+                        default => format_currency($row->value),
+                    };
                 })
                 ->addColumn('action', function ($row) {
                     return view('admin.salary-components.action', compact('row'))->render();
@@ -271,5 +278,70 @@ class SalaryComponentController extends Controller
             'success' => true,
             'message' => 'Record status updated successfully.'
         ]);
+    }
+
+    /**
+     * Show the "Bulk Assign" form — adds/updates this one component on
+     * each selected employee's own active salary structure, without
+     * touching any of their other components.
+     */
+    public function bulkAssignForm(SalaryComponent $salaryComponent)
+    {
+        $employees = Employee::active()->get();
+
+        return view('admin.salary-components.bulk-assign', compact('salaryComponent', 'employees'));
+    }
+
+    /**
+     * Apply the bulk assignment.
+     */
+    public function bulkAssign(BulkAssignSalaryComponentRequest $request, SalaryComponent $salaryComponent)
+    {
+        DB::beginTransaction();
+
+        try {
+            $result = $this->salaryStructureService->assignComponentToEmployees(
+                $salaryComponent,
+                $request->validated('employee_ids'),
+                $request->filled('amount') ? (float) $request->validated('amount') : null
+            );
+
+            $this->logActivity([
+                'actor_type' => 'admin',
+                'actor_id' => auth()->guard('admin')->id(),
+                'module' => 'salary-components',
+                'action' => 'bulk-assign',
+                'model' => 'SalaryComponent',
+                'model_id' => $salaryComponent->id,
+                'description' => 'Component "' . $salaryComponent->name . '" assigned to ' . $result['updated']->count() . ' employee(s)'
+                    . ($result['skipped']->count() ? ', skipped ' . $result['skipped']->count() . ' with no active salary structure' : ''),
+                'new_data' => [
+                    'employee_ids' => $request->validated('employee_ids'),
+                    'salary_structure_ids' => $result['updated']->pluck('id')->all(),
+                    'skipped' => $result['skipped']->all(),
+                ],
+                'old_data' => null
+            ]);
+
+            DB::commit();
+
+            $message = 'Component assigned to ' . $result['updated']->count() . ' employee(s).';
+
+            if ($result['skipped']->count()) {
+                $message .= ' Skipped ' . $result['skipped']->count() . ' employee(s) with no active salary structure.';
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

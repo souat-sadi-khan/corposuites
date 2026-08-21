@@ -110,6 +110,14 @@
                 <label>Address</label>
                 <textarea class="form-control" name="address" rows="2"></textarea>
             </div>
+            <div class="fm-field">
+                <label>Country</label>
+                <input type="text" class="form-control" name="country" placeholder="e.g., United States">
+            </div>
+            <div class="fm-field">
+                <label>State / Province</label>
+                <input type="text" class="form-control" name="state" placeholder="e.g., California">
+            </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
                 <select name="status" class="form-select select" data-placeholder="Select One" data-minimum-results-for-search="Infinity">

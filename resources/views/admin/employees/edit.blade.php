@@ -112,6 +112,14 @@
                 <label>Address</label>
                 <textarea class="form-control" name="address" rows="2">{{ old('address', $employee->address) }}</textarea>
             </div>
+            <div class="fm-field">
+                <label>Country</label>
+                <input type="text" class="form-control" name="country" value="{{ old('country', $employee->country) }}" placeholder="e.g., United States">
+            </div>
+            <div class="fm-field">
+                <label>State / Province</label>
+                <input type="text" class="form-control" name="state" value="{{ old('state', $employee->state) }}" placeholder="e.g., California">
+            </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
                 <select name="status" class="form-select">

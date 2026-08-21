@@ -27,14 +27,16 @@
             </div>
             <div class="fm-field">
                 <label>Calculation Type <span class="req">*</span></label>
-                <select name="calculation_type" class="form-select select" data-minimum-results-for-search="Infinity" required>
+                <select name="calculation_type" class="form-select select salary-component-calc-type" data-minimum-results-for-search="Infinity" required>
                     <option value="fixed" {{ old('calculation_type', $salaryComponent->calculation_type) == 'fixed' ? 'selected' : '' }}>Fixed</option>
                     <option value="percentage" {{ old('calculation_type', $salaryComponent->calculation_type) == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                    <option value="per_occurrence" {{ old('calculation_type', $salaryComponent->calculation_type) == 'per_occurrence' ? 'selected' : '' }}>Per Occurrence</option>
                 </select>
             </div>
             <div class="fm-field">
-                <label>Value <span class="req">*</span></label>
+                <label class="salary-component-value-label">Value <span class="req">*</span></label>
                 <input type="number" step="0.01" class="form-control" name="value" min="0" value="{{ old('value', $salaryComponent->value) }}" required>
+                <small class="text-muted salary-component-value-help"></small>
             </div>
             <div class="fm-field">
                 <label>Taxable</label>

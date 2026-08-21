@@ -67,7 +67,7 @@ var DataTableSalaryStructures = function () {
             language: {
                 emptyTable: `
                     <div class="text-center py-4">
-                        <img src="${window.location.origin}/assets/images/nothing-to-show.png"
+                        <img src="${window.location.origin}/assets/images/nothing-to-show.svg"
                              class="img-fluid mb-2"
                              style="max-width:150px">
                         <p class="text-muted mb-0">
@@ -1405,7 +1405,8 @@ function initSalaryStructureAdvSearch() {
 
         $(this).select2({
             width: '100%',
-            dropdownParent: $('#salaryAdvSearchModal')
+            dropdownParent: $('#salaryAdvSearchModal'),
+            templateResult: _selectOptionTemplate
         });
 
     });
@@ -1447,6 +1448,50 @@ function initSalaryStructureAdvSearch() {
         }
 
     });
+}
+
+$('.as-select').select2({
+    width: '100%',
+    dropdownParent: $('#salaryAdvSearchModal')
+});
+
+function _selectOptionTemplate(option) {
+    if (!option.id || !option.element) {
+        return option.text;
+    }
+
+    var $option = $(option.element);
+
+    var logo = $option.attr('data-logo');
+    var desc = $option.attr('data-desc');
+
+    var $opt = $('<div class="sel-opt-rich"></div>');
+
+    // Avatar
+    if (logo) {
+        $opt.append(
+            '<div class="sel-opt-rich-avatar">' +
+                '<img class="sel-opt-rich-img" src="' + logo + '" alt="">' +
+            '</div>'
+        );
+    }
+
+    // Info
+    var $info = $('<div class="sel-opt-rich-info"></div>');
+
+    $info.append(
+        $('<div class="sel-opt-rich-name"></div>').text(option.text)
+    );
+
+    if (desc) {
+        $info.append(
+            $('<div class="sel-opt-rich-desc"></div>').text(desc)
+        );
+    }
+
+    $opt.append($info);
+
+    return $opt;
 }
 
 function clearSalaryStructureAdvField(key) {

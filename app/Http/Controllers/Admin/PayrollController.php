@@ -71,7 +71,17 @@ class PayrollController extends Controller
                         ? '<span class="badge bg-secondary-subtle text-secondary me-1">' . $row->salaryStructure->pay_type_label . '</span>'
                         : '';
 
-                    return $payTypeBadge . 'Net: ' . number_format($row->net_salary, 2) . '<br><small>Earnings: ' . number_format($row->total_earnings, 2) . ' / Deductions: ' . number_format($row->total_deductions, 2) . '</small>';
+                    $line = $payTypeBadge . 'Net: ' . number_format($row->net_salary, 2) . '<br><small>Earnings: ' . number_format($row->total_earnings, 2) . ' / Deductions: ' . number_format($row->total_deductions, 2) . '</small>';
+
+                    if ($row->overtime_hours > 0) {
+                        $line .= '<br><small class="text-warning">OT: ' . number_format($row->overtime_hours, 2) . 'h &rarr; ' . number_format($row->overtime_amount, 2) . '</small>';
+                    }
+
+                    if ($row->attendance_deduction > 0) {
+                        $line .= '<br><small class="text-danger">Attendance deduction: -' . number_format($row->attendance_deduction, 2) . '</small>';
+                    }
+
+                    return $line;
                 })
                 ->addColumn('payment_badge', function ($row) {
                     return $row->payment_status === 'paid'
@@ -99,13 +109,30 @@ class PayrollController extends Controller
         // so the form can show/require the Sales Amount field only for employees
         // on a commission-based structure — same "active, latest effective_date"
         // resolution PayrollService::create() uses to pick the structure.
-        $employeePayTypes = SalaryStructure::active()
+        $activeStructures = SalaryStructure::active()
             ->orderByDesc('effective_date')
+            ->with('items.salaryComponent')
             ->get()
             ->groupBy('employee_id')
-            ->map(fn ($structures) => $structures->first()->pay_type);
+            ->map(fn ($structures) => $structures->first());
 
-        return view('admin.payrolls.create', compact('employees', 'employeePayTypes'));
+        $employeePayTypes = $activeStructures->map(fn ($structure) => $structure->pay_type);
+
+        // Per-occurrence components (e.g. "Late Penalty — $10/occurrence") on
+        // each employee's active structure, so the form can render one
+        // "how many times this period" input per such component.
+        $employeeOccurrenceComponents = $activeStructures->map(function ($structure) {
+            return $structure->items
+                ->filter(fn ($item) => $item->salaryComponent->calculation_type === 'per_occurrence')
+                ->map(fn ($item) => [
+                    'id' => $item->salary_component_id,
+                    'name' => $item->salaryComponent->name,
+                    'rate' => (float) $item->amount,
+                ])
+                ->values();
+        });
+
+        return view('admin.payrolls.create', compact('employees', 'employeePayTypes', 'employeeOccurrenceComponents'));
     }
 
     /**
@@ -222,6 +249,26 @@ class PayrollController extends Controller
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Printable payslip for one payroll run — a standalone page (not the
+     * admin layout) meant to be opened in a new tab and saved as a PDF via
+     * the browser's own print dialog, the same convention every other
+     * print view in this project uses (Delivery Notes, Barcode Generator,
+     * POS receipts) rather than adding a server-side PDF library.
+     */
+    public function payslip(Payroll $payroll)
+    {
+        $payroll->load([
+            'employee.department', 'employee.designation',
+            'salaryStructure',
+            'items.salaryComponent',
+        ]);
+
+        $unpaidLeaveDeduction = $this->payrollService->unpaidLeaveDeductionFor($payroll);
+
+        return view('admin.payrolls.payslip', compact('payroll', 'unpaidLeaveDeduction'));
     }
 
     /**

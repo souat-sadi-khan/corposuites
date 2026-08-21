@@ -31,6 +31,7 @@
                     <option value="half_day" {{ old('attendance_status', $attendance->attendance_status) == 'half_day' ? 'selected' : '' }}>Half Day</option>
                     <option value="on_leave" {{ old('attendance_status', $attendance->attendance_status) == 'on_leave' ? 'selected' : '' }}>On Leave</option>
                     <option value="late" {{ old('attendance_status', $attendance->attendance_status) == 'late' ? 'selected' : '' }}>Late</option>
+                    <option value="early_leave" {{ old('attendance_status', $attendance->attendance_status) == 'early_leave' ? 'selected' : '' }}>Early Leave</option>
                 </select>
             </div>
             <div class="fm-field">
@@ -40,6 +41,11 @@
             <div class="fm-field">
                 <label>Check Out</label>
                 <input type="time" class="form-control" name="check_out" value="{{ old('check_out', $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('H:i') : '') }}">
+            </div>
+            <div class="fm-field">
+                <label>Overtime Hours</label>
+                <input type="number" step="0.25" min="0" max="24" class="form-control" name="overtime_hours" value="{{ old('overtime_hours', $attendance->overtime_hours) }}">
+                <small class="text-muted">Hours worked beyond the shift on this day.</small>
             </div>
             <div class="fm-field">
                 <label>Status</label>

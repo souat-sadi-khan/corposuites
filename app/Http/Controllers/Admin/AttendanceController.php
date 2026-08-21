@@ -71,7 +71,13 @@ class AttendanceController extends Controller
                 ->addColumn('timing', function ($row) {
                     $in = $row->check_in ? \Carbon\Carbon::parse($row->check_in)->format('h:i A') : '-';
                     $out = $row->check_out ? \Carbon\Carbon::parse($row->check_out)->format('h:i A') : '-';
-                    return $in . ' - ' . $out;
+                    $line = $in . ' - ' . $out;
+
+                    if ($row->overtime_hours > 0) {
+                        $line .= '<br><small class="text-warning">OT: ' . number_format($row->overtime_hours, 2) . 'h</small>';
+                    }
+
+                    return $line;
                 })
                 ->addColumn('location', function ($row) {
                     return $this->locationBadges($row);
@@ -83,6 +89,7 @@ class AttendanceController extends Controller
                         'half_day' => 'warning',
                         'on_leave' => 'info',
                         'late' => 'warning',
+                        'early_leave' => 'warning',
                     ];
                     $color = $map[$row->attendance_status] ?? 'secondary';
                     $label = ucwords(str_replace('_', ' ', $row->attendance_status));
@@ -91,7 +98,7 @@ class AttendanceController extends Controller
                 ->addColumn('action', function ($row) {
                     return view('admin.attendances.action', compact('row'))->render();
                 })
-                ->rawColumns(['status_badge', 'employee_name', 'location', 'attendance_status_badge', 'action'])
+                ->rawColumns(['status_badge', 'employee_name', 'timing', 'location', 'attendance_status_badge', 'action'])
                 ->make(true);
         }
 

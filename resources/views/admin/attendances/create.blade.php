@@ -30,6 +30,7 @@
                     <option value="half_day">Half Day</option>
                     <option value="on_leave">On Leave</option>
                     <option value="late">Late</option>
+                    <option value="early_leave">Early Leave</option>
                 </select>
             </div>
             <div class="fm-field">
@@ -39,6 +40,11 @@
             <div class="fm-field">
                 <label>Check Out</label>
                 <input type="time" class="form-control" name="check_out">
+            </div>
+            <div class="fm-field">
+                <label>Overtime Hours</label>
+                <input type="number" step="0.25" min="0" max="24" class="form-control" name="overtime_hours" value="0">
+                <small class="text-muted">Hours worked beyond the shift on this day.</small>
             </div>
             <div class="fm-field">
                 <label>Status</label>

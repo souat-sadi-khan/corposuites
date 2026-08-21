@@ -249,7 +249,7 @@ var AuditLogTable = function(){
 
                 <img
 
-                src="${window.location.origin}/assets/images/nothing-to-show.png"
+                src="${window.location.origin}/assets/images/nothing-to-show.svg"
 
                 class="img-fluid mb-2"
 

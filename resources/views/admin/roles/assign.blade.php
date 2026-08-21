@@ -28,31 +28,26 @@
         @php
             /*
             |--------------------------------------------------------------------------
-            | Group permissions by module
+            | Group permissions: Module -> Menu -> Actions
             |--------------------------------------------------------------------------
             |
-            | Example:
+            | e.g. "employee.view" / "employee.create" / ... become:
             |
-            | employee.view
-            | employee.create
-            | employee.edit
-            | employee.delete
+            |   HRM (module)
+            |     Employee (menu)
+            |       - View
+            |       - Create
+            |       - Edit
+            |       - Delete
             |
-            | becomes:
-            |
-            | Employee
-            |   - View
-            |   - Create
-            |   - Edit
-            |   - Delete
-            |
+            | See permission_module_map() / group_permissions_by_module() in
+            | app/Helpers/Helper.php for how a permission's group prefix
+            | (the part before the first dot) is mapped to an ERP module.
             */
 
-            $grouped = split_name($permissions);
+            $tree = group_permissions_by_module($permissions);
 
-            $totalPermissions = collect($grouped)
-                ->flatten()
-                ->count();
+            $totalPermissions = collect($permissions)->count();
         @endphp
 
 
@@ -72,7 +67,7 @@
                     <input type="text"
                            id="permSearch"
                            class="form-control"
-                           placeholder="Search module or permission..."
+                           placeholder="Search module, menu or permission..."
                            autocomplete="off">
                 </div>
 
@@ -109,18 +104,17 @@
 
             <div class="perm-module-list">
 
-                @foreach($grouped as $module => $perms)
+                @foreach($tree as $moduleLabel => $menus)
 
                     @php
-                        $moduleSlug = \Illuminate\Support\Str::slug($module, '-');
-                        $moduleName = \Illuminate\Support\Str::headline($module);
-                        $moduleTotal = count($perms);
+                        $moduleSlug = \Illuminate\Support\Str::slug($moduleLabel, '-');
+                        $moduleTotal = collect($menus)->flatten()->count();
                     @endphp
 
 
-                    <div class="perm-module"
+                    <div class="perm-module mb-3"
                          data-module="{{ $moduleSlug }}"
-                         data-name="{{ strtolower($moduleName) }}">
+                         data-name="{{ strtolower($moduleLabel) }}">
 
 
                         {{-- =================================================
@@ -134,7 +128,7 @@
                             {{-- Module All Switch --}}
                             <label class="perm-switch module-switch"
                                    onclick="event.stopPropagation();"
-                                   title="Enable / disable all {{ $moduleName }} permissions">
+                                   title="Enable / disable every {{ $moduleLabel }} permission">
 
                                 <input type="checkbox"
                                        class="module-select-all-chk"
@@ -149,13 +143,13 @@
                             <div class="perm-module-title">
 
                                 <span class="perm-module-name">
-                                    {{ $moduleName }}
+                                    {{ $moduleLabel }}
                                 </span>
 
                                 <span class="perm-module-meta"
                                       data-role="module-meta"
                                       data-module="{{ $moduleSlug }}">
-                                    0 of {{ $moduleTotal }} selected
+                                    0 of {{ $moduleTotal }} selected &middot; {{ count($menus) }} {{ Str::plural('menu', count($menus)) }}
                                 </span>
 
                             </div>
@@ -177,50 +171,90 @@
 
 
                         {{-- =================================================
-                            MODULE PERMISSIONS
+                            MODULE PERMISSIONS (grouped by menu)
                         ================================================== --}}
 
-                        <div class="perm-module-body">
+                        <div class="perm-module-body perm-module-body--menus">
 
-                            <div class="perm-grid">
+                            @foreach($menus as $menuPrefix => $menuPermissions)
 
-                                @foreach($perms as $permission)
+                                @php
+                                    $menuUid = $moduleSlug . '__' . \Illuminate\Support\Str::slug($menuPrefix, '-');
+                                    $menuLabel = toWord($menuPrefix);
+                                    $menuTotal = count($menuPermissions);
+                                @endphp
 
-                                    @php
-                                        $action = \Illuminate\Support\Str::afterLast(
-                                            $permission,
-                                            '.'
-                                        );
-                                    @endphp
+                                <div class="perm-menu-block"
+                                     data-menu="{{ $menuUid }}"
+                                     data-name="{{ strtolower($menuLabel) }}">
 
+                                    <div class="perm-menu-head">
 
-                                    <label class="perm-chip"
-                                           data-perm-label="{{ strtolower($action) }}">
+                                        <label class="perm-switch perm-menu-switch"
+                                               title="Enable / disable every {{ $menuLabel }} permission">
 
-                                        <input
-                                            type="checkbox"
-                                            name="permissions[]"
-                                            value="{{ $permission }}"
-                                            class="permission-chk"
-                                            data-module="{{ $moduleSlug }}"
-                                            {{ in_array($permission, $rolePermissions) ? 'checked' : '' }}
-                                        >
+                                            <input type="checkbox"
+                                                   class="menu-select-all-chk"
+                                                   data-menu="{{ $menuUid }}"
+                                                   data-module="{{ $moduleSlug }}">
 
+                                            <span class="track"></span>
 
-                                        <span class="tick">
-                                            <i class="ri-check-line"></i>
+                                        </label>
+
+                                        <span class="perm-menu-name">
+                                            {{ $menuLabel }}
                                         </span>
 
-
-                                        <span class="perm-chip-label">
-                                            {{ \Illuminate\Support\Str::headline($action) }}
+                                        <span class="perm-menu-badge"
+                                              data-role="menu-badge"
+                                              data-menu="{{ $menuUid }}">
+                                            0/{{ $menuTotal }}
                                         </span>
 
-                                    </label>
+                                    </div>
 
-                                @endforeach
+                                    <div class="perm-menu-grid">
 
-                            </div>
+                                        @foreach($menuPermissions as $permission)
+
+                                            @php
+                                                $action = \Illuminate\Support\Str::afterLast($permission->name, '.');
+                                            @endphp
+
+
+                                            <label class="perm-chip"
+                                                   data-perm-label="{{ strtolower($action) }}">
+
+                                                <input
+                                                    type="checkbox"
+                                                    name="permissions[]"
+                                                    value="{{ $permission->name }}"
+                                                    class="permission-chk"
+                                                    data-module="{{ $moduleSlug }}"
+                                                    data-menu="{{ $menuUid }}"
+                                                    {{ in_array($permission->name, $rolePermissions) ? 'checked' : '' }}
+                                                >
+
+
+                                                <span class="tick">
+                                                    <i class="ri-check-line"></i>
+                                                </span>
+
+
+                                                <span class="perm-chip-label">
+                                                    {{ \Illuminate\Support\Str::headline($action) }}
+                                                </span>
+
+                                            </label>
+
+                                        @endforeach
+
+                                    </div>
+
+                                </div>
+
+                            @endforeach
 
                         </div>
 
@@ -338,6 +372,9 @@
     const modules =
         root.querySelectorAll('.perm-module');
 
+    const menuBlocks =
+        root.querySelectorAll('.perm-menu-block');
+
     const totalPermissions =
         permissionCheckboxes.length;
 
@@ -345,7 +382,7 @@
 
     /*
     |--------------------------------------------------------------------------
-    | Get module permissions
+    | Query helpers
     |--------------------------------------------------------------------------
     */
 
@@ -353,6 +390,15 @@
 
         return root.querySelectorAll(
             '.permission-chk[data-module="' + moduleSlug + '"]'
+        );
+
+    }
+
+
+    function getMenuPermissions(menuUid) {
+
+        return root.querySelectorAll(
+            '.permission-chk[data-menu="' + menuUid + '"]'
         );
 
     }
@@ -377,6 +423,75 @@
         chip.classList.toggle(
             'is-checked',
             checkbox.checked
+        );
+
+    }
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Refresh a single menu's state (toggle + badge)
+    |--------------------------------------------------------------------------
+    */
+
+    function refreshMenu(menuUid) {
+
+        const permissions =
+            getMenuPermissions(menuUid);
+
+        const menu =
+            root.querySelector(
+                '.perm-menu-block[data-menu="' + menuUid + '"]'
+            );
+
+        if (!menu) {
+            return;
+        }
+
+        const menuSwitch =
+            menu.querySelector('.menu-select-all-chk');
+
+        const menuBadge =
+            menu.querySelector('[data-role="menu-badge"]');
+
+        let selected = 0;
+
+        permissions.forEach(function (checkbox) {
+
+            if (checkbox.checked) {
+                selected++;
+            }
+
+        });
+
+        const total = permissions.length;
+
+        if (menuSwitch) {
+
+            menuSwitch.checked =
+                total > 0 && selected === total;
+
+            menuSwitch.indeterminate =
+                selected > 0 && selected < total;
+
+        }
+
+        if (menuBadge) {
+
+            menuBadge.textContent =
+                selected + '/' + total;
+
+            menuBadge.classList.toggle(
+                'is-active',
+                selected > 0
+            );
+
+        }
+
+        menu.classList.toggle(
+            'has-selection',
+            selected > 0
         );
 
     }
@@ -418,6 +533,9 @@
             module.querySelector(
                 '[data-role="module-badge"]'
             );
+
+        const menuCount =
+            module.querySelectorAll('.perm-menu-block').length;
 
 
         let selected = 0;
@@ -467,7 +585,9 @@
                 selected +
                 ' of ' +
                 total +
-                ' selected';
+                ' selected · ' +
+                menuCount +
+                (menuCount === 1 ? ' menu' : ' menus');
 
         }
 
@@ -578,27 +698,23 @@
 
     function refreshAll() {
 
-        const processedModules = {};
+        menuBlocks.forEach(function (menu) {
 
-        permissionCheckboxes.forEach(function (checkbox) {
-
-            paintPermission(checkbox);
-
-
-            const moduleSlug =
-                checkbox.getAttribute('data-module');
-
-
-            if (!processedModules[moduleSlug]) {
-
-                refreshModule(moduleSlug);
-
-                processedModules[moduleSlug] = true;
-
-            }
+            refreshMenu(
+                menu.getAttribute('data-menu')
+            );
 
         });
 
+        modules.forEach(function (module) {
+
+            refreshModule(
+                module.getAttribute('data-module')
+            );
+
+        });
+
+        permissionCheckboxes.forEach(paintPermission);
 
         refreshGlobal();
 
@@ -624,6 +740,11 @@
                 const moduleSlug =
                     checkbox.getAttribute('data-module');
 
+                const menuUid =
+                    checkbox.getAttribute('data-menu');
+
+
+                refreshMenu(menuUid);
 
                 refreshModule(moduleSlug);
 
@@ -633,6 +754,51 @@
         );
 
     });
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MENU: Select All
+    |--------------------------------------------------------------------------
+    */
+
+    root
+        .querySelectorAll('.menu-select-all-chk')
+        .forEach(function (menuSwitch) {
+
+            menuSwitch.addEventListener(
+                'change',
+                function () {
+
+                    const menuUid =
+                        menuSwitch.getAttribute('data-menu');
+
+                    const moduleSlug =
+                        menuSwitch.getAttribute('data-module');
+
+                    const permissions =
+                        getMenuPermissions(menuUid);
+
+                    permissions.forEach(function (checkbox) {
+
+                        checkbox.checked =
+                            menuSwitch.checked;
+
+                        paintPermission(checkbox);
+
+                    });
+
+                    refreshMenu(menuUid);
+
+                    refreshModule(moduleSlug);
+
+                    refreshGlobal();
+
+                }
+            );
+
+        });
 
 
 
@@ -678,6 +844,31 @@
                     );
 
 
+                    /*
+                    | Refresh every menu inside this module too,
+                    | so each menu's own toggle stays in sync.
+                    */
+
+                    const module =
+                        root.querySelector(
+                            '.perm-module[data-module="' + moduleSlug + '"]'
+                        );
+
+                    if (module) {
+
+                        module
+                            .querySelectorAll('.perm-menu-block')
+                            .forEach(function (menu) {
+
+                                refreshMenu(
+                                    menu.getAttribute('data-menu')
+                                );
+
+                            });
+
+                    }
+
+
                     refreshModule(moduleSlug);
 
                     refreshGlobal();
@@ -716,9 +907,17 @@
 
                 /*
                 |--------------------------------------------------------------------------
-                | Refresh every module
+                | Refresh every menu + module
                 |--------------------------------------------------------------------------
                 */
+
+                menuBlocks.forEach(function (menu) {
+
+                    refreshMenu(
+                        menu.getAttribute('data-menu')
+                    );
+
+                });
 
                 modules.forEach(function (module) {
 
@@ -818,43 +1017,72 @@
 
 
                     const moduleMatches =
-                        moduleName.indexOf(query) !== -1;
+                        !!query && moduleName.indexOf(query) !== -1;
 
 
-                    let visiblePermissions = 0;
+                    let visiblePermissionsInModule = 0;
 
 
                     /*
                     |--------------------------------------------------------------------------
-                    | Filter permissions
+                    | Filter menu blocks, then chips within each menu
                     |--------------------------------------------------------------------------
                     */
 
                     module
-                        .querySelectorAll('.perm-chip')
-                        .forEach(function (chip) {
+                        .querySelectorAll('.perm-menu-block')
+                        .forEach(function (menuBlock) {
+
+                            const menuName =
+                                menuBlock.getAttribute('data-name') || '';
+
+                            const menuMatches =
+                                !!query && menuName.indexOf(query) !== -1;
+
+                            let visiblePermissions = 0;
+
+                            menuBlock
+                                .querySelectorAll('.perm-chip')
+                                .forEach(function (chip) {
+
+                                    const permissionName =
+                                        chip.getAttribute(
+                                            'data-perm-label'
+                                        ) || '';
+
+                                    const visible =
+                                        !query ||
+                                        moduleMatches ||
+                                        menuMatches ||
+                                        permissionName.indexOf(query) !== -1;
+
+                                    chip.classList.toggle(
+                                        'perm-hidden-row',
+                                        !visible
+                                    );
+
+                                    if (visible) {
+                                        visiblePermissions++;
+                                    }
+
+                                });
 
 
-                            const permissionName =
-                                chip.getAttribute(
-                                    'data-perm-label'
-                                ) || '';
-
-
-                            const visible =
+                            const showMenu =
                                 !query ||
                                 moduleMatches ||
-                                permissionName.indexOf(query) !== -1;
+                                menuMatches ||
+                                visiblePermissions > 0;
 
 
-                            chip.classList.toggle(
+                            menuBlock.classList.toggle(
                                 'perm-hidden-row',
-                                !visible
+                                !showMenu
                             );
 
 
-                            if (visible) {
-                                visiblePermissions++;
+                            if (showMenu) {
+                                visiblePermissionsInModule++;
                             }
 
                         });
@@ -869,7 +1097,7 @@
                     const showModule =
                         !query ||
                         moduleMatches ||
-                        visiblePermissions > 0;
+                        visiblePermissionsInModule > 0;
 
 
                     module.classList.toggle(

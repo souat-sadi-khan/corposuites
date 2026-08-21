@@ -24,7 +24,8 @@ class AttendanceRequest extends FormRequest
             'attendance_date' => 'required|date',
             'check_in' => 'nullable|date_format:H:i',
             'check_out' => 'nullable|date_format:H:i|after:check_in',
-            'attendance_status' => 'required|in:present,absent,half_day,on_leave,late',
+            'attendance_status' => 'required|in:present,absent,half_day,on_leave,late,early_leave',
+            'overtime_hours' => 'nullable|numeric|min:0|max:24',
             'remarks' => 'nullable|string|max:1000',
             'status' => 'required|boolean',
         ];

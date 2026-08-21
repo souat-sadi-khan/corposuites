@@ -38,7 +38,7 @@ var DataTableSalaryComponents = function () {
             language: {
                 emptyTable: `
                     <div class="text-center py-4">
-                        <img src="${window.location.origin}/assets/images/nothing-to-show.png" class="img-fluid mb-2" style="max-width:150px">
+                        <img src="${window.location.origin}/assets/images/nothing-to-show.svg" class="img-fluid mb-2" style="max-width:150px">
                         <p class="text-muted mb-0">No salary components available</p>
                     </div>
                 `
@@ -65,6 +65,52 @@ var DataTableSalaryComponents = function () {
         }
     };
 }();
+
+
+// =====================================================
+// Calculation Type — Value label/help text
+// =====================================================
+
+var SALARY_COMPONENT_CALC_TYPE_LABELS = {
+    fixed: {
+        label: 'Value',
+        help: 'A flat amount added to (earning) or deducted from (deduction) each pay period.'
+    },
+    percentage: {
+        label: 'Value (%)',
+        help: 'A percentage of the employee\'s basic salary for that period, recalculated automatically each payroll run.'
+    },
+    per_occurrence: {
+        label: 'Rate per Occurrence',
+        help: 'A flat rate multiplied by however many times this happens in a period (e.g. "$10 per late day") — the count is entered when generating each employee\'s payroll.'
+    }
+};
+
+function updateSalaryComponentValueUi(form) {
+
+    var $form = $(form);
+
+    var calcType = $form
+        .find('[name="calculation_type"]')
+        .val() || 'fixed';
+
+    var config = SALARY_COMPONENT_CALC_TYPE_LABELS[calcType] || SALARY_COMPONENT_CALC_TYPE_LABELS.fixed;
+
+    $form.find('.salary-component-value-label').contents().first().replaceWith(config.label + ' ');
+    $form.find('.salary-component-value-help').text(config.help);
+}
+
+$(document).on('change', '.salary-component-calc-type', function () {
+    updateSalaryComponentValueUi($(this).closest('form'));
+});
+
+$(document).on('shown.bs.modal', '#modal_remote', function () {
+
+    $(this).find('form.ajax-form').each(function () {
+        updateSalaryComponentValueUi($(this));
+    });
+
+});
 
 $('.as-select').select2({
     width: '100%',

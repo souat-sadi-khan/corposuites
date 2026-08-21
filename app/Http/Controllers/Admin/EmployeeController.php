@@ -11,6 +11,7 @@ use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\EmployeeType;
 use App\Models\EmploymentStatus;
+use App\Models\SalaryStructure;
 use App\Models\Shift;
 use App\Services\EmployeeService;
 use App\Traits\ActivityLogger;
@@ -341,6 +342,43 @@ class EmployeeController extends Controller
         $roles = Role::where('guard_name', 'admin')->get();
 
         return view('admin.employees.create-login', compact('employee', 'roles'));
+    }
+
+    /**
+     * Small "Purpose / Issue Date" form loaded into the shared remote
+     * modal — submits as a plain GET, target="_blank" straight to the
+     * certificate print route, the same "configure before printing" flow
+     * Barcode Generator's own index form already established, rather
+     * than a two-step AJAX submission.
+     */
+    public function salaryCertificateForm(Employee $employee)
+    {
+        return view('admin.employees.salary-certificate-form', compact('employee'));
+    }
+
+    /**
+     * Printable salary certificate for one employee, drawn from their
+     * current active Salary Structure — the same "active, latest
+     * effective_date" resolution PayrollController::create() already
+     * uses, since a certificate is about the employee's current pay, not
+     * one specific past payroll run. A standalone page (not the admin
+     * layout), meant to be printed / saved as a PDF via the browser's
+     * own print dialog, matching every other print view in this project.
+     */
+    public function salaryCertificate(Employee $employee, Request $request)
+    {
+        $employee->load(['department', 'designation']);
+
+        $structure = SalaryStructure::where('employee_id', $employee->id)
+            ->active()
+            ->orderByDesc('effective_date')
+            ->with('items.salaryComponent')
+            ->first();
+
+        $purpose = trim((string) $request->query('purpose')) ?: 'whatever purpose it may serve';
+        $issueDate = $request->query('issue_date') ?: now()->toDateString();
+
+        return view('admin.employees.salary-certificate', compact('employee', 'structure', 'purpose', 'issueDate'));
     }
 
     /**

@@ -25,6 +25,13 @@
     <!-- Navigation -->
     <nav class="sb-nav" id="sidebarNav">
 
+        <!-- Collapsed-mode scroll arrows (shown/hidden by theme.js only
+             when the icon list overflows) — replaces the scrollbar so a
+             compacted sidebar never shows one. -->
+        <button type="button" class="sb-nav-arrow sb-nav-arrow-up" id="sbNavArrowUp" aria-label="Scroll menu up" tabindex="-1">
+            <i class="ri-arrow-up-s-line"></i>
+        </button>
+
         <!-- ── MAIN ── -->
         <div class="sb-label">Main</div>
 
@@ -530,5 +537,9 @@
                 <span class="n-lbl">Documentation</span>
             </a>
         </div>
+
+        <button type="button" class="sb-nav-arrow sb-nav-arrow-down" id="sbNavArrowDown" aria-label="Scroll menu down" tabindex="-1">
+            <i class="ri-arrow-down-s-line"></i>
+        </button>
     </nav>
 </aside>

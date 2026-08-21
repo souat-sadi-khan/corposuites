@@ -359,6 +359,192 @@
             </div>
         </div>
 
+        {{-- Overtime --}}
+        <div class="settings-card mb-3">
+            <div class="settings-card-head">
+                <div>
+                    <h5>Overtime</h5>
+                    <p>How overtime hours recorded on Attendance are priced when Payroll is generated.</p>
+                </div>
+
+                <i class="ri-timer-flash-line"></i>
+            </div>
+
+            <div class="row fm-body g-3">
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input type="checkbox"
+                                name="hrm_overtime_enabled"
+                                class="form-check-input"
+                                id="overtimeEnabledSwitch"
+                                value="1"
+                                {{ get_settings('hrm_overtime_enabled') ? 'checked' : '' }}>
+
+                        <label class="form-check-label" for="overtimeEnabledSwitch">
+                            Enable Overtime Pay
+                        </label>
+                    </div>
+                    <small class="text-muted">
+                        When off, Payroll ignores any overtime hours recorded on Attendance entirely.
+                    </small>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Calculation Method</label>
+
+                    <select name="hrm_overtime_calculation_method" id="overtimeMethodSelect" class="form-control select" required>
+                        @php $currentOtMethod = get_settings('hrm_overtime_calculation_method', 'multiplier'); @endphp
+                        <option value="multiplier" {{ $currentOtMethod === 'multiplier' ? 'selected' : '' }}>Multiplier (e.g. 1.5x hourly rate)</option>
+                        <option value="flat_rate" {{ $currentOtMethod === 'flat_rate' ? 'selected' : '' }}>Flat Rate (a fixed amount per OT hour)</option>
+                        <option value="tiered" {{ $currentOtMethod === 'tiered' ? 'selected' : '' }}>Tiered (different multipliers as OT hours build up)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Standard Monthly Hours</label>
+
+                    <input type="number"
+                            step="1"
+                            min="1"
+                            max="744"
+                            name="hrm_overtime_standard_monthly_hours"
+                            class="form-control"
+                            value="{{ get_settings('hrm_overtime_standard_monthly_hours', 208) }}"
+                            required>
+
+                    <small class="text-muted">
+                        Used to turn a monthly/daily/commission employee's period earnings into an hourly rate
+                        (e.g. 8 hours &times; 26 working days = 208). Not used by the Flat Rate method.
+                    </small>
+                </div>
+
+                <div class="col-md-6 ot-method-field ot-method-multiplier">
+                    <label class="form-label">Overtime Multiplier</label>
+
+                    <input type="number"
+                            step="0.1"
+                            min="1"
+                            max="10"
+                            name="hrm_overtime_multiplier"
+                            class="form-control"
+                            value="{{ get_settings('hrm_overtime_multiplier', 1.5) }}">
+
+                    <small class="text-muted">Every overtime hour is paid at this multiple of the employee's derived hourly rate.</small>
+                </div>
+
+                <div class="col-md-6 ot-method-field ot-method-flat_rate">
+                    <label class="form-label">Flat Rate per OT Hour</label>
+
+                    <input type="number"
+                            step="0.01"
+                            min="0"
+                            name="hrm_overtime_flat_rate"
+                            class="form-control"
+                            value="{{ get_settings('hrm_overtime_flat_rate', 0) }}">
+
+                    <small class="text-muted">Every overtime hour is paid this exact amount, regardless of the employee's own salary.</small>
+                </div>
+
+                <div class="col-12 ot-method-field ot-method-tiered">
+                    <div class="alert alert-info d-flex align-items-start gap-2 mb-3" role="alert">
+                        <i class="ri-information-line fs-5"></i>
+                        <div>
+                            The first Tier 1 hours are paid at the Tier 1 multiplier, the next Tier 2 hours at the
+                            Tier 2 multiplier, and anything beyond that at the Tier 3 multiplier — all against the
+                            employee's own derived hourly rate.
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Tier 1 Hours</label>
+                            <input type="number" step="0.25" min="0.25" max="24" name="hrm_overtime_tier1_hours" class="form-control" value="{{ get_settings('hrm_overtime_tier1_hours', 2) }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tier 1 Multiplier</label>
+                            <input type="number" step="0.1" min="1" max="10" name="hrm_overtime_tier1_multiplier" class="form-control" value="{{ get_settings('hrm_overtime_tier1_multiplier', 1.5) }}">
+                        </div>
+                        <div class="col-md-4"></div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Tier 2 Hours (after Tier 1)</label>
+                            <input type="number" step="0.25" min="0.25" max="24" name="hrm_overtime_tier2_hours" class="form-control" value="{{ get_settings('hrm_overtime_tier2_hours', 2) }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tier 2 Multiplier</label>
+                            <input type="number" step="0.1" min="1" max="10" name="hrm_overtime_tier2_multiplier" class="form-control" value="{{ get_settings('hrm_overtime_tier2_multiplier', 2) }}">
+                        </div>
+                        <div class="col-md-4"></div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Tier 3 Multiplier (all remaining hours)</label>
+                            <input type="number" step="0.1" min="1" max="10" name="hrm_overtime_tier3_multiplier" class="form-control" value="{{ get_settings('hrm_overtime_tier3_multiplier', 2.5) }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Attendance Deductions --}}
+        <div class="settings-card mb-3">
+            <div class="settings-card-head">
+                <div>
+                    <h5>Attendance Deductions</h5>
+                    <p>Automatic pay deductions for late arrivals, early departures, and unapproved absences — computed from Attendance when Payroll is generated.</p>
+                </div>
+
+                <i class="ri-alarm-warning-line"></i>
+            </div>
+
+            <div class="row fm-body g-3">
+
+                <div class="col-md-4">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="hrm_late_deduction_enabled" class="form-check-input" id="lateDeductionSwitch" value="1" {{ get_settings('hrm_late_deduction_enabled') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="lateDeductionSwitch">Deduct for Late Arrivals</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Grace Count (per period)</label>
+                    <input type="number" step="1" min="0" max="60" name="hrm_late_deduction_grace_count" class="form-control" value="{{ get_settings('hrm_late_deduction_grace_count', 3) }}">
+                    <small class="text-muted">First this many late days per pay period are free.</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Amount per Late Beyond Grace</label>
+                    <input type="number" step="0.01" min="0" name="hrm_late_deduction_per_occurrence" class="form-control" value="{{ get_settings('hrm_late_deduction_per_occurrence', 0) }}">
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="hrm_early_leave_deduction_enabled" class="form-check-input" id="earlyLeaveDeductionSwitch" value="1" {{ get_settings('hrm_early_leave_deduction_enabled') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="earlyLeaveDeductionSwitch">Deduct for Early Leaves</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Grace Count (per period)</label>
+                    <input type="number" step="1" min="0" max="60" name="hrm_early_leave_deduction_grace_count" class="form-control" value="{{ get_settings('hrm_early_leave_deduction_grace_count', 3) }}">
+                    <small class="text-muted">First this many early-leave days per pay period are free.</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Amount per Early Leave Beyond Grace</label>
+                    <input type="number" step="0.01" min="0" name="hrm_early_leave_deduction_per_occurrence" class="form-control" value="{{ get_settings('hrm_early_leave_deduction_per_occurrence', 0) }}">
+                </div>
+
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="hrm_absent_deduction_enabled" class="form-check-input" id="absentDeductionSwitch" value="1" {{ get_settings('hrm_absent_deduction_enabled') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="absentDeductionSwitch">Deduct for Unapproved Absences</label>
+                    </div>
+                    <small class="text-muted">
+                        Any day marked "Absent" that isn't already covered by an approved unpaid Leave Request
+                        docks one day's pay (the same per-day rate used for unpaid leave). Leave this off if
+                        absences should only ever be handled through Leave Requests.
+                    </small>
+                </div>
+
+            </div>
+        </div>
+
         <div class="settings-save-box mt-3">
             <button type="submit" id="submit" class="settings-submit">
                 <i class="ri-save-3-line"></i>
@@ -382,6 +568,15 @@
                 var values = $(this).val() || [];
                 $('#weekendDaysHidden').val(values.join(','));
             });
+
+            function toggleOvertimeMethodFields() {
+                var method = $('#overtimeMethodSelect').val();
+                $('.ot-method-field').hide();
+                $('.ot-method-' + method).show();
+            }
+
+            $('#overtimeMethodSelect').on('change', toggleOvertimeMethodFields);
+            toggleOvertimeMethodFields();
 
             $('#payrollCutoffSelect').on('change', function () {
                 var day = parseInt($(this).val(), 10);

@@ -30,7 +30,7 @@
         <div class="cat-tree" id="categoryTree">
             @if($categories->where('parent_id', null)->isEmpty())
                 <div class="text-center py-4">
-                    <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                    <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                     <p class="text-muted mb-0">No categories available</p>
                 </div>
             @else

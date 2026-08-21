@@ -53,6 +53,27 @@ class HrmSettingsController extends Controller
 
             // Payroll
             'hrm_payroll_cutoff_day' => 'nullable|integer|min:0|max:28',
+
+            // Overtime
+            'hrm_overtime_enabled' => 'nullable|boolean',
+            'hrm_overtime_calculation_method' => 'required|in:multiplier,flat_rate,tiered',
+            'hrm_overtime_multiplier' => 'nullable|numeric|min:1|max:10',
+            'hrm_overtime_flat_rate' => 'nullable|numeric|min:0',
+            'hrm_overtime_standard_monthly_hours' => 'required|numeric|min:1|max:744',
+            'hrm_overtime_tier1_hours' => 'nullable|numeric|min:0.25|max:24',
+            'hrm_overtime_tier1_multiplier' => 'nullable|numeric|min:1|max:10',
+            'hrm_overtime_tier2_hours' => 'nullable|numeric|min:0.25|max:24',
+            'hrm_overtime_tier2_multiplier' => 'nullable|numeric|min:1|max:10',
+            'hrm_overtime_tier3_multiplier' => 'nullable|numeric|min:1|max:10',
+
+            // Attendance Deductions
+            'hrm_late_deduction_enabled' => 'nullable|boolean',
+            'hrm_late_deduction_grace_count' => 'nullable|integer|min:0|max:60',
+            'hrm_late_deduction_per_occurrence' => 'nullable|numeric|min:0',
+            'hrm_early_leave_deduction_enabled' => 'nullable|boolean',
+            'hrm_early_leave_deduction_grace_count' => 'nullable|integer|min:0|max:60',
+            'hrm_early_leave_deduction_per_occurrence' => 'nullable|numeric|min:0',
+            'hrm_absent_deduction_enabled' => 'nullable|boolean',
         ], [
             'hrm_office_latitude.required_if' => 'Set the office location before turning on geofence validation.',
             'hrm_office_longitude.required_if' => 'Set the office location before turning on geofence validation.',
@@ -71,6 +92,10 @@ class HrmSettingsController extends Controller
         // Checkbox fields are omitted from the request entirely when unchecked,
         // so they need an explicit false rather than being silently skipped.
         $settings['hrm_geofence_required'] = $request->boolean('hrm_geofence_required');
+        $settings['hrm_overtime_enabled'] = $request->boolean('hrm_overtime_enabled');
+        $settings['hrm_late_deduction_enabled'] = $request->boolean('hrm_late_deduction_enabled');
+        $settings['hrm_early_leave_deduction_enabled'] = $request->boolean('hrm_early_leave_deduction_enabled');
+        $settings['hrm_absent_deduction_enabled'] = $request->boolean('hrm_absent_deduction_enabled');
 
         foreach ($settings as $key => $value) {
             SystemSetting::updateOrCreate(

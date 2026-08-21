@@ -104,7 +104,7 @@
                 <tr>
                     <td colspan="4" class="text-center text-muted">
                         <div class="text-center py-4">
-                            <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                            <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                             <p class="text-muted mb-0">No leave records in this range.</p>
                         </div>
                     </td>

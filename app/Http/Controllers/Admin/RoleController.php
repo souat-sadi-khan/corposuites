@@ -107,7 +107,7 @@ class RoleController extends Controller
     {
         $role = Role::with('permissions')->findOrFail($id);
 
-        $groupedPermissions = split_name($role->permissions);
+        $groupedPermissions = group_permissions_by_module($role->permissions);
 
         return view(
             'admin.roles.show',

@@ -651,6 +651,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.getElementById('sidebar');
     const fullLogo = document.getElementById('fullLogo');
     const miniLogo = document.getElementById('miniLogo');
+    const sidebarNav = document.getElementById('sidebarNav');
+    const navArrowUp = document.getElementById('sbNavArrowUp');
+    const navArrowDown = document.getElementById('sbNavArrowDown');
 
     const STORAGE_KEY = 'sidebarCollapsed';
 
@@ -663,6 +666,77 @@ document.addEventListener('DOMContentLoaded', function () {
             fullLogo.style.display = 'inline-flex';
             miniLogo.style.display = 'none';
             $('.main-area').removeClass('is-collapsed');
+        }
+    }
+
+    /* ──────────────────────────────────────────────────
+       COLLAPSED SIDEBAR — scroll via up/down arrows
+       instead of a scrollbar (arrows only render when
+       the icon list actually overflows the viewport).
+    ────────────────────────────────────────────────── */
+    function refreshNavArrows() {
+        if (!sidebarNav || !navArrowUp || !navArrowDown) return;
+
+        var canScroll = sidebar.classList.contains('sidebar-collapsed') &&
+            (sidebarNav.scrollHeight - sidebarNav.clientHeight > 4);
+
+        sidebar.classList.toggle('has-nav-arrows', canScroll);
+
+        if (!canScroll) {
+            navArrowUp.classList.remove('is-visible');
+            navArrowDown.classList.remove('is-visible');
+            return;
+        }
+
+        navArrowUp.classList.toggle('is-visible', sidebarNav.scrollTop > 4);
+        navArrowDown.classList.toggle(
+            'is-visible',
+            sidebarNav.scrollTop < (sidebarNav.scrollHeight - sidebarNav.clientHeight - 4)
+        );
+    }
+
+    function scrollNavBy(amount) {
+        if (!sidebarNav) return;
+        sidebarNav.scrollBy({ top: amount, behavior: 'smooth' });
+        setTimeout(refreshNavArrows, 200);
+    }
+
+    if (navArrowUp) {
+        navArrowUp.addEventListener('click', function () { scrollNavBy(-140); });
+    }
+    if (navArrowDown) {
+        navArrowDown.addEventListener('click', function () { scrollNavBy(140); });
+    }
+    if (sidebarNav) {
+        var navScrollTimer = null;
+        sidebarNav.addEventListener('scroll', function () {
+            clearTimeout(navScrollTimer);
+            navScrollTimer = setTimeout(refreshNavArrows, 60);
+        });
+    }
+    window.addEventListener('resize', refreshNavArrows);
+
+    /* ──────────────────────────────────────────────────
+       Bring the current page's menu item into view inside
+       the sidebar on load — instantly, no animation — so a
+       refresh always shows the active item even if the menu
+       had been scrolled to the bottom before reloading.
+    ────────────────────────────────────────────────── */
+    function revealActiveNavItem() {
+        if (!sidebarNav) return;
+
+        var actives = sidebarNav.querySelectorAll('.nav-row.is-active');
+        if (!actives.length) return;
+
+        var active = actives[actives.length - 1];
+        var navRect = sidebarNav.getBoundingClientRect();
+        var activeRect = active.getBoundingClientRect();
+
+        var itemTop = (activeRect.top - navRect.top) + sidebarNav.scrollTop;
+        var itemBottom = itemTop + activeRect.height;
+
+        if (itemTop < sidebarNav.scrollTop || itemBottom > sidebarNav.scrollTop + sidebarNav.clientHeight) {
+            sidebarNav.scrollTop = Math.max(0, itemTop - (sidebarNav.clientHeight / 2));
         }
     }
 
@@ -686,6 +760,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update logo
         updateLogo();
 
+        // Re-check whether the collapsed icon list needs scroll arrows
+        refreshNavArrows();
+
     });
 
     observer.observe(sidebar, {
@@ -703,6 +780,9 @@ document.addEventListener('DOMContentLoaded', function () {
             $('#' + $(this).data('target')).show();
         });
     }
+
+    revealActiveNavItem();
+    refreshNavArrows();
 });
 
 document.addEventListener('DOMContentLoaded', function () {

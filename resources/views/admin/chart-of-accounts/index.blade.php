@@ -30,7 +30,7 @@
         <div class="coa-tree" id="chartOfAccountTree">
             @if($accounts->where('parent_id', null)->isEmpty())
                 <div class="text-center py-4">
-                    <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                    <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                     <p class="text-muted mb-0">No accounts available</p>
                 </div>
             @else

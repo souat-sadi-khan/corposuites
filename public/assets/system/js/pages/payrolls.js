@@ -49,7 +49,7 @@ var DataTablePayrolls = function () {
             language: {
                 emptyTable: `
                     <div class="text-center py-4">
-                        <img src="${window.location.origin}/assets/images/nothing-to-show.png" class="img-fluid mb-2" style="max-width:150px">
+                        <img src="${window.location.origin}/assets/images/nothing-to-show.svg" class="img-fluid mb-2" style="max-width:150px">
                         <p class="text-muted mb-0">No payroll records available</p>
                     </div>
                 `
@@ -96,13 +96,67 @@ function togglePayrollCommissionField($form) {
 
 $(document).on('change', '[name="employee_id"]', function () {
     togglePayrollCommissionField($(this).closest('form'));
+    togglePayrollOccurrenceFields($(this).closest('form'));
 });
 
 $(document).on('shown.bs.modal', '#modal_remote', function () {
     $(this).find('form.ajax-form').each(function () {
         togglePayrollCommissionField($(this));
+        togglePayrollOccurrenceFields($(this));
     });
 });
+
+// =====================================================
+// Occurrence Count Fields (one per per-occurrence
+// component on the selected employee's active structure)
+// =====================================================
+function togglePayrollOccurrenceFields($form) {
+
+    var $select = $form.find('[name="employee_id"]');
+    var $option = $select.find('option:selected');
+    var $wrap = $form.find('.payroll-occurrence-fields');
+    var $rows = $form.find('.payroll-occurrence-rows');
+
+    var components = [];
+
+    try {
+        components = JSON.parse($option.attr('data-occurrence-components') || '[]');
+    } catch (e) {
+        components = [];
+    }
+
+    $rows.empty();
+
+    if (!components.length) {
+        $wrap.hide();
+        return;
+    }
+
+    components.forEach(function (component) {
+
+        var $row = $(
+            '<div class="d-flex align-items-center gap-2 mb-2">' +
+                '<label class="mb-0 flex-shrink-0" style="min-width:200px;">' +
+                    $('<span></span>').text(component.name).html() +
+                    ' <small class="text-muted">(' + formatPayrollAmount(component.rate) + '/occurrence)</small>' +
+                '</label>' +
+                '<input type="number" min="0" step="1" class="form-control form-control-sm" ' +
+                    'name="occurrence_counts[' + component.id + ']" placeholder="0" value="0" required>' +
+            '</div>'
+        );
+
+        $rows.append($row);
+    });
+
+    $wrap.show();
+}
+
+function formatPayrollAmount(amount) {
+    return Number(amount || 0).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
 
 // =====================================================
 // Mark as Paid

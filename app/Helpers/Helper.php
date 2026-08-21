@@ -110,6 +110,154 @@ if (!function_exists('toSpan')) {
     }
 }
 
+if (!function_exists('permission_module_map')) {
+    /**
+     * Static map of ERP module -> ordered permission "group" prefixes
+     * (the part of a permission name before the first dot).
+     *
+     * This mirrors the section comments inside RolePermissionSeeder.php
+     * exactly, so the module-wise permission assigner UI groups every
+     * permission under the same module a developer would expect from
+     * that seeder file. Keep this in sync whenever a new module/group
+     * prefix is added to the seeder.
+     */
+    function permission_module_map(): array
+    {
+        return [
+            'Base Admin Panel' => ['user', 'role', 'settings', 'dms', 'activity-log'],
+
+            'Workflow Engine' => [
+                'workflow-template', 'workflow-definition', 'workflow-status',
+                'workflow-notification-trigger', 'approval-delegation',
+            ],
+
+            'HRM' => [
+                'employee-type', 'employment-status', 'shift', 'holiday', 'leave-type',
+                'salary-component', 'skill', 'employee', 'employee-document',
+                'emergency-contact', 'bank-account', 'education', 'experience',
+                'transfer', 'promotion', 'resignation', 'termination', 'attendance',
+                'attendance-adjustment', 'leave-balance', 'leave-request',
+                'salary-structure', 'salary-template', 'minimum-wage-rule', 'payroll',
+                'expense-claim', 'employee-loan', 'performance-review', 'hr-report',
+                'leave-report', 'department', 'designation',
+            ],
+
+            'CRM' => [
+                'lead-source', 'lead-status', 'lead', 'contact', 'company',
+                'relationship-history', 'opportunity', 'activity', 'follow-up',
+                'email-communication', 'quotation', 'sales-forecast',
+                'crm-dashboard', 'crm-report',
+            ],
+
+            'Product Management' => [
+                'category', 'brand', 'unit', 'unit-conversion', 'product-attribute',
+                'attribute-value', 'product', 'product-variant', 'product-image',
+                'product-bundle', 'price-tier', 'product-price', 'discount-rule',
+                'barcode-generator', 'product-report',
+            ],
+
+            'Sales' => [
+                'customer', 'customer-group', 'payment-term', 'price-list',
+                'sales-quotation', 'sales-order', 'delivery', 'delivery-note',
+                'sales-invoice', 'credit-note', 'sales-return', 'pos',
+                'sales-target', 'sales-commission', 'sales-report',
+            ],
+
+            'Purchase' => [
+                'vendor', 'vendor-group', 'vendor-performance-review',
+                'purchase-request', 'rfq', 'supplier-quotation', 'purchase-order',
+                'goods-receipt', 'purchase-invoice', 'debit-note',
+                'purchase-return', 'purchase-report',
+            ],
+
+            'Inventory' => [
+                'warehouse', 'warehouse-location', 'stock-entry', 'opening-stock',
+                'stock-adjustment', 'stock-transfer', 'stock-count', 'product-batch',
+                'product-serial', 'inventory-transaction', 'stock-valuation',
+                'reorder-level', 'low-stock-alert', 'inventory-report',
+            ],
+
+            'Accounting' => [
+                'chart-of-account', 'account-type', 'journal-entry', 'general-ledger',
+                'cash-book', 'finance-bank-account', 'bank-transaction',
+                'bank-reconciliation', 'accounts-receivable', 'accounts-payable',
+                'payment-receive', 'payment-make', 'trial-balance', 'profit-and-loss',
+                'balance-sheet', 'cash-flow', 'tax-rate', 'financial-report',
+            ],
+
+            'Asset Management' => [
+                'asset-category', 'asset', 'asset-purchase', 'asset-assignment',
+                'employee-asset-tracking', 'asset-location', 'asset-location-movement',
+                'asset-maintenance-schedule', 'asset-maintenance-record',
+                'asset-depreciation', 'asset-disposal', 'asset-report',
+            ],
+
+            'Project Management' => [
+                'client', 'project', 'project-budget', 'project-team-member',
+                'project-milestone', 'project-task', 'task-board', 'gantt-chart',
+                'project-task-dependency', 'project-time-entry', 'project-timesheet',
+                'project-expense', 'project-invoice', 'project-report',
+            ],
+
+            'Support' => [
+                'ticket-category', 'ticket', 'ticket-assignment', 'ticket-status',
+                'ticket-priority', 'sla-policy', 'escalation-rule', 'ticket-escalation',
+                'knowledge-base-category', 'knowledge-base-article', 'support-report',
+            ],
+
+            'Budget & Finance' => [
+                'budget', 'department-budget', 'finance-project-budget',
+            ],
+        ];
+    }
+}
+
+if (!function_exists('group_permissions_by_module')) {
+    /**
+     * Group a flat collection/array of permissions (Eloquent Permission
+     * models or plain permission-name strings) into a two-level tree:
+     *
+     *   [ 'HRM' => [ 'employee' => [ <perm>, <perm> ... ], ... ], ... ]
+     *
+     * Module + menu order follows permission_module_map(); any group
+     * prefix not present in that map (e.g. a brand new module whose
+     * seeder block hasn't been added to the map yet) is bucketed under
+     * a trailing "Other" module so nothing ever silently disappears.
+     */
+    function group_permissions_by_module($permissions): array
+    {
+        $items = collect($permissions)->map(function ($permission) {
+            return is_string($permission) ? (object) ['name' => $permission] : $permission;
+        });
+
+        $byPrefix = [];
+        foreach ($items as $item) {
+            $prefix = explode('.', $item->name)[0];
+            $byPrefix[$prefix][] = $item;
+        }
+
+        $tree = [];
+        $used = [];
+
+        foreach (permission_module_map() as $moduleLabel => $prefixes) {
+            foreach ($prefixes as $prefix) {
+                if (!empty($byPrefix[$prefix])) {
+                    $tree[$moduleLabel][$prefix] = $byPrefix[$prefix];
+                    $used[$prefix] = true;
+                }
+            }
+        }
+
+        foreach ($byPrefix as $prefix => $perms) {
+            if (empty($used[$prefix])) {
+                $tree['Other'][$prefix] = $perms;
+            }
+        }
+
+        return $tree;
+    }
+}
+
 if (!function_exists('checkChildActive')) {
     function checkChildActive(array $items): bool
     {
@@ -494,6 +642,79 @@ if (!function_exists('format_currency')) {
         return $position === 'after'
             ? $number . $symbol
             : $symbol . $number;
+    }
+}
+
+/**
+ * Spell out an amount in English words, e.g. 2850.50 -> "Two Thousand Eight
+ * Hundred Fifty and 50/100" — the "amount in words" line printed on a
+ * professional payslip/cheque. Currency name/code is appended by the
+ * caller (this helper only knows the number, not the currency).
+ * Supports 0 up to 999,999,999,999.99; anything larger falls back to a
+ * plain formatted number rather than guessing at a word for it.
+ */
+if (!function_exists('amount_in_words')) {
+    function amount_in_words($amount): string
+    {
+        $amount = round((float) $amount, 2);
+        $whole = (int) floor(abs($amount));
+        $cents = (int) round((abs($amount) - $whole) * 100);
+
+        if ($whole > 999999999999) {
+            return format_number($amount);
+        }
+
+        $words = $whole === 0 ? 'Zero' : number_to_words_int($whole);
+
+        return trim($words) . ' and ' . str_pad((string) $cents, 2, '0', STR_PAD_LEFT) . '/100';
+    }
+}
+
+if (!function_exists('number_to_words_int')) {
+    function number_to_words_int(int $number): string
+    {
+        $ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+            'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        $tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        $threeDigits = function (int $n) use ($ones, $tens) {
+            $out = '';
+
+            if ($n >= 100) {
+                $out .= $ones[intdiv($n, 100)] . ' Hundred ';
+                $n %= 100;
+            }
+
+            if ($n >= 20) {
+                $out .= $tens[intdiv($n, 10)] . ' ';
+                $n %= 10;
+            }
+
+            if ($n > 0) {
+                $out .= $ones[$n] . ' ';
+            }
+
+            return $out;
+        };
+
+        $scales = [
+            [1000000000, 'Billion'],
+            [1000000, 'Million'],
+            [1000, 'Thousand'],
+        ];
+
+        $result = '';
+
+        foreach ($scales as [$value, $label]) {
+            if ($number >= $value) {
+                $result .= $threeDigits(intdiv($number, $value)) . $label . ' ';
+                $number %= $value;
+            }
+        }
+
+        $result .= $threeDigits($number);
+
+        return trim(preg_replace('/\s+/', ' ', $result));
     }
 }
 

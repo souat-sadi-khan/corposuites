@@ -72,9 +72,9 @@ class AttendancePortalController extends Controller {
             'check_out_source' => $data['source'] ?? 'browser_geolocation',
         ];
 
-        $halfDayStatus = $this->halfDayStatus($employee, $attendance->check_in, $checkOutTime, $attendance->attendance_status);
-        if ($halfDayStatus) {
-            $update['attendance_status'] = $halfDayStatus;
+        $checkoutStatus = $this->checkoutStatus($employee, $attendance->check_in, $checkOutTime, $attendance->attendance_status);
+        if ($checkoutStatus) {
+            $update['attendance_status'] = $checkoutStatus;
         }
 
         $attendance->update($update);
@@ -131,9 +131,9 @@ class AttendancePortalController extends Controller {
         if ($data['event'] === 'check_in') {
             $values['attendance_status'] = $this->isLate($when, $employee) ? 'late' : 'present';
         } else {
-            $halfDayStatus = $this->halfDayStatus($employee, $attendance->check_in, $when, $attendance->attendance_status);
-            if ($halfDayStatus) {
-                $values['attendance_status'] = $halfDayStatus;
+            $checkoutStatus = $this->checkoutStatus($employee, $attendance->check_in, $when, $attendance->attendance_status);
+            if ($checkoutStatus) {
+                $values['attendance_status'] = $checkoutStatus;
             }
         }
 
@@ -163,19 +163,27 @@ class AttendancePortalController extends Controller {
     }
 
     /**
-     * Whether a check-out should be recorded as a half day. The threshold is
-     * a PERCENTAGE of the employee's own shift duration (Shifts module),
-     * not a flat number of hours — a flat threshold would misjudge a
-     * part-time 4-hour shift and a full 8-hour shift the same way. Falls
-     * back to the HRM Settings "Default Shift" window (start/end) only for
-     * employees with no shift assigned. Handles overnight shifts (end time
-     * earlier than start time) by treating the shift as crossing midnight.
+     * Whether a check-out should be recorded as a half day or an early
+     * leave. The threshold is a PERCENTAGE of the employee's own shift
+     * duration (Shifts module), not a flat number of hours — a flat
+     * threshold would misjudge a part-time 4-hour shift and a full 8-hour
+     * shift the same way. Falls back to the HRM Settings "Default Shift"
+     * window (start/end) only for employees with no shift assigned.
+     * Handles overnight shifts (end time earlier than start time) by
+     * treating the shift as crossing midnight.
      *
-     * Returns null when the half-day rule doesn't apply (no check-in yet,
-     * already on leave/absent, or worked hours meet/exceed the threshold) so
-     * the caller can leave the existing attendance_status untouched.
+     * Worked hours below the half-day threshold => 'half_day'. Worked
+     * hours at or above that threshold but still short of the full shift
+     * => 'early_leave' — a distinct, lighter-weight signal than half_day
+     * (most of the shift was worked, just not checked out on time).
+     * Worked hours meeting or exceeding the full shift duration leave the
+     * status untouched (still 'present'/'late' from check-in).
+     *
+     * Returns null when neither rule applies (no check-in yet, already on
+     * leave/absent, or the full shift was worked) so the caller can leave
+     * the existing attendance_status untouched.
      */
-    private function halfDayStatus(Employee $employee, ?string $checkIn, Carbon $checkOutTime, ?string $currentStatus): ?string
+    private function checkoutStatus(Employee $employee, ?string $checkIn, Carbon $checkOutTime, ?string $currentStatus): ?string
     {
         if (!$checkIn || in_array($currentStatus, ['on_leave', 'absent'], true)) {
             return null;
@@ -208,7 +216,11 @@ class AttendancePortalController extends Controller {
         $thresholdPercent = (float) get_settings('hrm_half_day_threshold_percent', 50);
         $thresholdHours = $shiftDurationHours * ($thresholdPercent / 100);
 
-        return $workedHours < $thresholdHours ? 'half_day' : null;
+        if ($workedHours < $thresholdHours) {
+            return 'half_day';
+        }
+
+        return $workedHours < $shiftDurationHours ? 'early_leave' : null;
     }
 
     /**

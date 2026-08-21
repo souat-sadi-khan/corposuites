@@ -44,6 +44,8 @@ use App\Http\Controllers\Admin\LeaveRequestController;
 use App\Http\Controllers\Admin\LeaveReportController;
 use App\Http\Controllers\Admin\SalaryStructureController;
 use App\Http\Controllers\Admin\SalaryTemplateController;
+use App\Http\Controllers\Admin\MinimumWageRuleController;
+use App\Http\Controllers\Admin\PayrollComplianceReportController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\ExpenseClaimController;
 use App\Http\Controllers\Admin\EmployeeLoanController;
@@ -813,6 +815,8 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::get('salary-components/{salaryComponent}/print', [HrmDetailExportController::class, 'componentPrint'])->name('salary-components.print');
     Route::get('salary-components/how-to', [SalaryComponentController::class, 'howTo'])->name('salary-components.how.to');
     Route::post('salary-components/status/{id}', [SalaryComponentController::class, 'updateStatus'])->name('salary-components.status');
+    Route::get('salary-components/{salaryComponent}/bulk-assign', [SalaryComponentController::class, 'bulkAssignForm'])->name('salary-components.bulk-assign-form');
+    Route::post('salary-components/{salaryComponent}/bulk-assign', [SalaryComponentController::class, 'bulkAssign'])->name('salary-components.bulk-assign');
     Route::resource('salary-components', SalaryComponentController::class)->except(['show']);
 
     // HRM - Skills
@@ -826,6 +830,8 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');
     Route::get('employees/{employee}/create-login', [EmployeeController::class, 'createLogin'])->name('employees.create-login');
     Route::post('employees/{employee}/create-login', [EmployeeController::class, 'storeLogin'])->name('employees.store-login');
+    Route::get('employees/{employee}/salary-certificate-form', [EmployeeController::class, 'salaryCertificateForm'])->name('employees.salary-certificate-form');
+    Route::get('employees/{employee}/salary-certificate', [EmployeeController::class, 'salaryCertificate'])->name('employees.salary-certificate');
     Route::get('employees/find/{id}', [EmployeeController::class, 'findEmployee'])->name('employees.find');
     Route::resource('employees', EmployeeController::class);
 
@@ -923,9 +929,17 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assign'])->name('salary-templates.assign');
     Route::resource('salary-templates', SalaryTemplateController::class)->except(['show']);
 
+    // HRM - Minimum Wage Rules (per country/state compliance floor)
+    Route::post('minimum-wage-rules/status/{id}', [MinimumWageRuleController::class, 'updateStatus'])->name('minimum-wage-rules.status');
+    Route::resource('minimum-wage-rules', MinimumWageRuleController::class)->except(['show']);
+
+    // HRM - Payroll Compliance Report (read-only)
+    Route::get('payroll-compliance-report', [PayrollComplianceReportController::class, 'index'])->name('payroll-compliance-report.index');
+
     // HRM - Payroll
     Route::post('payrolls/status/{id}', [PayrollController::class, 'updateStatus'])->name('payrolls.status');
     Route::post('payrolls/{payroll}/mark-paid', [PayrollController::class, 'markAsPaid'])->name('payrolls.mark-paid');
+    Route::get('payrolls/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payrolls.payslip');
     Route::resource('payrolls', PayrollController::class)->except(['show', 'edit', 'update']);
 
     // HRM - Expense Claims

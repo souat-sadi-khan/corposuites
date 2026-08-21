@@ -186,6 +186,13 @@ class RolePermissionSeeder extends Seeder
             'salary-template.delete',
             'salary-template.assign',
 
+            'minimum-wage-rule.view',
+            'minimum-wage-rule.create',
+            'minimum-wage-rule.edit',
+            'minimum-wage-rule.delete',
+
+            'payroll-compliance-report.view',
+
             'payroll.view',
             'payroll.create',
             'payroll.delete',

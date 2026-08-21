@@ -204,7 +204,7 @@
     <!-- Advanced Search Modal -->
     <div class="modal fade" id="salaryAdvSearchModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content fm-modal-content">
+            <div class="nx-modal-box fm-modal-content">
                 <div class="modal-header fm-modal-head">
                     <div>
                         <h5 class="modal-title"><i class="ri-filter-3-line me-1"></i> Advanced Search</h5>
@@ -223,27 +223,27 @@
                             <select id="advEmployee" class="form-select" data-placeholder="All Employees">
                                 <option value="">All Employees</option>
                                 @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}">{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                                    <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}">{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                                 @endforeach
                             </select>
                         </div>
 
                         <div class="fm-field">
                             <label>Department</label>
-                            <select id="advDepartment" class="form-select">
+                            <select id="advDepartment" class="form-select" data-placeholder="All Departments">
                                 <option value="">All Departments</option>
                                 @foreach($departments as $department)
-                                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                    <option data-desc="{{ $department->description }}" value="{{ $department->id }}">{{ $department->name }}</option>
                                 @endforeach
                             </select>
                         </div>
 
                         <div class="fm-field">
                             <label>Designation</label>
-                            <select id="advDesignation" class="form-select">
+                            <select id="advDesignation" class="form-select" data-placeholder="All Designations">
                                 <option value="">All Designations</option>
                                 @foreach($designations as $designation)
-                                    <option value="{{ $designation->id }}">{{ $designation->name }}{{ $designation->department ? ' — '.$designation->department->name : '' }}</option>
+                                    <option data-desc="{{ $designation->description }}" value="{{ $designation->id }}">{{ $designation->name }}{{ $designation->department ? ' — '.$designation->department->name : '' }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -252,7 +252,7 @@
 
                         <div class="fm-field">
                             <label>Pay Type</label>
-                            <select id="advPayType" class="form-select" data-minimum-results-for-search="Infinity">
+                            <select id="advPayType" class="form-select as-select" data-minimum-results-for-search="Infinity">
                                 <option value="">All Pay Types</option>
                                 <option value="monthly">Monthly</option>
                                 <option value="daily">Daily</option>
@@ -262,7 +262,7 @@
 
                         <div class="fm-field">
                             <label>Status</label>
-                            <select id="advStatus" class="form-select" data-minimum-results-for-search="Infinity">
+                            <select id="advStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
                                 <option value="">All Statuses</option>
                                 <option value="1">Active</option>
                                 <option value="0">Inactive</option>

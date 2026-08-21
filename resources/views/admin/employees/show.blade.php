@@ -39,6 +39,8 @@
                     <div class="fm-field"><label>Shift</label><div>{{ $employee->shift->name ?? '-' }}</div></div>
                     <div class="fm-field"><label>Login Account</label><div>{{ $employee->admin?->email ?? 'No login account' }}</div></div>
                     <div class="fm-field fm-full"><label>Address</label><div>{{ $employee->address ?? '-' }}</div></div>
+                    <div class="fm-field"><label>Country</label><div>{{ $employee->country ?? '-' }}</div></div>
+                    <div class="fm-field"><label>State / Province</label><div>{{ $employee->state ?? '-' }}</div></div>
                 </div>
             </div>
 
@@ -57,7 +59,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No documents</p>
                                     </div>
                                 </td>
@@ -82,7 +84,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No emergency contacts</p>
                                     </div>
                                 </td>
@@ -107,7 +109,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No bank accounts</p>
                                     </div>
                                 </td>
@@ -132,7 +134,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No education records</p>
                                     </div>
                                 </td>
@@ -157,7 +159,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No experience records</p>
                                     </div>
                                 </td>
@@ -179,7 +181,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No transfers</p>
                                     </div>
                                 </td>
@@ -198,7 +200,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No promotions</p>
                                     </div>
                                 </td>
@@ -217,7 +219,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No resignations</p>
                                     </div>
                                 </td>
@@ -236,7 +238,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No terminations</p>
                                     </div>
                                 </td>
@@ -262,7 +264,7 @@
                             <tr>
                                 <td colspan="4" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No attendance records (showing latest 30)</p>
                                     </div>
                                 </td>
@@ -284,7 +286,7 @@
                             <tr>
                                 <td colspan="5" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No leave balances</p>
                                     </div>
                                 </td>
@@ -303,7 +305,7 @@
                             <tr>
                                 <td colspan="4" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No leave requests</p>
                                     </div>
                                 </td>
@@ -325,7 +327,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No salary structures</p>
                                     </div>
                                 </td>
@@ -344,7 +346,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No payroll records</p>
                                     </div>
                                 </td>
@@ -366,7 +368,7 @@
                             <tr>
                                 <td colspan="4" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No expense claims</p>
                                     </div>
                                 </td>
@@ -385,7 +387,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No loans</p>
                                     </div>
                                 </td>
@@ -406,7 +408,7 @@
                             <tr>
                                 <td colspan="3" class="text-center text-muted">
                                     <div class="text-center py-4">
-                                        <img src="{{ asset('assets/images/nothing-to-show.png') }}" class="img-fluid mb-2" style="max-width:150px">
+                                        <img src="{{ asset('assets/images/nothing-to-show.svg') }}" class="img-fluid mb-2" style="max-width:150px">
                                         <p class="text-muted mb-0">No performance reviews</p>
                                     </div>
                                 </td>
