@@ -35,10 +35,12 @@
         </button>
 
         <!-- Add Button -->
+        @can('leave-type.create')
         <button id="openModal" data-url="{{ route('admin.leave-types.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Leave Type
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

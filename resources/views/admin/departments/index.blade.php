@@ -26,9 +26,11 @@
             <i class="ri-question-mark"></i>
         </button>
 
+        @can('department.create')
         <button id="openModal" data-url="{{ route('admin.departments.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i> Add Department
         </button>
+        @endcan
     </div>
 
     <div class="nx-card tl-card">

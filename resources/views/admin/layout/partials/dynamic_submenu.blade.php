@@ -1,8 +1,8 @@
 @foreach($items as $item)
     @php
         $hasChildren = !empty($item['children']);
-        $canAccess = !isset($item['permission']) || $item['permission'] === null;
-        // $canAccess = !isset($item['permission']) || $item['permission'] === null || auth()->user()->can($item['permission']);
+        $canAccess = !isset($item['permission']) || $item['permission'] === null
+            || auth()->guard('admin')->user()?->can($item['permission']);
 
         if (!$canAccess) {
             continue;
@@ -12,11 +12,20 @@
         $filteredChildren = [];
         if ($hasChildren) {
             $filteredChildren = array_filter($item['children'], function ($child) {
-                return !isset($child['permission']) || $child['permission'] === null;
-                // return !isset($child['permission']) || $child['permission'] === null || auth()->user()->can($child['permission']);
+                return !isset($child['permission']) || $child['permission'] === null
+                    || auth()->guard('admin')->user()?->can($child['permission']);
             });
 
             $hasVisibleChildren = !empty($filteredChildren);
+
+            // A group whose every child has been permission-filtered away
+            // has nothing left to show — skip it entirely rather than
+            // falling through to the "no children" branch below, which
+            // would otherwise render it as a dead "#" link (group headers
+            // carry no route of their own).
+            if (!$hasVisibleChildren) {
+                continue;
+            }
         } else {
             $hasVisibleChildren = false;
         }

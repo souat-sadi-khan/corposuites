@@ -35,10 +35,12 @@
 
         <div class="tl-spacer"></div>
 
+        @can('minimum-wage-rule.create')
         <button id="openModal" data-url="{{ route('admin.minimum-wage-rules.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Minimum Wage Rule
         </button>
+        @endcan
     </div>
 
     <div class="nx-card tl-card">

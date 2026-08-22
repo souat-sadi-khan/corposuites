@@ -42,10 +42,12 @@
         </button>
 
         <!-- Add Button -->
+        @can('promotion.create')
         <button id="openModal" data-url="{{ route('admin.promotions.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Promotion
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

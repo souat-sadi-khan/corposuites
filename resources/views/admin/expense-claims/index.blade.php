@@ -37,10 +37,12 @@
         <div class="tl-spacer"></div>
 
         <!-- Add Button -->
+        @can('expense-claim.create')
         <button id="openModal" data-url="{{ route('admin.expense-claims.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Expense Claim
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

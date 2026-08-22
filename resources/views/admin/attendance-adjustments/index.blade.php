@@ -37,10 +37,12 @@
         <div class="tl-spacer"></div>
 
         <!-- Add Button -->
+        @can('attendance-adjustment.create')
         <button id="openModal" data-url="{{ route('admin.attendance-adjustments.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Adjustment
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

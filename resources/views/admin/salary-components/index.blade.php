@@ -22,10 +22,12 @@
         </button>
 
         <!-- Add Button -->
+        @can('salary-component.create')
         <button id="openModal" data-url="{{ route('admin.salary-components.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Salary Component
         </button>
+        @endcan
     </div>
 
     <!-- Active Advanced Search Filters -->

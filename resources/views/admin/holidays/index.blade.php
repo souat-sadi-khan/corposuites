@@ -41,10 +41,12 @@
         </a>
 
         <!-- Add Button -->
+        @can('holiday.create')
         <button id="openModal" data-url="{{ route('admin.holidays.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Holiday
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

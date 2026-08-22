@@ -35,10 +35,12 @@
         </button>
 
         <!-- Add Button -->
+        @can('shift.create')
         <button id="openModal" data-url="{{ route('admin.shifts.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Shift
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

@@ -137,9 +137,10 @@ if (!function_exists('permission_module_map')) {
                 'emergency-contact', 'bank-account', 'education', 'experience',
                 'transfer', 'promotion', 'resignation', 'termination', 'attendance',
                 'attendance-adjustment', 'leave-balance', 'leave-request',
-                'salary-structure', 'salary-template', 'minimum-wage-rule', 'payroll',
+                'salary-structure', 'salary-template', 'minimum-wage-rule',
+                'payroll-compliance-report', 'payroll',
                 'expense-claim', 'employee-loan', 'performance-review', 'hr-report',
-                'leave-report', 'department', 'designation',
+                'leave-report', 'department', 'designation', 'hrm-setting',
             ],
 
             'CRM' => [

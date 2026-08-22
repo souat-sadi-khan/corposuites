@@ -55,10 +55,17 @@
 
             @foreach($dynamicMenus as $module)
                 @php
-                    // Filter children by permission
+                    // Filter children by permission (module-level, i.e.
+                    // top-level items directly under this module — either a
+                    // group header, always null/always shown here, or a
+                    // leaf link like "Employees"/"HRM Settings"). A group
+                    // whose own nested items are ALL individually
+                    // inaccessible is collapsed away inside
+                    // dynamic_submenu.blade.php's own recursive filtering,
+                    // not here.
                     $accessibleChildren = array_filter($module['children'], function ($child) {
-                        return !isset($child['permission']) || $child['permission'] === null;
-                        // return !isset($child['permission']) || $child['permission'] === null || auth()->user()->can($child['permission']);
+                        return !isset($child['permission']) || $child['permission'] === null
+                            || auth()->guard('admin')->user()?->can($child['permission']);
                     });
 
                     if (empty($accessibleChildren)) {
@@ -86,6 +93,18 @@
                                 } elseif (!empty($child["url"])) {
                                     $childHref = $child["url"];
                                 }
+
+                                // Pre-filter grandchildren so an empty group
+                                // (every grandchild permission-filtered away)
+                                // never prints its own "fp-sub-label" header
+                                // with nothing underneath it.
+                                $visibleGrandchildren = !empty($child["children"])
+                                    ? array_filter($child["children"], function ($grandchild) {
+                                        return !isset($grandchild["permission"])
+                                            || $grandchild["permission"] === null
+                                            || auth()->guard('admin')->user()?->can($grandchild["permission"]);
+                                    })
+                                    : [];
                             @endphp
 
                             @if(empty($child["children"]))
@@ -93,17 +112,13 @@
                                     <i class="{{ $child["icon"] ?? "ri-circle-line" }}"></i>
                                     {{ $child["label"] }}
                                 </a>
-                            @else
+                            @elseif(!empty($visibleGrandchildren))
 
                                 <div class="fp-sub-label">{{ $child["label"] }}</div>
 
-                                @foreach($child["children"] as $grandchild)
+                                @foreach($visibleGrandchildren as $grandchild)
 
                                     @php
-                                        $canAccess = !isset($grandchild["permission"])
-                                            || $grandchild["permission"] === null;
-                                            // || auth()->user()->can($grandchild["permission"]);
-
                                         $grandHref = "#";
 
                                         if (!empty($grandchild["route"]) && \Illuminate\Support\Facades\Route::has($grandchild["route"])) {
@@ -113,14 +128,12 @@
                                         }
                                     @endphp
 
-                                    @if($canAccess)
-                                        <div class="fp-sub-link">
-                                            <a href="{{ $grandHref }}">
-                                                <i class="{{ $grandchild["icon"] ?? "ri-circle-line" }}"></i>
-                                                {{ $grandchild["label"] }}
-                                            </a>
-                                        </div>
-                                    @endif
+                                    <div class="fp-sub-link">
+                                        <a href="{{ $grandHref }}">
+                                            <i class="{{ $grandchild["icon"] ?? "ri-circle-line" }}"></i>
+                                            {{ $grandchild["label"] }}
+                                        </a>
+                                    </div>
 
                                 @endforeach
 

@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.installation' => App\Http\Middleware\CheckInstallation::class,
             'isAdmin' => App\Http\Middleware\AdminPermission::class,
             'isInstalled' => App\Http\Middleware\CheckIfInstalled::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
 
         $middleware->web(append: [

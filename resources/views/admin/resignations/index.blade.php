@@ -42,10 +42,12 @@
         </button>
 
         <!-- Add Button -->
+        @can('resignation.create')
         <button id="openModal" data-url="{{ route('admin.resignations.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Resignation
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

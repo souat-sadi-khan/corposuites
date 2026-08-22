@@ -37,10 +37,12 @@
         <div class="tl-spacer"></div>
 
         <!-- Add Button -->
+        @can('performance-review.create')
         <button id="openModal" data-url="{{ route('admin.performance-reviews.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Review
         </button>
+        @endcan
     </div>
 
     <!-- Table Card -->

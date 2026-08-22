@@ -25,9 +25,11 @@
             <i class="ri-question-mark"></i>
         </button>
 
+        @can('designation.create')
         <button id="openModal" data-url="{{ route('admin.designations.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i> Add Designation
         </button>
+        @endcan
     </div>
 
     <div class="nx-card tl-card">

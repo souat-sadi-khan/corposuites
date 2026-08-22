@@ -160,6 +160,7 @@ class RolePermissionSeeder extends Seeder
             'attendance-adjustment.edit',
             'attendance-adjustment.delete',
             'attendance-adjustment.approve',
+            'attendance-adjustment.reject',
 
             'leave-balance.view',
             'leave-balance.create',
@@ -173,6 +174,7 @@ class RolePermissionSeeder extends Seeder
             'leave-request.edit',
             'leave-request.delete',
             'leave-request.approve',
+            'leave-request.reject',
             'leave-request.cancel',
 
             'salary-structure.view',
@@ -203,12 +205,15 @@ class RolePermissionSeeder extends Seeder
             'expense-claim.edit',
             'expense-claim.delete',
             'expense-claim.approve',
+            'expense-claim.reject',
 
             'employee-loan.view',
             'employee-loan.create',
             'employee-loan.edit',
             'employee-loan.delete',
             'employee-loan.approve',
+            'employee-loan.reject',
+            'employee-loan.record-payment',
 
             'performance-review.view',
             'performance-review.create',
@@ -227,6 +232,9 @@ class RolePermissionSeeder extends Seeder
             'designation.create',
             'designation.edit',
             'designation.delete',
+
+            'hrm-setting.view',
+            'hrm-setting.edit',
 
             // CRM
             'lead-source.view',

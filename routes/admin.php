@@ -774,204 +774,364 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('finance-project-budgets/status/{id}', [FinanceProjectBudgetController::class, 'updateStatus'])->name('finance-project-budgets.status');
     Route::resource('finance-project-budgets', FinanceProjectBudgetController::class)->except(['show']);
 
-    // HRM - Master details offcanvas
+    /*
+    |--------------------------------------------------------------------------
+    | HRM permission enforcement
+    |--------------------------------------------------------------------------
+    |
+    | Every HRM route below is gated by a "permission:{slug},admin" middleware
+    | entry matching the exact permission names seeded in
+    | database/seeders/RolePermissionSeeder.php. The Spatie PermissionMiddleware
+    | is guard-aware (the second, comma-separated argument), so it always
+    | checks the currently authenticated *admin* guard user, never the
+    | unrelated default 'web' guard.
+    |
+    | A handful of routes are intentionally left ungated:
+    |   - master-details.show / employees.find / designations.byDepartment —
+    |     small cross-module AJAX helpers (offcanvas detail viewer, employee
+    |     picker, dependent dropdown) reused by several already-gated parent
+    |     screens; gating them individually risks breaking a picker on a
+    |     screen whose own permission doesn't imply this one.
+    |   - profile/* and attendance-portal/* — self-service "my own records"
+    |     routes (an employee viewing/checking in their own attendance,
+    |     documents, etc.), not administrative management of other people's
+    |     records, so they must stay open to any authenticated admin.
+    |
+    | See App\Providers\AppServiceProvider::boot() for the Gate::before
+    | Super Admin bypass that keeps this safe even if a slug here is ever
+    | mistyped — Super Admin always passes regardless.
+    |--------------------------------------------------------------------------
+    */
+
+    // HRM - Master details offcanvas (shared cross-module detail viewer)
     Route::get('master-details/{type}/{id}', [MasterDetailController::class, 'show'])->name('master-details.show');
 
+    // HRM - HRM Settings
+    Route::get('hrm-settings', [HrmSettingsController::class, 'index'])->name('hrm-settings.index')->middleware('permission:hrm-setting.view,admin');
+    Route::put('hrm-settings', [HrmSettingsController::class, 'update'])->name('hrm-settings.update')->middleware('permission:hrm-setting.edit,admin');
+    Route::get('hrm-settings/device-guide', [HrmSettingsController::class, 'deviceGuide'])->name('hrm-settings.device-guide')->middleware('permission:hrm-setting.view,admin');
+
     // HRM - Employee Types
-    Route::get('hrm-settings', [HrmSettingsController::class, 'index'])->name('hrm-settings.index');
-    Route::put('hrm-settings', [HrmSettingsController::class, 'update'])->name('hrm-settings.update');
-    Route::get('hrm-settings/device-guide', [HrmSettingsController::class, 'deviceGuide'])->name('hrm-settings.device-guide');
-    Route::get('employee-types/how-to', [EmployeeTypeController::class, 'howTo'])->name('employee-types.how.to');
-    Route::post('employee-types/status/{id}', [EmployeeTypeController::class, 'updateStatus'])->name('employee-types.status');
-    Route::resource('employee-types', EmployeeTypeController::class)->except(['show']);
+    Route::get('employee-types/how-to', [EmployeeTypeController::class, 'howTo'])->name('employee-types.how.to')->middleware('permission:employee-type.view,admin');
+    Route::post('employee-types/status/{id}', [EmployeeTypeController::class, 'updateStatus'])->name('employee-types.status')->middleware('permission:employee-type.edit,admin');
+    Route::resource('employee-types', EmployeeTypeController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:employee-type.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:employee-type.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:employee-type.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:employee-type.delete,admin');
 
     // HRM - Employment Statuses
-    Route::get('employment-statuses/how-to', [EmploymentStatusController::class, 'howTo'])->name('employment-statuses.how.to');
-    Route::post('employment-statuses/status/{id}', [EmploymentStatusController::class, 'updateStatus'])->name('employment-statuses.status');
-    Route::resource('employment-statuses', EmploymentStatusController::class)->except(['show']);
+    Route::get('employment-statuses/how-to', [EmploymentStatusController::class, 'howTo'])->name('employment-statuses.how.to')->middleware('permission:employment-status.view,admin');
+    Route::post('employment-statuses/status/{id}', [EmploymentStatusController::class, 'updateStatus'])->name('employment-statuses.status')->middleware('permission:employment-status.edit,admin');
+    Route::resource('employment-statuses', EmploymentStatusController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:employment-status.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:employment-status.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:employment-status.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:employment-status.delete,admin');
 
     // HRM - Shifts
-    Route::get('shifts/how-to', [ShiftController::class, 'howTo'])->name('shifts.how.to');
-    Route::post('shifts/status/{id}', [ShiftController::class, 'updateStatus'])->name('shifts.status');
-    Route::resource('shifts', ShiftController::class)->except(['show']);
+    Route::get('shifts/how-to', [ShiftController::class, 'howTo'])->name('shifts.how.to')->middleware('permission:shift.view,admin');
+    Route::post('shifts/status/{id}', [ShiftController::class, 'updateStatus'])->name('shifts.status')->middleware('permission:shift.edit,admin');
+    Route::resource('shifts', ShiftController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:shift.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:shift.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:shift.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:shift.delete,admin');
 
     // HRM - Holidays
-    Route::get('holidays/how-to', [HolidayController::class, 'howTo'])->name('holidays.how.to');
-    Route::get('holidays/calendar', [HolidayController::class, 'calendar'])->name('holidays.calendar');
-    Route::get('holidays/calendar-events', [HolidayController::class, 'calendarEvents'])->name('holidays.calendar-events');
-    Route::post('holidays/status/{id}', [HolidayController::class, 'updateStatus'])->name('holidays.status');
-    Route::resource('holidays', HolidayController::class)->except(['show']);
+    Route::get('holidays/how-to', [HolidayController::class, 'howTo'])->name('holidays.how.to')->middleware('permission:holiday.view,admin');
+    Route::get('holidays/calendar', [HolidayController::class, 'calendar'])->name('holidays.calendar')->middleware('permission:holiday.view,admin');
+    Route::get('holidays/calendar-events', [HolidayController::class, 'calendarEvents'])->name('holidays.calendar-events')->middleware('permission:holiday.view,admin');
+    Route::post('holidays/status/{id}', [HolidayController::class, 'updateStatus'])->name('holidays.status')->middleware('permission:holiday.edit,admin');
+    Route::resource('holidays', HolidayController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:holiday.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:holiday.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:holiday.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:holiday.delete,admin');
 
     // HRM - Leave Types
-    Route::get('leave-types/{leaveType}/details', [HrmDetailExportController::class, 'leaveType'])->name('leave-types.details');
-    Route::get('leave-types/{leaveType}/export', [HrmDetailExportController::class, 'leaveExport'])->name('leave-types.export');
-    Route::get('leave-types/how-to', [LeaveTypeController::class, 'howTo'])->name('leave-types.how.to');
-    Route::post('leave-types/status/{id}', [LeaveTypeController::class, 'updateStatus'])->name('leave-types.status');
-    Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
+    Route::get('leave-types/{leaveType}/details', [HrmDetailExportController::class, 'leaveType'])->name('leave-types.details')->middleware('permission:leave-type.view,admin');
+    Route::get('leave-types/{leaveType}/export', [HrmDetailExportController::class, 'leaveExport'])->name('leave-types.export')->middleware('permission:leave-type.view,admin');
+    Route::get('leave-types/how-to', [LeaveTypeController::class, 'howTo'])->name('leave-types.how.to')->middleware('permission:leave-type.view,admin');
+    Route::post('leave-types/status/{id}', [LeaveTypeController::class, 'updateStatus'])->name('leave-types.status')->middleware('permission:leave-type.edit,admin');
+    Route::resource('leave-types', LeaveTypeController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:leave-type.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:leave-type.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:leave-type.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:leave-type.delete,admin');
 
     // HRM - Salary Components
-    Route::get('salary-components/{salaryComponent}/details', [HrmDetailExportController::class, 'component'])->name('salary-components.details');
-    Route::get('salary-components/{salaryComponent}/export', [HrmDetailExportController::class, 'componentExport'])->name('salary-components.export');
-    Route::get('salary-components/{salaryComponent}/print', [HrmDetailExportController::class, 'componentPrint'])->name('salary-components.print');
-    Route::get('salary-components/how-to', [SalaryComponentController::class, 'howTo'])->name('salary-components.how.to');
-    Route::post('salary-components/status/{id}', [SalaryComponentController::class, 'updateStatus'])->name('salary-components.status');
-    Route::get('salary-components/{salaryComponent}/bulk-assign', [SalaryComponentController::class, 'bulkAssignForm'])->name('salary-components.bulk-assign-form');
-    Route::post('salary-components/{salaryComponent}/bulk-assign', [SalaryComponentController::class, 'bulkAssign'])->name('salary-components.bulk-assign');
-    Route::resource('salary-components', SalaryComponentController::class)->except(['show']);
+    Route::get('salary-components/{salaryComponent}/details', [HrmDetailExportController::class, 'component'])->name('salary-components.details')->middleware('permission:salary-component.view,admin');
+    Route::get('salary-components/{salaryComponent}/export', [HrmDetailExportController::class, 'componentExport'])->name('salary-components.export')->middleware('permission:salary-component.view,admin');
+    Route::get('salary-components/{salaryComponent}/print', [HrmDetailExportController::class, 'componentPrint'])->name('salary-components.print')->middleware('permission:salary-component.view,admin');
+    Route::get('salary-components/how-to', [SalaryComponentController::class, 'howTo'])->name('salary-components.how.to')->middleware('permission:salary-component.view,admin');
+    Route::post('salary-components/status/{id}', [SalaryComponentController::class, 'updateStatus'])->name('salary-components.status')->middleware('permission:salary-component.edit,admin');
+    Route::get('salary-components/{salaryComponent}/bulk-assign', [SalaryComponentController::class, 'bulkAssignForm'])->name('salary-components.bulk-assign-form')->middleware('permission:salary-component.edit,admin');
+    Route::post('salary-components/{salaryComponent}/bulk-assign', [SalaryComponentController::class, 'bulkAssign'])->name('salary-components.bulk-assign')->middleware('permission:salary-component.edit,admin');
+    Route::resource('salary-components', SalaryComponentController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:salary-component.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:salary-component.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:salary-component.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:salary-component.delete,admin');
 
     // HRM - Skills
-    Route::post('skills/status/{id}', [SkillController::class, 'updateStatus'])->name('skills.status');
-    Route::resource('skills', SkillController::class)->except(['show']);
+    Route::post('skills/status/{id}', [SkillController::class, 'updateStatus'])->name('skills.status')->middleware('permission:skill.edit,admin');
+    Route::resource('skills', SkillController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:skill.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:skill.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:skill.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:skill.delete,admin');
 
     // HRM - Employees
-    Route::post('employees/status/{id}', [EmployeeController::class, 'updateStatus'])->name('employees.status');
-    Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export');
-    Route::get('employees/import', [EmployeeController::class, 'importForm'])->name('employees.import-form');
-    Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');
-    Route::get('employees/{employee}/create-login', [EmployeeController::class, 'createLogin'])->name('employees.create-login');
-    Route::post('employees/{employee}/create-login', [EmployeeController::class, 'storeLogin'])->name('employees.store-login');
-    Route::get('employees/{employee}/salary-certificate-form', [EmployeeController::class, 'salaryCertificateForm'])->name('employees.salary-certificate-form');
-    Route::get('employees/{employee}/salary-certificate', [EmployeeController::class, 'salaryCertificate'])->name('employees.salary-certificate');
+    Route::post('employees/status/{id}', [EmployeeController::class, 'updateStatus'])->name('employees.status')->middleware('permission:employee.edit,admin');
+    Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export')->middleware('permission:employee.view,admin');
+    Route::get('employees/import', [EmployeeController::class, 'importForm'])->name('employees.import-form')->middleware('permission:employee.create,admin');
+    Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import')->middleware('permission:employee.create,admin');
+    Route::get('employees/{employee}/create-login', [EmployeeController::class, 'createLogin'])->name('employees.create-login')->middleware('permission:employee.edit,admin');
+    Route::post('employees/{employee}/create-login', [EmployeeController::class, 'storeLogin'])->name('employees.store-login')->middleware('permission:employee.edit,admin');
+    Route::get('employees/{employee}/salary-certificate-form', [EmployeeController::class, 'salaryCertificateForm'])->name('employees.salary-certificate-form')->middleware('permission:employee.view,admin');
+    Route::get('employees/{employee}/salary-certificate', [EmployeeController::class, 'salaryCertificate'])->name('employees.salary-certificate')->middleware('permission:employee.view,admin');
+    // Lightweight lookup used by dependent pickers on other, already-gated
+    // screens (e.g. selecting an employee while creating a Leave Request) —
+    // deliberately left ungated, see the note above this HRM block.
     Route::get('employees/find/{id}', [EmployeeController::class, 'findEmployee'])->name('employees.find');
-    Route::resource('employees', EmployeeController::class);
+    Route::resource('employees', EmployeeController::class)
+        ->middlewareFor(['index', 'show'], 'permission:employee.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:employee.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:employee.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:employee.delete,admin');
 
     // HRM - Employee Documents
-    Route::get('employee-documents/how-to', [EmployeeDocumentController::class, 'howTo'])->name('employee-documents.how.to');
-    Route::post('employee-documents/status/{id}', [EmployeeDocumentController::class, 'updateStatus'])->name('employee-documents.status');
+    Route::get('employee-documents/how-to', [EmployeeDocumentController::class, 'howTo'])->name('employee-documents.how.to')->middleware('permission:employee-document.view,admin');
+    Route::post('employee-documents/status/{id}', [EmployeeDocumentController::class, 'updateStatus'])->name('employee-documents.status')->middleware('permission:employee-document.edit,admin');
+    // Self-service — an employee viewing their OWN uploaded documents.
     Route::get('profile/documents', [EmployeeDocumentController::class, 'myDocuments'])->name('profile.documents');
-    Route::resource('employee-documents', EmployeeDocumentController::class)->except(['show']);
+    Route::resource('employee-documents', EmployeeDocumentController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:employee-document.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:employee-document.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:employee-document.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:employee-document.delete,admin');
 
     // HRM - Emergency Contacts
-    Route::get('emergency-contacts/how-to', [EmergencyContactController::class, 'howTo'])->name('emergency-contacts.how.to');
-    Route::post('emergency-contacts/status/{id}', [EmergencyContactController::class, 'updateStatus'])->name('emergency-contacts.status');
+    Route::get('emergency-contacts/how-to', [EmergencyContactController::class, 'howTo'])->name('emergency-contacts.how.to')->middleware('permission:emergency-contact.view,admin');
+    Route::post('emergency-contacts/status/{id}', [EmergencyContactController::class, 'updateStatus'])->name('emergency-contacts.status')->middleware('permission:emergency-contact.edit,admin');
     Route::get('profile/emergency-contacts', [EmergencyContactController::class, 'myEmergencyContacts'])->name('profile.emergency-contacts');
-    Route::resource('emergency-contacts', EmergencyContactController::class)->except(['show']);
+    Route::resource('emergency-contacts', EmergencyContactController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:emergency-contact.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:emergency-contact.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:emergency-contact.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:emergency-contact.delete,admin');
 
     // HRM - Bank Accounts
-    Route::get('bank-accounts/how-to', [BankAccountController::class, 'howTo'])->name('bank-accounts.how.to');
-    Route::post('bank-accounts/status/{id}', [BankAccountController::class, 'updateStatus'])->name('bank-accounts.status');
+    Route::get('bank-accounts/how-to', [BankAccountController::class, 'howTo'])->name('bank-accounts.how.to')->middleware('permission:bank-account.view,admin');
+    Route::post('bank-accounts/status/{id}', [BankAccountController::class, 'updateStatus'])->name('bank-accounts.status')->middleware('permission:bank-account.edit,admin');
     Route::get('profile/bank-accounts', [BankAccountController::class, 'myBankAccounts'])->name('profile.bank-accounts');
-    Route::resource('bank-accounts', BankAccountController::class)->except(['show']);
+    Route::resource('bank-accounts', BankAccountController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:bank-account.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:bank-account.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:bank-account.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:bank-account.delete,admin');
 
     // HRM - Education
-    Route::get('educations/how-to', [EducationController::class, 'howTo'])->name('educations.how.to');
-    Route::post('educations/status/{id}', [EducationController::class, 'updateStatus'])->name('educations.status');
+    Route::get('educations/how-to', [EducationController::class, 'howTo'])->name('educations.how.to')->middleware('permission:education.view,admin');
+    Route::post('educations/status/{id}', [EducationController::class, 'updateStatus'])->name('educations.status')->middleware('permission:education.edit,admin');
     Route::get('profile/educations', [EducationController::class, 'myEducations'])->name('profile.educations');
-    Route::resource('educations', EducationController::class)->except(['show']);
+    Route::resource('educations', EducationController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:education.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:education.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:education.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:education.delete,admin');
 
     // HRM - Experience
-    Route::get('experiences/how-to', [ExperienceController::class, 'howTo'])->name('experiences.how.to');
-    Route::post('experiences/status/{id}', [ExperienceController::class, 'updateStatus'])->name('experiences.status');
+    Route::get('experiences/how-to', [ExperienceController::class, 'howTo'])->name('experiences.how.to')->middleware('permission:experience.view,admin');
+    Route::post('experiences/status/{id}', [ExperienceController::class, 'updateStatus'])->name('experiences.status')->middleware('permission:experience.edit,admin');
     Route::get('profile/experiences', [ExperienceController::class, 'myExperience'])->name('profile.experiences');
-    Route::resource('experiences', ExperienceController::class)->except(['show']);
+    Route::resource('experiences', ExperienceController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:experience.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:experience.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:experience.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:experience.delete,admin');
 
     // HRM - Transfers
-    Route::get('transfers/how-to', [TransferController::class, 'howTo'])->name('transfers.how.to');
-    Route::post('transfers/status/{id}', [TransferController::class, 'updateStatus'])->name('transfers.status');
-    Route::resource('transfers', TransferController::class)->except(['show']);
+    Route::get('transfers/how-to', [TransferController::class, 'howTo'])->name('transfers.how.to')->middleware('permission:transfer.view,admin');
+    Route::post('transfers/status/{id}', [TransferController::class, 'updateStatus'])->name('transfers.status')->middleware('permission:transfer.edit,admin');
+    Route::resource('transfers', TransferController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:transfer.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:transfer.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:transfer.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:transfer.delete,admin');
 
     // HRM - Promotions
-    Route::get('promotions/how-to', [PromotionController::class, 'howTo'])->name('promotions.how.to');
-    Route::post('promotions/status/{id}', [PromotionController::class, 'updateStatus'])->name('promotions.status');
-    Route::resource('promotions', PromotionController::class)->except(['show']);
+    Route::get('promotions/how-to', [PromotionController::class, 'howTo'])->name('promotions.how.to')->middleware('permission:promotion.view,admin');
+    Route::post('promotions/status/{id}', [PromotionController::class, 'updateStatus'])->name('promotions.status')->middleware('permission:promotion.edit,admin');
+    Route::resource('promotions', PromotionController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:promotion.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:promotion.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:promotion.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:promotion.delete,admin');
 
     // HRM - Resignations
-    Route::get('resignations/how-to', [ResignationController::class, 'howTo'])->name('resignations.how.to');
-    Route::post('resignations/status/{id}', [ResignationController::class, 'updateStatus'])->name('resignations.status');
-    Route::resource('resignations', ResignationController::class)->except(['show']);
+    Route::get('resignations/how-to', [ResignationController::class, 'howTo'])->name('resignations.how.to')->middleware('permission:resignation.view,admin');
+    Route::post('resignations/status/{id}', [ResignationController::class, 'updateStatus'])->name('resignations.status')->middleware('permission:resignation.edit,admin');
+    Route::resource('resignations', ResignationController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:resignation.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:resignation.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:resignation.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:resignation.delete,admin');
 
     // HRM - Terminations
-    Route::get('terminations/how-to', [TerminationController::class, 'howTo'])->name('terminations.how.to');
-    Route::post('terminations/status/{id}', [TerminationController::class, 'updateStatus'])->name('terminations.status');
-    Route::resource('terminations', TerminationController::class)->except(['show']);
+    Route::get('terminations/how-to', [TerminationController::class, 'howTo'])->name('terminations.how.to')->middleware('permission:termination.view,admin');
+    Route::post('terminations/status/{id}', [TerminationController::class, 'updateStatus'])->name('terminations.status')->middleware('permission:termination.edit,admin');
+    Route::resource('terminations', TerminationController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:termination.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:termination.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:termination.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:termination.delete,admin');
 
     // HRM - Attendance
+    // Self-service kiosk — an employee checking THEMSELVES in/out, resolved
+    // from their own linked employee record, never someone else's.
     Route::get('attendance-portal', [AttendancePortalController::class, 'portal'])->name('attendance-portal.index');
     Route::post('attendance-portal/check-in', [AttendancePortalController::class, 'checkIn'])->name('attendance-portal.check-in');
     Route::post('attendance-portal/check-out', [AttendancePortalController::class, 'checkOut'])->name('attendance-portal.check-out');
-    Route::get('attendance-monthly', [AttendancePortalController::class, 'monthly'])->name('attendances.monthly');
-    Route::post('attendances/status/{id}', [AttendanceController::class, 'updateStatus'])->name('attendances.status');
-    Route::resource('attendances', AttendanceController::class)->except(['show']);
+    // Unlike the portal above, this accepts an arbitrary employee_id — it's
+    // an admin report over any employee's month, not a self-service view.
+    Route::get('attendance-monthly', [AttendancePortalController::class, 'monthly'])->name('attendances.monthly')->middleware('permission:attendance.view,admin');
+    Route::post('attendances/status/{id}', [AttendanceController::class, 'updateStatus'])->name('attendances.status')->middleware('permission:attendance.edit,admin');
+    Route::resource('attendances', AttendanceController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:attendance.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:attendance.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:attendance.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:attendance.delete,admin');
 
     // HRM - Attendance Adjustments
-    Route::post('attendance-adjustments/status/{id}', [AttendanceAdjustmentController::class, 'updateStatus'])->name('attendance-adjustments.status');
-    Route::post('attendance-adjustments/{attendanceAdjustment}/approve', [AttendanceAdjustmentController::class, 'approve'])->name('attendance-adjustments.approve');
-    Route::post('attendance-adjustments/{attendanceAdjustment}/reject', [AttendanceAdjustmentController::class, 'reject'])->name('attendance-adjustments.reject');
-    Route::resource('attendance-adjustments', AttendanceAdjustmentController::class)->except(['show']);
+    Route::post('attendance-adjustments/status/{id}', [AttendanceAdjustmentController::class, 'updateStatus'])->name('attendance-adjustments.status')->middleware('permission:attendance-adjustment.edit,admin');
+    Route::post('attendance-adjustments/{attendanceAdjustment}/approve', [AttendanceAdjustmentController::class, 'approve'])->name('attendance-adjustments.approve')->middleware('permission:attendance-adjustment.approve,admin');
+    Route::post('attendance-adjustments/{attendanceAdjustment}/reject', [AttendanceAdjustmentController::class, 'reject'])->name('attendance-adjustments.reject')->middleware('permission:attendance-adjustment.reject,admin');
+    Route::resource('attendance-adjustments', AttendanceAdjustmentController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:attendance-adjustment.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:attendance-adjustment.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:attendance-adjustment.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:attendance-adjustment.delete,admin');
 
     // HRM - Leave Balances
-    Route::post('leave-balances/status/{id}', [LeaveBalanceController::class, 'updateStatus'])->name('leave-balances.status');
-    Route::post('leave-balances/generate', [LeaveBalanceController::class, 'generate'])->name('leave-balances.generate');
-    Route::post('leave-balances/{leaveBalance}/encash', [LeaveBalanceController::class, 'encash'])->name('leave-balances.encash');
-    Route::resource('leave-balances', LeaveBalanceController::class)->except(['show']);
+    Route::post('leave-balances/status/{id}', [LeaveBalanceController::class, 'updateStatus'])->name('leave-balances.status')->middleware('permission:leave-balance.edit,admin');
+    Route::post('leave-balances/generate', [LeaveBalanceController::class, 'generate'])->name('leave-balances.generate')->middleware('permission:leave-balance.generate,admin');
+    Route::post('leave-balances/{leaveBalance}/encash', [LeaveBalanceController::class, 'encash'])->name('leave-balances.encash')->middleware('permission:leave-balance.encash,admin');
+    Route::resource('leave-balances', LeaveBalanceController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:leave-balance.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:leave-balance.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:leave-balance.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:leave-balance.delete,admin');
 
     // HRM - Leave Requests
-    Route::get('leave-requests/calendar', [LeaveRequestController::class, 'calendar'])->name('leave-requests.calendar');
-    Route::get('leave-requests/calendar-events', [LeaveRequestController::class, 'calendarEvents'])->name('leave-requests.calendar-events');
-    Route::post('leave-requests/status/{id}', [LeaveRequestController::class, 'updateStatus'])->name('leave-requests.status');
-    Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve');
-    Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
-    Route::post('leave-requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel'])->name('leave-requests.cancel');
-    Route::resource('leave-requests', LeaveRequestController::class)->except(['show']);
+    Route::get('leave-requests/calendar', [LeaveRequestController::class, 'calendar'])->name('leave-requests.calendar')->middleware('permission:leave-request.view,admin');
+    Route::get('leave-requests/calendar-events', [LeaveRequestController::class, 'calendarEvents'])->name('leave-requests.calendar-events')->middleware('permission:leave-request.view,admin');
+    Route::post('leave-requests/status/{id}', [LeaveRequestController::class, 'updateStatus'])->name('leave-requests.status')->middleware('permission:leave-request.edit,admin');
+    Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve')->middleware('permission:leave-request.approve,admin');
+    Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject')->middleware('permission:leave-request.reject,admin');
+    Route::post('leave-requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel'])->name('leave-requests.cancel')->middleware('permission:leave-request.cancel,admin');
+    Route::resource('leave-requests', LeaveRequestController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:leave-request.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:leave-request.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:leave-request.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:leave-request.delete,admin');
 
     // HRM - Leave Reports (Phase F3)
-    Route::get('leave-reports', [LeaveReportController::class, 'index'])->name('leave-reports.index');
+    Route::get('leave-reports', [LeaveReportController::class, 'index'])->name('leave-reports.index')->middleware('permission:leave-report.view,admin');
 
     // HRM - Salary Structures
-    Route::get('salary-structures/how-to', [SalaryStructureController::class, 'howTo'])->name('salary-structures.how.to');
-    Route::post('salary-structures/status/{id}', [SalaryStructureController::class, 'updateStatus'])->name('salary-structures.status');
-    Route::resource('salary-structures', SalaryStructureController::class)->except(['show']);
+    Route::get('salary-structures/how-to', [SalaryStructureController::class, 'howTo'])->name('salary-structures.how.to')->middleware('permission:salary-structure.view,admin');
+    Route::post('salary-structures/status/{id}', [SalaryStructureController::class, 'updateStatus'])->name('salary-structures.status')->middleware('permission:salary-structure.edit,admin');
+    Route::resource('salary-structures', SalaryStructureController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:salary-structure.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:salary-structure.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:salary-structure.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:salary-structure.delete,admin');
 
     // HRM - Salary Templates (bulk-assignable salary templates for employee groups)
-    Route::get('salary-templates/how-to', [SalaryTemplateController::class, 'howTo'])->name('salary-templates.how.to');
-    Route::post('salary-templates/status/{id}', [SalaryTemplateController::class, 'updateStatus'])->name('salary-templates.status');
-    Route::get('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assignForm'])->name('salary-templates.assign-form');
-    Route::post('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assign'])->name('salary-templates.assign');
-    Route::resource('salary-templates', SalaryTemplateController::class)->except(['show']);
+    Route::get('salary-templates/how-to', [SalaryTemplateController::class, 'howTo'])->name('salary-templates.how.to')->middleware('permission:salary-template.view,admin');
+    Route::post('salary-templates/status/{id}', [SalaryTemplateController::class, 'updateStatus'])->name('salary-templates.status')->middleware('permission:salary-template.edit,admin');
+    Route::get('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assignForm'])->name('salary-templates.assign-form')->middleware('permission:salary-template.assign,admin');
+    Route::post('salary-templates/{salaryTemplate}/assign', [SalaryTemplateController::class, 'assign'])->name('salary-templates.assign')->middleware('permission:salary-template.assign,admin');
+    Route::resource('salary-templates', SalaryTemplateController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:salary-template.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:salary-template.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:salary-template.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:salary-template.delete,admin');
 
     // HRM - Minimum Wage Rules (per country/state compliance floor)
-    Route::post('minimum-wage-rules/status/{id}', [MinimumWageRuleController::class, 'updateStatus'])->name('minimum-wage-rules.status');
-    Route::resource('minimum-wage-rules', MinimumWageRuleController::class)->except(['show']);
+    Route::post('minimum-wage-rules/status/{id}', [MinimumWageRuleController::class, 'updateStatus'])->name('minimum-wage-rules.status')->middleware('permission:minimum-wage-rule.edit,admin');
+    Route::resource('minimum-wage-rules', MinimumWageRuleController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:minimum-wage-rule.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:minimum-wage-rule.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:minimum-wage-rule.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:minimum-wage-rule.delete,admin');
 
     // HRM - Payroll Compliance Report (read-only)
-    Route::get('payroll-compliance-report', [PayrollComplianceReportController::class, 'index'])->name('payroll-compliance-report.index');
+    Route::get('payroll-compliance-report', [PayrollComplianceReportController::class, 'index'])->name('payroll-compliance-report.index')->middleware('permission:payroll-compliance-report.view,admin');
 
     // HRM - Payroll
-    Route::post('payrolls/status/{id}', [PayrollController::class, 'updateStatus'])->name('payrolls.status');
-    Route::post('payrolls/{payroll}/mark-paid', [PayrollController::class, 'markAsPaid'])->name('payrolls.mark-paid');
-    Route::get('payrolls/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payrolls.payslip');
-    Route::resource('payrolls', PayrollController::class)->except(['show', 'edit', 'update']);
+    Route::post('payrolls/status/{id}', [PayrollController::class, 'updateStatus'])->name('payrolls.status')->middleware('permission:payroll.create,admin');
+    Route::post('payrolls/{payroll}/mark-paid', [PayrollController::class, 'markAsPaid'])->name('payrolls.mark-paid')->middleware('permission:payroll.mark-paid,admin');
+    Route::get('payrolls/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payrolls.payslip')->middleware('permission:payroll.view,admin');
+    Route::resource('payrolls', PayrollController::class)->except(['show', 'edit', 'update'])
+        ->middlewareFor(['index'], 'permission:payroll.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:payroll.create,admin')
+        ->middlewareFor(['destroy'], 'permission:payroll.delete,admin');
 
     // HRM - Expense Claims
-    Route::post('expense-claims/status/{id}', [ExpenseClaimController::class, 'updateStatus'])->name('expense-claims.status');
-    Route::post('expense-claims/{expenseClaim}/approve', [ExpenseClaimController::class, 'approve'])->name('expense-claims.approve');
-    Route::post('expense-claims/{expenseClaim}/reject', [ExpenseClaimController::class, 'reject'])->name('expense-claims.reject');
-    Route::resource('expense-claims', ExpenseClaimController::class)->except(['show']);
+    Route::post('expense-claims/status/{id}', [ExpenseClaimController::class, 'updateStatus'])->name('expense-claims.status')->middleware('permission:expense-claim.edit,admin');
+    Route::post('expense-claims/{expenseClaim}/approve', [ExpenseClaimController::class, 'approve'])->name('expense-claims.approve')->middleware('permission:expense-claim.approve,admin');
+    Route::post('expense-claims/{expenseClaim}/reject', [ExpenseClaimController::class, 'reject'])->name('expense-claims.reject')->middleware('permission:expense-claim.reject,admin');
+    Route::resource('expense-claims', ExpenseClaimController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:expense-claim.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:expense-claim.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:expense-claim.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:expense-claim.delete,admin');
 
     // HRM - Employee Loans
-    Route::post('employee-loans/status/{id}', [EmployeeLoanController::class, 'updateStatus'])->name('employee-loans.status');
-    Route::post('employee-loans/{employeeLoan}/approve', [EmployeeLoanController::class, 'approve'])->name('employee-loans.approve');
-    Route::post('employee-loans/{employeeLoan}/reject', [EmployeeLoanController::class, 'reject'])->name('employee-loans.reject');
-    Route::post('employee-loans/{employeeLoan}/record-payment', [EmployeeLoanController::class, 'recordPayment'])->name('employee-loans.record-payment');
-    Route::resource('employee-loans', EmployeeLoanController::class)->except(['show']);
+    Route::post('employee-loans/status/{id}', [EmployeeLoanController::class, 'updateStatus'])->name('employee-loans.status')->middleware('permission:employee-loan.edit,admin');
+    Route::post('employee-loans/{employeeLoan}/approve', [EmployeeLoanController::class, 'approve'])->name('employee-loans.approve')->middleware('permission:employee-loan.approve,admin');
+    Route::post('employee-loans/{employeeLoan}/reject', [EmployeeLoanController::class, 'reject'])->name('employee-loans.reject')->middleware('permission:employee-loan.reject,admin');
+    Route::post('employee-loans/{employeeLoan}/record-payment', [EmployeeLoanController::class, 'recordPayment'])->name('employee-loans.record-payment')->middleware('permission:employee-loan.record-payment,admin');
+    Route::resource('employee-loans', EmployeeLoanController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:employee-loan.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:employee-loan.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:employee-loan.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:employee-loan.delete,admin');
 
     // HRM - Performance Reviews
-    Route::post('performance-reviews/status/{id}', [PerformanceReviewController::class, 'updateStatus'])->name('performance-reviews.status');
-    Route::resource('performance-reviews', PerformanceReviewController::class)->except(['show']);
+    Route::post('performance-reviews/status/{id}', [PerformanceReviewController::class, 'updateStatus'])->name('performance-reviews.status')->middleware('permission:performance-review.edit,admin');
+    Route::resource('performance-reviews', PerformanceReviewController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:performance-review.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:performance-review.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:performance-review.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:performance-review.delete,admin');
 
     // HRM - HR Reports
-    Route::get('hr-reports', [HrReportController::class, 'index'])->name('hr-reports.index');
+    Route::get('hr-reports', [HrReportController::class, 'index'])->name('hr-reports.index')->middleware('permission:hr-report.view,admin');
 
     // HRM - Departments
-    Route::get('departments/how-to', [DepartmentController::class, 'howTo'])->name('departments.how.to');
-    Route::post('departments/status/{id}', [DepartmentController::class, 'updateStatus'])->name('departments.status');
-    Route::resource('departments', DepartmentController::class)->except(['show']);
+    Route::get('departments/how-to', [DepartmentController::class, 'howTo'])->name('departments.how.to')->middleware('permission:department.view,admin');
+    Route::post('departments/status/{id}', [DepartmentController::class, 'updateStatus'])->name('departments.status')->middleware('permission:department.edit,admin');
+    Route::resource('departments', DepartmentController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:department.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:department.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:department.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:department.delete,admin');
 
     // HRM - Designations
-    Route::get('designations/how-to', [DesignationController::class, 'howTo'])->name('designations.how.to');
-    Route::post('designations/status/{id}', [DesignationController::class, 'updateStatus'])->name('designations.status');
+    Route::get('designations/how-to', [DesignationController::class, 'howTo'])->name('designations.how.to')->middleware('permission:designation.view,admin');
+    Route::post('designations/status/{id}', [DesignationController::class, 'updateStatus'])->name('designations.status')->middleware('permission:designation.edit,admin');
+    // Dependent-dropdown helper (department -> designations), reused by
+    // other already-gated screens — deliberately left ungated.
     Route::get('designations/by-department/{department}', [DesignationController::class, 'getByDepartment'])->name('designations.byDepartment');
-    Route::resource('designations', DesignationController::class)->except(['show']);
+    Route::resource('designations', DesignationController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:designation.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:designation.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:designation.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:designation.delete,admin');
 
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
