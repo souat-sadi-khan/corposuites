@@ -12,10 +12,10 @@
         <div class="fm-grid">
             <div class="fm-field">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" class="form-select select" required data-placeholder="Select Employee">
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ old('employee_id', $performanceReview->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}"  value="{{ $employee->id }}" {{ old('employee_id', $performanceReview->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
@@ -24,7 +24,7 @@
                 <select name="reviewer_id" class="form-select select">
                     <option value="">Select Reviewer</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ old('reviewer_id', $performanceReview->reviewer_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}"  value="{{ $employee->id }}" {{ old('reviewer_id', $performanceReview->reviewer_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
@@ -42,7 +42,7 @@
             </div>
             <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $performanceReview->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $performanceReview->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>

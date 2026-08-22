@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <div class="sec-hdr d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="sec-hdr d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h2>Payroll Compliance Report</h2>
             <div class="sec-sub">Every active employee's current pay rate checked against today's Minimum Wage Rules</div>
@@ -14,22 +14,22 @@
     </div>
 
     <div class="tl-toolbar mb-3">
-        <form method="GET" class="d-flex gap-2 flex-wrap align-items-center w-100">
-            <select name="department_id" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+        <form method="GET" class="fm-body d-flex gap-2 flex-wrap align-items-center w-100">
+            <select name="department_id" class="form-select select form-select-sm w-auto" onchange="this.form.submit()">
                 <option value="">All Departments</option>
                 @foreach($departments as $department)
-                    <option value="{{ $department->id }}" {{ (string) $departmentId === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
+                    <option data-desc="{{ $department->description }}" value="{{ $department->id }}" {{ (string) $departmentId === (string) $department->id ? 'selected' : '' }}>{{ $department->name }}</option>
                 @endforeach
             </select>
 
-            <select name="pay_type" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+            <select name="pay_type" class="form-select select form-select-sm w-auto" onchange="this.form.submit()">
                 <option value="">All Pay Types</option>
                 <option value="monthly" {{ $payType === 'monthly' ? 'selected' : '' }}>Monthly</option>
                 <option value="daily" {{ $payType === 'daily' ? 'selected' : '' }}>Daily</option>
                 <option value="commission" {{ $payType === 'commission' ? 'selected' : '' }}>Commission-based</option>
             </select>
 
-            <select name="compliance" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+            <select name="compliance" class="select form-select form-select-sm w-auto" onchange="this.form.submit()">
                 <option value="">All Compliance States</option>
                 <option value="compliant" {{ $compliance === 'compliant' ? 'selected' : '' }}>Compliant</option>
                 <option value="non_compliant" {{ $compliance === 'non_compliant' ? 'selected' : '' }}>Non-Compliant</option>
@@ -193,3 +193,9 @@
     </div>
 
 @endsection
+
+@push('scripts')
+    <script>
+        _componentSelect();
+    </script>
+@endpush

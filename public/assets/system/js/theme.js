@@ -408,6 +408,14 @@ $(function () {
     if (!was) $dd.addClass('is-open');
   });
 
+  $('#attendanceWidgetBtn').on('click', function (e) {
+    e.stopPropagation();
+    var $dd = $('#attendanceWidgetDd');
+    var was = $dd.hasClass('is-open');
+    closeAllDd();
+    if (!was) $dd.addClass('is-open');
+  });
+
   $(document).on('click', function () { closeAllDd(); hideFlyout(); });
   $('.tb-dd').on('click', function (e) { e.stopPropagation(); });
 });

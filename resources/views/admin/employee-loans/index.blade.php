@@ -37,12 +37,12 @@
         <div class="tl-spacer"></div>
 
         <!-- Add Button -->
-        @can('employee-loan.create')
+        @if(Auth::guard('admin')->user()?->can('employee-loan.create'))
         <button id="openModal" data-url="{{ route('admin.employee-loans.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Loan
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

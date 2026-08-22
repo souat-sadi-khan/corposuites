@@ -30,12 +30,12 @@
         <div class="tl-spacer"></div>
 
         <!-- Add Button -->
-        @can('skill.create')
+        @if(Auth::guard('admin')->user()?->can('skill.create'))
         <button id="openModal" data-url="{{ route('admin.skills.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Skill
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

@@ -25,11 +25,11 @@
             <i class="ri-question-mark"></i>
         </button>
 
-        @can('designation.create')
+        @if(Auth::guard('admin')->user()?->can('designation.create'))
         <button id="openModal" data-url="{{ route('admin.designations.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i> Add Designation
         </button>
-        @endcan
+        @endif
     </div>
 
     <div class="nx-card tl-card">

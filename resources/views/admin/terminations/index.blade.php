@@ -42,12 +42,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('termination.create')
+        @if(Auth::guard('admin')->user()?->can('termination.create'))
         <button id="openModal" data-url="{{ route('admin.terminations.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Termination
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

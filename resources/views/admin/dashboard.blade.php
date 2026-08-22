@@ -1,4 +1,4 @@
-@extends('admin.layout.app', ['title' => t('site_title.dashboard_title')])
+@extends('admin.layout.app', ['title' => t('site_title.dashboard_title'), 'modal' => 'lg'])
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('assets/system/css/dashboard.css') }}">

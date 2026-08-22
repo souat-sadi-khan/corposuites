@@ -14,35 +14,33 @@
             <input type="text" id="expenseClaimSearch" placeholder="Search Expense Claims">
         </div>
 
-        <div class="tl-filter-wrap">
-            <button class="tl-filter-btn" id="tlFilterBtn" title="Filter">
-                <i class="ri-equalizer-line"></i>
-            </button>
-
-            <div class="tl-filter-dd" id="tlFilterDd">
-                <div class="tl-filter-dd-title">
-                    Filter by Status
-                </div>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="1" checked>
-                    Active
-                </label>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="0" checked>
-                    Inactive
-                </label>
-            </div>
-        </div>
+        <!-- Advanced Search -->
+        <button type="button" class="btn-nx-outline adv-search-btn" data-bs-toggle="modal" data-bs-target="#expenseClaimAdvSearchModal" title="Advanced Search">
+            <i class="ri-filter-3-line"></i>
+            Advanced Search
+            <span class="adv-search-badge" id="advSearchBadge" style="display:none;">0</span>
+        </button>
 
         <div class="tl-spacer"></div>
 
+        <!-- How To -->
+        <button id="openModal" data-url="{{ route('admin.expense-claims.how.to') }}" class="btn-nx-outline">
+            <i class="ri-question-mark"></i>
+        </button>
+
         <!-- Add Button -->
-        @can('expense-claim.create')
+        @if(Auth::guard('admin')->user()?->can('expense-claim.create'))
         <button id="openModal" data-url="{{ route('admin.expense-claims.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Expense Claim
         </button>
-        @endcan
+        @endif
+    </div>
+
+    <!-- Active Advanced Search Filters -->
+    <div class="adv-search-chips" id="advSearchChipsBar" style="display:none;">
+        <span class="adv-search-chips-label"><i class="ri-price-tag-3-line"></i> Filters:</span>
+        <div id="advSearchChips" class="d-flex align-items-center gap-2 flex-wrap"></div>
     </div>
 
     <!-- Table Card -->
@@ -52,11 +50,12 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Category</th>
                         <th>Employee</th>
+                        <th>Category</th>
                         <th>Date</th>
                         <th>Receipt</th>
                         <th>Approval</th>
+                        <th>Reimbursement</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>
                     </tr>
@@ -75,6 +74,126 @@
                 <button class="tl-page-btn" id="tlNext" title="Next page">
                     <i class="ri-arrow-right-s-line"></i>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Modal -->
+    <div class="modal fade" id="expenseClaimAdvSearchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="nx-modal-box fm-modal-content">
+                <div class="modal-header fm-modal-head">
+                    <div>
+                        <h5 class="modal-title"><i class="ri-filter-3-line me-1"></i> Advanced Search</h5>
+                        <p>Combine any of the fields below to narrow down expense claims.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body fm-modal-body fm-body">
+                    <div class="fm-grid">
+
+                        <div class="adv-search-section"><i class="ri-user-3-line"></i> Employee &amp; Category</div>
+
+                        <div class="fm-field fm-full">
+                            <label>Employee</label>
+                            <select id="advEmployee" class="form-select" data-placeholder="All Employees">
+                                <option value="">All Employees</option>
+                                @foreach($employees as $employee)
+                                    <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->employee_code }}" value="{{ $employee->id }}">{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="fm-field fm-full">
+                            <label>Category</label>
+                            <select id="advCategory" class="form-select" data-placeholder="All Categories">
+                                <option value="">All Categories</option>
+                                @foreach($expenseCategories as $category)
+                                    <option data-desc="{{ $category->description }}" value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="adv-search-section"><i class="ri-shield-check-line"></i> Approval &amp; Reimbursement</div>
+
+                        <div class="fm-field">
+                            <label>Approval Status</label>
+                            <select id="advApprovalStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">All Approvals</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Reimbursement Status</label>
+                            <select id="advPaymentStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">All</option>
+                                <option value="unpaid">Unpaid</option>
+                                <option value="paid">Reimbursed</option>
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Has Receipt</label>
+                            <select id="advHasReceipt" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">Either</option>
+                                <option value="1">Yes</option>
+                                <option value="0">No</option>
+                            </select>
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Record Status</label>
+                            <select id="advRecordStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">Active and Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+
+                        <div class="adv-search-section"><i class="ri-calendar-2-line"></i> Expense Date Range</div>
+
+                        <div class="fm-field">
+                            <label>From</label>
+                            <input type="date" id="advDateFrom" class="form-control">
+                        </div>
+
+                        <div class="fm-field">
+                            <label>To</label>
+                            <input type="date" id="advDateTo" class="form-control">
+                        </div>
+
+                        <div class="adv-search-section"><i class="ri-money-dollar-circle-line"></i> Amount Range</div>
+
+                        <div class="fm-field">
+                            <label>Minimum</label>
+                            <input type="number" step="0.01" min="0" id="advAmountMin" class="form-control" placeholder="e.g. 10">
+                        </div>
+
+                        <div class="fm-field">
+                            <label>Maximum</label>
+                            <input type="number" step="0.01" min="0" id="advAmountMax" class="form-control" placeholder="e.g. 500">
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="modal-footer fm-modal-foot">
+                    <span class="fm-foot-note">
+                        <i class="ri-information-line"></i> Leave a field empty to skip that filter
+                    </span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn-nx-outline" id="advSearchReset">
+                            <i class="ri-refresh-line me-1"></i> Reset
+                        </button>
+                        <button type="button" class="btn-nx-primary" id="advSearchApply">
+                            <i class="ri-search-line me-1"></i> Apply Filters
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

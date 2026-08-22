@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <div class="sec-hdr">
+    <div class="sec-hdr mb-3">
         <div>
             <h2>HR Overview</h2>
             <div class="sec-sub">Aggregated snapshot across employees, attendance, leave, and payroll</div>
@@ -10,7 +10,7 @@
     </div>
 
     <!-- Stat cards -->
-    <div class="stats-grid">
+    <div class="stats-grid mb-3">
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-lbl">Total Employees</div>
@@ -96,15 +96,14 @@
         </div>
     </div>
 
-    <div class="twin-row mb-3">
-        <div class="nx-card">
+    <div class="twin-row">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Employees by Department</div>
                     <div class="nx-card-sub">Active employees grouped by department</div>
                 </div>
             </div>
-
             <div class="nx-card-body">
                 <div class="chart-wrap">
                     <canvas id="departmentChart"></canvas>
@@ -112,7 +111,7 @@
             </div>
         </div>
 
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Today's Attendance</div>
@@ -128,7 +127,7 @@
         </div>
     </div>
 
-    <div class="bottom-row">
+    <div class="bottom-row mb-3 ">
         <div class="nx-card">
             <div class="nx-card-hdr">
                 <div>

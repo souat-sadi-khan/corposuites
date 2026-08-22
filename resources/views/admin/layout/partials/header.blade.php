@@ -10,6 +10,44 @@
         <span class="bc-page" id="bcPage">{{ isset($title) ? $title : 'Dashboard' }}</span>
     </div>
 
+    @if($attendanceWidget)
+        <!-- Attendance Widget — always-visible status chip, left side of header -->
+        <div class="position-relative">
+            <button type="button" class="aw-chip aw-chip-{{ $attendanceWidget['state'] }}" id="attendanceWidgetBtn" title="My Attendance">
+                <span class="aw-chip-dot" id="awChipDot"></span>
+                <span class="aw-chip-label" id="awChipLabel">{{ $attendanceWidget['label'] }}</span>
+                @if($attendanceWidget['check_in'])
+                    <span class="aw-chip-time" id="awChipTime">· {{ $attendanceWidget['check_in'] }}</span>
+                @else
+                    <span class="aw-chip-time" id="awChipTime"></span>
+                @endif
+            </button>
+
+            <div class="tb-dd aw-dd" id="attendanceWidgetDd">
+                <div class="aw-head">
+                    <div class="aw-today">Today</div>
+                    <div class="aw-date" id="awDate">{{ $attendanceWidget['date_label'] }}</div>
+                </div>
+
+                <div class="aw-body" id="awBody">
+                    @include('admin.layout.partials.attendance-widget-body', ['w' => $attendanceWidget])
+                </div>
+
+                <div class="dd-foot">
+                    <a href="{{ route('admin.attendance-portal.index') }}">My Attendance</a>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.attendanceWidgetRoutes = {
+                status: '{{ route('admin.attendance-widget.status') }}',
+                checkIn: '{{ route('admin.attendance-portal.check-in') }}',
+                checkOut: '{{ route('admin.attendance-portal.check-out') }}'
+            };
+        </script>
+    @endif
+
     <div class="tb-search">
         <i class="ri-search-line"></i>
         <input type="text" id="globalSearchInput" placeholder="Search anything...">

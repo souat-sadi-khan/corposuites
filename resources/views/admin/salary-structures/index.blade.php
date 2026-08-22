@@ -156,12 +156,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('salary-structure.create')
+        @if(Auth::guard('admin')->user()?->can('salary-structure.create'))
         <button id="openModal" data-url="{{ route('admin.salary-structures.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Salary Structure
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Active Advanced Search Filters -->

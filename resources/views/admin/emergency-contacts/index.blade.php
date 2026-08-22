@@ -42,12 +42,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('emergency-contact.create')
+        @if(Auth::guard('admin')->user()?->can('emergency-contact.create'))
         <button id="openModal" data-url="{{ route('admin.emergency-contacts.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Contact
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

@@ -2,13 +2,13 @@
 
 @section('content')
 
-    <div class="sec-hdr d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="sec-hdr d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
             <h2>Leave Reports</h2>
             <div class="sec-sub">Balance utilization, trends, and status analytics for {{ $year }}</div>
         </div>
 
-        <form method="GET" action="{{ route('admin.leave-reports.index') }}" class="d-flex align-items-center gap-2">
+        <form method="GET" action="{{ route('admin.leave-reports.index') }}" class="d-flex fm-body align-items-center gap-2">
             <label class="mb-0"><small>Year</small></label>
             <select name="year" class="form-select" style="width:auto;" onchange="this.form.submit()">
                 @foreach($years as $y)
@@ -61,8 +61,8 @@
         </div>
     </div>
 
-    <div class="twin-row mb-3">
-        <div class="nx-card">
+    <div class="twin-row">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Utilization by Leave Type</div>
@@ -77,7 +77,7 @@
             </div>
         </div>
 
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Monthly Trend</div>
@@ -93,8 +93,8 @@
         </div>
     </div>
 
-    <div class="twin-row mb-3">
-        <div class="nx-card">
+    <div class="twin-row">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Request Status Breakdown</div>
@@ -109,7 +109,7 @@
             </div>
         </div>
 
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Balance Summary by Type</div>

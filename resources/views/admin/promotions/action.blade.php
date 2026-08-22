@@ -5,9 +5,9 @@
     </button> --}}
 
     <!-- Delete -->
-    @can('promotion.delete')
+    @if(Auth::guard('admin')->user()?->can('promotion.delete'))
     <button class="tl-icon-btn danger" id="delete_item" data-id="{{ $row->id }}" data-url="{{ route('admin.promotions.destroy', $row->id) }}" data-del="1" title="Delete">
         <i class="ri-delete-bin-line"></i>
     </button>
-    @endcan
+    @endif
 </div>

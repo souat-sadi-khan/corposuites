@@ -27,7 +27,7 @@
                     </label>
 
                     <select name="date_format"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
 
                         @foreach([
@@ -58,7 +58,7 @@
                         Time Format
                     </label>
                     <select name="time_format"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
 
                         <option value="12"
@@ -84,7 +84,7 @@
                     </label>
 
                     <select name="week_start"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
 
                         @foreach([
@@ -116,7 +116,7 @@
                     </label>
 
                     <select name="month_start"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
 
                         <option value="1">
@@ -166,7 +166,7 @@
                     </label>
 
                     <select name="decimal_separator"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
                         <option value="."
                         {{ get_settings('decimal_separator') == '.' ? 'selected' : '' }}>
@@ -191,7 +191,7 @@
                     </label>
 
                     <select name="thousand_separator"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
                         <option value=","
                         {{ get_settings('thousand_separator') == ',' ? 'selected' : '' }}>
@@ -291,7 +291,7 @@
 
 
                     <select name="currency"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
 
                         @foreach([
@@ -448,7 +448,7 @@
 
 
                     <select name="timezone"
-                            class="form-control select2-infinity">
+                            class="form-control select">
 
 
                         @foreach(tz_list() as $timezone)

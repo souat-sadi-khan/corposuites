@@ -11,11 +11,11 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" data-placeholder="Select Employee" class="form-select select" required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
                         <option
-                            value="{{ $employee->id }}"
+                            value="{{ $employee->id }}" data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}"
                             data-pay-type="{{ $employeePayTypes[$employee->id] ?? 'monthly' }}"
                             data-occurrence-components='@json($employeeOccurrenceComponents[$employee->id] ?? [])'
                             {{ request('employee_id') == $employee->id ? 'selected' : '' }}>

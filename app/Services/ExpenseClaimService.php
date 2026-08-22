@@ -46,6 +46,25 @@ class ExpenseClaimService
         return $expenseClaim;
     }
 
+    public function markReimbursed(ExpenseClaim $expenseClaim, ?string $paymentDate, ?string $method): ExpenseClaim
+    {
+        if ($expenseClaim->approval_status !== 'approved') {
+            throw new \RuntimeException('Only an approved claim can be marked as reimbursed.');
+        }
+
+        if ($expenseClaim->payment_status === 'paid') {
+            throw new \RuntimeException('This claim has already been reimbursed.');
+        }
+
+        $expenseClaim->update([
+            'payment_status' => 'paid',
+            'payment_date' => $paymentDate ?: now()->toDateString(),
+            'reimbursement_method' => $method,
+        ]);
+
+        return $expenseClaim;
+    }
+
     protected function storeFile(UploadedFile $file): string
     {
         return $file->store('receipts/expense-claims', 'public');

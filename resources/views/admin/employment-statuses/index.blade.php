@@ -35,12 +35,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('employment-status.create')
+        @if(Auth::guard('admin')->user()?->can('employment-status.create'))
         <button id="openModal" data-url="{{ route('admin.employment-statuses.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Employment Status
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

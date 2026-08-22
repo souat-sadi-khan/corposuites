@@ -35,12 +35,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('leave-type.create')
+        @if(Auth::guard('admin')->user()?->can('leave-type.create'))
         <button id="openModal" data-url="{{ route('admin.leave-types.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Leave Type
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

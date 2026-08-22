@@ -56,6 +56,15 @@ if (!function_exists('clear_settings_cache')) {
 if (!function_exists('tz_list')) {
     function tz_list()
     {
+        // date_default_timezone_set() is process/request-global, and the loop
+        // below calls it once per timezone just to read that zone's own GMT
+        // offset — without saving/restoring the timezone that was active
+        // before this function ran, every date/time computed for the REST
+        // of the request (including now()/today() elsewhere on this same
+        // page) would be silently left in whichever zone happens to be last
+        // in PHP's timezone_identifiers_list().
+        $originalTimezone = date_default_timezone_get();
+
         $zones_array = array();
         $timestamp = time();
         foreach (timezone_identifiers_list() as $key => $zone) {
@@ -63,6 +72,9 @@ if (!function_exists('tz_list')) {
             $zones_array[$key]['zone'] = $zone;
             $zones_array[$key]['diff_from_GMT'] = 'UTC/GMT ' . date('P', $timestamp);
         }
+
+        date_default_timezone_set($originalTimezone);
+
         return $zones_array;
     }
 }

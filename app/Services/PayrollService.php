@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\Employee;
 use App\Models\Payroll;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureItem;
 use App\Models\LeaveRequest;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class PayrollService
 {
@@ -68,6 +70,107 @@ class PayrollService
         }
 
         return $payroll;
+    }
+
+    /**
+     * Generate payroll for every employee id given, for one month/year —
+     * the "Generate for All" bulk action. Each employee is checked for
+     * eligibility independently and skipped (with a plain-English reason,
+     * never a thrown exception) rather than aborting the whole batch —
+     * the same {created, skipped} shape already established by
+     * SalaryTemplateService::assignToEmployees() and
+     * SalaryStructureService::assignComponentToEmployees(). A commission-
+     * based structure or one carrying a per-occurrence component is
+     * skipped too: a bulk run has no way to collect a per-employee sales
+     * figure or occurrence count, so those must still be generated one at
+     * a time from the regular "Generate Payroll" form.
+     *
+     * @return array{created: \Illuminate\Support\Collection<int, Payroll>, skipped: \Illuminate\Support\Collection<int, array>}
+     */
+    public function bulkGenerate(array $employeeIds, int $month, int $year): array
+    {
+        $created = collect();
+        $skipped = collect();
+
+        if (empty($employeeIds)) {
+            return ['created' => $created, 'skipped' => $skipped];
+        }
+
+        $employees = Employee::whereIn('id', $employeeIds)->get()->keyBy('id');
+
+        $structures = SalaryStructure::whereIn('employee_id', $employeeIds)
+            ->active()
+            ->orderByDesc('effective_date')
+            ->with('items.salaryComponent')
+            ->get()
+            ->groupBy('employee_id')
+            ->map(fn ($group) => $group->first());
+
+        $alreadyGenerated = Payroll::where('month', $month)
+            ->where('year', $year)
+            ->whereIn('employee_id', $employeeIds)
+            ->pluck('employee_id')
+            ->flip();
+
+        foreach ($employeeIds as $employeeId) {
+            $employee = $employees->get($employeeId);
+
+            if (! $employee) {
+                continue;
+            }
+
+            if ($alreadyGenerated->has($employeeId)) {
+                $skipped->push($this->bulkSkipRow($employee, 'Already has a payroll for this period.'));
+                continue;
+            }
+
+            $structure = $structures->get($employeeId);
+
+            if (! $structure) {
+                $skipped->push($this->bulkSkipRow($employee, 'No active salary structure.'));
+                continue;
+            }
+
+            if ($structure->pay_type === 'commission') {
+                $skipped->push($this->bulkSkipRow($employee, 'Commission-based pay needs a sales amount — generate individually.'));
+                continue;
+            }
+
+            $hasPerOccurrence = $structure->items->contains(
+                fn (SalaryStructureItem $item) => $item->salaryComponent->calculation_type === 'per_occurrence'
+            );
+
+            if ($hasPerOccurrence) {
+                $skipped->push($this->bulkSkipRow($employee, 'Has per-occurrence components needing counts — generate individually.'));
+                continue;
+            }
+
+            try {
+                $payroll = DB::transaction(fn () => $this->create([
+                    'employee_id' => $employeeId,
+                    'month' => $month,
+                    'year' => $year,
+                    'payment_status' => 'unpaid',
+                    'status' => 1,
+                ]));
+
+                $created->push($payroll);
+            } catch (\Throwable $e) {
+                $skipped->push($this->bulkSkipRow($employee, 'Could not be generated: ' . $e->getMessage()));
+            }
+        }
+
+        return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    protected function bulkSkipRow(Employee $employee, string $reason): array
+    {
+        return [
+            'employee_id' => $employee->id,
+            'employee_name' => $employee->full_name,
+            'employee_code' => $employee->employee_code,
+            'reason' => $reason,
+        ];
     }
 
     public function update(Payroll $payroll, array $data): Payroll

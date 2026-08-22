@@ -35,12 +35,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('employee-type.create')
+        @if(Auth::guard('admin')->user()?->can('employee-type.create'))
         <button id="openModal" data-url="{{ route('admin.employee-types.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Employee Type
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

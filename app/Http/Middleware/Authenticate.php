@@ -16,6 +16,10 @@ class Authenticate
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Set this before performing any work on an admin request. Blade's
+        // @can directive resolves the current user from the active guard.
+        Auth::shouldUse('admin');
+
         if (!Auth::guard('admin')->check()) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);

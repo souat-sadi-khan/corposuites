@@ -311,6 +311,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 	<script src="{{ asset('assets/system/js/main.js') }}"></script>
+	<script src="{{ asset('assets/system/js/attendance-widget.js') }}"></script>
 	<script src="{{ asset('assets/system/js/notification.js') }}"></script>
 
     @stack('scripts')

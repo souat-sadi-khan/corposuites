@@ -1,3 +1,90 @@
+---
+
+# Implementation Progress Tracker
+
+(Audited directly against the current codebase — updated as each task is finished. One task at a time.)
+
+CROSS-CUTTING FIX 2026-08-29 (per user question "what timezone is it using / get it from Localization settings"): found and fixed a real, app-WIDE bug — the Localization settings page lets an admin pick a "Default Timezone" (saved as the `timezone` system setting, e.g. Asia/Dhaka) but nothing ever actually applied it anywhere; the whole app (every now()/today() call, including every attendance check-in/checkout time and "today" boundary, not just Attendance) was silently running on config('app.timezone') from .env (UTC) regardless. Fixed in App\Providers\AppServiceProvider::boot() (applyConfiguredTimezone(), guarded so it never breaks a fresh-install console command like migrate before the settings table exists). Verified: now()/today() correctly return Asia/Dhaka time after the fix (was UTC before), migrate:status still runs cleanly. Also fixed a related latent bug found while reading this code: Helper.php's tz_list() (used by the Localization page's own timezone dropdown) called date_default_timezone_set() once per zone to compute GMT offsets but never restored the original timezone afterward, silently leaving the WHOLE REST OF THAT REQUEST on the last zone in PHP's list — fixed by saving/restoring it.
+
+Module 1: Schema / Backend Foundation — RE-VERIFIED 2026-08-29 (all 8 migrations confirmed Ran; columns match models exactly)
+[*] attendances table has employee_id, leave_request_id, attendance_date, check_in/out, geolocation, source, attendance_status enum, overtime_hours, leave snapshot fields, remarks, status
+[*] shifts table (name, start_time, end_time, grace period usage, description, status)
+[*] Employee/Attendance model relations (shift(), attendances(), employee())
+[*] payrolls.attendance_deduction column
+
+Module 2: Check-In / Check-Out Self-Service Backend — RE-VERIFIED 2026-08-29 (11-scenario live lifecycle test + 1 edge-case regression test, all passing; 1 real bug found and fixed)
+[*] AttendancePortalController::checkIn() — on-time, late, and duplicate-check-in-rejected all verified correct
+[*] AttendancePortalController::checkOut() — checkout-without-checkin rejected, duplicate-checkout rejected, verified correct
+[*] AttendancePortalController::devicePunch() (biometric device webhook, token-authed, CSRF-exempt) — correct-token accepted, wrong-token rejected, verified
+[*] Geolocation + geofence validation — verified: distant coordinate rejected with distance shown, in-radius coordinate accepted
+[*] Late / half-day / early-leave detection vs shift + grace period — verified: on-time, late, half_day (<50% shift worked), early_leave (>=50% but <full shift), full-shift-worked-stays-present, all correct
+[*] Overnight shift handling — BUG FOUND & FIXED: checkOut() looked up the attendance row by whereDate('attendance_date', today()), which never matches an overnight shift's row (dated the day BEFORE checkout) — every overnight check-out failed with a false "Check in before checking out." Fixed in app/Http/Controllers/Admin/AttendancePortalController.php: checkOut() now falls back to an still-open (check_in set, check_out null) record from yesterday when no record exists for today, while still correctly saying "check in before checking out" (not "already checked out") for a normal employee who has a closed record from yesterday but hasn't checked in yet today. Re-verified: overnight shift now checks out correctly (early_leave, 5min short of full 8h shift), and the no-false-positive edge case confirmed separately.
+
+Module 3: Header Attendance Widget — COMPLETED 2026-08-29 (8-state live functional test + non-employee-linked-admin regression test, all passing)
+[*] View composer / lightweight service for today's attendance+shift+leave status — app/Services/AttendanceStatusService.php (centralized, reused by both the header composer and the AJAX refresh endpoint), wired via AppServiceProvider's existing header composer (only queries when auth()->employee exists, no N+1)
+[*] Header/topbar widget markup (status, check-in/out time, worked hours, shift) — resources/views/admin/layout/partials/header.blade.php (new .tb-btn/.tb-dd widget, matches existing notif/profile dropdown convention exactly) + resources/views/admin/layout/partials/attendance-widget-body.blade.php (shared partial, reused by both the initial page render and the AJAX refresh so markup exists in one place only)
+[*] Check In / Check Out action buttons in widget (AJAX, loading/success/error states) — public/assets/system/js/attendance-widget.js, posts to the SAME existing admin.attendance-portal.check-in/check-out endpoints (no duplicate business logic), disables buttons + shows "Checking in/out..." while in flight (duplicate-request guard), refreshes via a new GET admin.attendance-widget.status endpoint (App\Http\Controllers\Admin\AttendanceWidgetController) after success
+[*] Verified all 8 states resolve correctly: not_checked_in, checked_in, late, checked_out, on_leave (via attendance row), holiday, weekly_off, absent — all through a real employee/admin/shift fixture, not just code review
+[*] Verified widget correctly absent (zero markup, zero queries triggered) for a plain admin with no linked employee
+[*] REVISED 2026-08-29 per user feedback ("button not working" + "move to left side" + "must show status clearly") — reproduced live in a real browser session (not just code review), found and fixed 3 real bugs:
+    1. Trigger button click did nothing: the dropdown's markup had a leftover inline style="display:none" copied from the Notifications dropdown's markup — inline styles beat the .tb-dd.is-open CSS class, so opening never worked. (Notifications only "works" because notification.js separately toggles its own inline style.display; every other dropdown in the header — profile, language, quick menus — correctly has NO inline display and relies on the CSS class alone, which is the actually-correct pattern.) Fixed by removing the inline style, matching those.
+    2. Check In / Check Out buttons did nothing even after fixing 1: theme.js registers `$('.tb-dd').on('click', e => e.stopPropagation())` on every dropdown so an in-dropdown click doesn't bubble up and trigger the global click-anywhere-closes-dropdowns handler — that same stopPropagation silently swallowed my document-level delegated button handlers before they ever fired. Fixed by delegating from the stable attendanceWidgetDd container instead of document.
+    3. After a successful check-in/out, the header chip's label/time/color never updated (only the dropdown body did), and the success message flashed and vanished instantly because the refresh replaced the message element in the same tick it was set. Fixed both in public/assets/system/js/attendance-widget.js.
+    Redesigned as requested: moved from the right-hand icon cluster into the header's LEFT side (next to the page title, before the search box — .tb-breadcrumb area), and changed from a small icon+dot into an always-visible text chip ("● Late · 09:20 AM") so status is readable without opening the dropdown at all.
+    Verified live end-to-end after all fixes: open/close, Check In → success message → chip updates to Late with the real check-in time → Check Out button appears → Check Out → success message → chip updates to "Checked Out" → action buttons correctly gone. All temporary browser-test fixtures (including 2 orphaned sets left behind by an earlier failed test script run, caught by a follow-up sweep) cleaned up.
+[*] FINAL RE-VERIFICATION 2026-08-29 (post timezone-fix + UI redesign, requested explicitly) — no code drift found between the two rounds; re-ran everything fresh:
+    - All 8 states re-checked via AttendanceStatusService directly under the NOW-CORRECT Asia/Dhaka timezone (previously only tested under UTC) — all correct, including that today's real date genuinely falls on a configured weekly-off day (Saturday) and the service correctly reports weekly_off rather than not_checked_in for it, matching real settings data.
+    - Query count for a full state resolution: 5 queries (employee's own row already in memory, shift lazy-load, attendance lookup, holiday lookup, leave-request exists check) — direct point lookups, no N+1 loop.
+    - Fresh live browser click-through end-to-end: open dropdown → Check In → "Checked in late." success message → chip updates to Late with the REAL Asia/Dhaka check-in time (11:04 PM, not a UTC-shifted time) → Check Out → "Checked out successfully." → chip updates to Checked Out, zero action buttons remain → outside-click correctly closes the dropdown. Zero console errors throughout.
+    - Non-employee-linked admin regression re-confirmed absent in the prior round; code unchanged since, no re-check needed.
+    Module 3 confirmed fully correct and stable as of this re-verification. All test fixtures cleaned up.
+
+Module 4: My Attendance (Employee Self-Service Page) — FULLY COMPLETED 2026-08-29 (all sub-items done, live/functionally verified)
+[*] Route + controller (attendance-portal.index/check-in/check-out)
+[*] Proper "My Attendance" UI — full redesign: gradient hero card (modern check-in/out buttons, remix icons, live times) + 8 summary stat cards (Present/Absent/Late/On Leave/Worked Hours/Overtime/Half Day/Missing Checkout) + full monthly detail table, all built on a new, centralized App\Services\AttendanceReportService (one query for attendance + one for holidays across the whole range, not per-day — reused for the future admin Module 6 report too)
+[*] Month/Date-range filters — Month (Y-m) OR explicit Date From/Date To (overrides month), capped at 92 days, defaults to current month; verified via real controller calls: full-month mode correctly classified all 31 August days (present/absent/late/on_leave/holiday/weekly_off/pending sum to exactly 31, worked-minutes math correct to the minute), range mode correctly scoped to exactly the 3 requested days
+[*] Added to HRM sidebar menu — "My Attendance" under the existing "Attendance & Leave" group, permission=null (self-service, same ungated reasoning as the routes themselves), verified present in a live rendered sidebar
+[*] Attendance adjustment request action from this page — COMPLETED 2026-08-29: reuses the EXISTING AttendanceAdjustment model/AttendanceAdjustmentService (no duplicate correction system) via two new ungated self-service routes (admin.attendance-portal.adjustment.form/store), a new resources/views/admin/attendance-portal/adjustment.blade.php form (pre-fills the day's actual recorded check-in/out as a starting point), and a "Request Adjustment" link + "Missing Checkout" indicator + "Adjustment: Pending/Approved/Rejected" badge added to every past-day row in the My Attendance table. Verified via 7 real functional tests: form pre-fill correct, future-date requests correctly rejected, a spoofed employee_id in the POST body is correctly ignored and forced to the real logged-in employee's own id (never trusted from the client, per PART 18/19), duplicate pending requests for the same date correctly rejected, the "already pending" notice correctly replaces the form once one exists, and all three table indicators (adjustment badge / request link / missing-checkout flag) render correctly.
+[*] Modernized Check In/Check Out buttons with gradient + remix icons per user feedback (was plain Bootstrap buttons)
+
+Module 5: Monthly Attendance Sheet / Calendar (Admin)
+[*] Route + controller (admin.attendances.monthly) with holiday/weekend detection
+[ ] Proper calendar/sheet UI (sticky columns, day-code badges P/A/L/H/WO/LV/HD, hover detail) — current view is a bare inline-HTML table
+[ ] Add to HRM sidebar menu (currently direct-URL only)
+
+Module 6: Admin Attendance Report (Advanced Filters + Summary Cards)
+[ ] Date range / department / designation / shift / employee-type filters (currently only status + employee_id + search)
+[ ] Centralized AttendanceReportService for calculations
+[ ] Summary cards (Present/Absent/Late/Leave/Worked Hours/Overtime/Missing Checkouts)
+[ ] Dedicated attendance report page (distinct from the generic HR dashboard tile)
+
+Module 7: Attendance Adjustment Integration
+[*] AttendanceAdjustment model/controller: full CRUD + approve()/reject(), Approvable/HasWorkflow
+[ ] Visual indicator on Attendance list/sheet for pending/approved/rejected adjustment
+[ ] "Request Adjustment" quick action wired from attendance record/day cell
+
+Module 8: Leave Integration
+[*] LeaveAttendanceService::syncApprovedLeave() / removeLeave() — approved leave writes on_leave into attendances with original-status snapshot/restore
+[ ] Leave state/type/duration shown in monthly sheet + admin report (view-level)
+
+Module 9: PDF Export
+[ ] Install PDF package (e.g. barryvdh/laravel-dompdf) — not present in composer.json
+[ ] Attendance PDF template (landscape, header/footer, summary, filter-aware)
+
+Module 10: Excel Export
+[ ] Install Excel package (e.g. maatwebsite/excel) — not present in composer.json
+[ ] AttendanceExport class, filter-aware, using shared report service
+
+Module 11: CSV Export
+[ ] CSV export endpoint (filter-aware, stable column names)
+
+Module 12: Permissions Mapping
+[*] attendance.{view,create,edit,delete} and attendance-adjustment.{view,create,edit,delete,approve,reject} permissions exist and are enforced (route middleware + sidebar can() checks are ACTIVE — CLAUDE.md's "enforcement disabled" note is stale)
+[ ] Dedicated permission for self-service check-in/out (currently just auth + linked-employee check)
+[ ] Dedicated permission for monthly report route (currently reuses attendance.view)
+
+---
+
 You are working on my existing **CorpoSuites**, an enterprise-grade ERP system built primarily with **Laravel + jQuery + Bootstrap**.
 
 Your task is to inspect the existing HRM architecture first, understand the current coding conventions, routes, controllers, models, services, repositories, Blade structure, permissions, AJAX patterns, DataTables usage, export patterns, and UI system, and then upgrade the existing **Attendance Management module** without unnecessarily breaking or replacing working functionality.

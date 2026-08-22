@@ -262,12 +262,12 @@
         </button>
 
         <!-- Add Button -->
-        @can('salary-template.create')
+        @if(Auth::guard('admin')->user()?->can('salary-template.create'))
         <button id="openModal" data-url="{{ route('admin.salary-templates.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Salary Template
         </button>
-        @endcan
+        @endif
     </div>
 
     <!-- Table Card -->

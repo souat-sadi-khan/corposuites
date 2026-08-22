@@ -5,8 +5,10 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use App\Models\Lang\Language;
+use App\Services\AttendanceStatusService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->applyConfiguredTimezone();
+
         View::composer('admin.layout.partials.header', function ($view) {
             $view->with(
                 'languages',
@@ -31,6 +35,12 @@ class AppServiceProvider extends ServiceProvider
                     ->orderBy('name')
                     ->get()
             );
+
+            // Only ever queried for the currently authenticated admin's OWN
+            // linked employee (never an arbitrary one), and only when that
+            // link exists — a plain admin account costs nothing extra here.
+            $employee = auth()->guard('admin')->user()?->employee;
+            $view->with('attendanceWidget', $employee ? AttendanceStatusService::forEmployee($employee) : null);
         });
 
         /*
@@ -47,5 +57,39 @@ class AppServiceProvider extends ServiceProvider
                 ? true
                 : null;
         });
+    }
+
+    /**
+     * The Localization settings page lets an admin pick a "Default Timezone"
+     * (stored as the `timezone` system setting) but nothing ever actually
+     * applied it — every now()/today() call across the whole app (including
+     * every attendance check-in/check-out and "today" boundary) ran on
+     * config('app.timezone') from .env (UTC) regardless of what was
+     * configured here, silently disagreeing with the business's real
+     * timezone. This makes the setting actually take effect, as early in
+     * the request as possible, for both date_default_timezone_set() (what
+     * now()/Carbon actually read) and config('app.timezone') (what anything
+     * that explicitly reads that config key sees).
+     *
+     * Guarded so it can never break a console command on a fresh install —
+     * boot() runs even for `php artisan migrate` before the settings table
+     * exists yet.
+     */
+    private function applyConfiguredTimezone(): void
+    {
+        try {
+            if (!Schema::hasTable('system_settings')) {
+                return;
+            }
+
+            $timezone = get_settings('timezone');
+            if ($timezone && in_array($timezone, timezone_identifiers_list(), true)) {
+                date_default_timezone_set($timezone);
+                config(['app.timezone' => $timezone]);
+            }
+        } catch (\Throwable $e) {
+            // Never let a settings-table hiccup (e.g. mid-migration) break
+            // every single request in the app.
+        }
     }
 }

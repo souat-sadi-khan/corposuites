@@ -23,13 +23,8 @@ var DataTablePayrolls = function () {
                     if (employeeId) {
                         d.employee_id = employeeId;
                     }
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
-                    });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
+
+                    applyPayrollAdvFiltersToRequest(d);
                 }
             },
             columns: [
@@ -71,6 +66,7 @@ var DataTablePayrolls = function () {
         init: function () {
             initDataTable();
             _statusUpdate();
+            initPayrollAdvSearch();
         }
     };
 }();
@@ -213,19 +209,305 @@ document.addEventListener('DOMContentLoaded', function () {
     $('#tlNext').on('click', function () {
         dataTableInstance.page('next').draw('page');
     });
-
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
-    });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
-    });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
-        dataTableInstance.draw();
-    });
 });
+
+// =====================================================
+// Advanced Search — state, select2, chips, apply/reset
+// =====================================================
+
+var payrollAdvFilters = {};
+
+function initPayrollAdvSearch() {
+
+    if (!$('#payrollAdvSearchModal').length) {
+        return;
+    }
+
+    $('#advEmployee, #advDepartment, #advDesignation').each(function () {
+        $(this).select2({
+            width: '100%',
+            dropdownParent: $('#payrollAdvSearchModal'),
+            templateResult: _payrollSelectOptionTemplate
+        });
+    });
+
+    $('.as-select').select2({
+        width: '100%',
+        dropdownParent: $('#payrollAdvSearchModal')
+    });
+
+    $('#advSearchApply').on('click', function () {
+        applyPayrollAdvFilters(true);
+    });
+
+    $('#advSearchReset').on('click', function () {
+        resetPayrollAdvFieldsUI();
+    });
+
+    $(document).on('click', '.adv-chip-remove', function () {
+        var key = $(this).data('key');
+        delete payrollAdvFilters[key];
+        clearPayrollAdvField(key);
+        renderPayrollFilterChips();
+        if (dataTableInstance) {
+            dataTableInstance.draw();
+        }
+    });
+
+    $(document).on('click', '#advClearAllChips', function () {
+        payrollAdvFilters = {};
+        resetPayrollAdvFieldsUI();
+        renderPayrollFilterChips();
+        if (dataTableInstance) {
+            dataTableInstance.draw();
+        }
+    });
+}
+
+function _payrollSelectOptionTemplate(option) {
+    if (!option.id || !option.element) {
+        return option.text;
+    }
+
+    var $option = $(option.element);
+    var logo = $option.attr('data-logo');
+    var desc = $option.attr('data-desc');
+
+    var $opt = $('<div class="sel-opt-rich"></div>');
+
+    if (logo) {
+        $opt.append(
+            '<div class="sel-opt-rich-avatar">' +
+                '<img class="sel-opt-rich-img" src="' + logo + '" alt="">' +
+            '</div>'
+        );
+    }
+
+    var $info = $('<div class="sel-opt-rich-info"></div>');
+    $info.append($('<div class="sel-opt-rich-name"></div>').text(option.text));
+
+    if (desc) {
+        $info.append($('<div class="sel-opt-rich-desc"></div>').text(desc));
+    }
+
+    $opt.append($info);
+
+    return $opt;
+}
+
+function clearPayrollAdvField(key) {
+    switch (key) {
+        case 'employee_id':
+            $('#advEmployee').val('').trigger('change.select2');
+            break;
+        case 'department_id':
+            $('#advDepartment').val('').trigger('change.select2');
+            break;
+        case 'designation_id':
+            $('#advDesignation').val('').trigger('change.select2');
+            break;
+        case 'pay_type':
+            $('#advPayType').val('').trigger('change.select2');
+            break;
+        case 'payment_status':
+            $('#advPaymentStatus').val('').trigger('change.select2');
+            break;
+        case 'status':
+            $('#advRecordStatus').val('').trigger('change.select2');
+            break;
+        case 'period':
+            $('#advMonth, #advYear').val('').trigger('change.select2');
+            break;
+        case 'net_salary_range':
+            $('#advNetSalaryMin, #advNetSalaryMax').val('');
+            break;
+    }
+}
+
+function resetPayrollAdvFieldsUI() {
+    $('#advEmployee, #advDepartment, #advDesignation, #advPayType, #advPaymentStatus, #advRecordStatus, #advMonth, #advYear')
+        .val('')
+        .trigger('change.select2');
+
+    $('#advNetSalaryMin, #advNetSalaryMax').val('');
+}
+
+var payrollMonthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function collectPayrollAdvFilters() {
+
+    var filters = {};
+
+    var $employee = $('#advEmployee');
+    if ($employee.val()) {
+        filters.employee_id = {
+            value: $employee.val(),
+            label: 'Employee: ' + $employee.find('option:selected').text()
+        };
+    }
+
+    var $department = $('#advDepartment');
+    if ($department.val()) {
+        filters.department_id = {
+            value: $department.val(),
+            label: 'Department: ' + $department.find('option:selected').text()
+        };
+    }
+
+    var $designation = $('#advDesignation');
+    if ($designation.val()) {
+        filters.designation_id = {
+            value: $designation.val(),
+            label: 'Designation: ' + $designation.find('option:selected').text()
+        };
+    }
+
+    var $payType = $('#advPayType');
+    if ($payType.val()) {
+        filters.pay_type = {
+            value: $payType.val(),
+            label: 'Pay Type: ' + $payType.find('option:selected').text()
+        };
+    }
+
+    var $paymentStatus = $('#advPaymentStatus');
+    if ($paymentStatus.val()) {
+        filters.payment_status = {
+            value: $paymentStatus.val(),
+            label: 'Reimbursement: ' + $paymentStatus.find('option:selected').text()
+        };
+    }
+
+    var $recordStatus = $('#advRecordStatus');
+    if ($recordStatus.val() !== '') {
+        filters.status = {
+            value: $recordStatus.val(),
+            label: 'Record Status: ' + $recordStatus.find('option:selected').text()
+        };
+    }
+
+    var month = $('#advMonth').val();
+    var year = $('#advYear').val();
+    if (month || year) {
+        var label = 'Period: ' + (month ? payrollMonthNames[parseInt(month, 10)] : 'Any month') + ' ' + (year || '(any year)');
+        filters.period = {
+            value: { month: month, year: year },
+            label: label
+        };
+    }
+
+    var netMin = $('#advNetSalaryMin').val();
+    var netMax = $('#advNetSalaryMax').val();
+    if (netMin !== '' || netMax !== '') {
+        filters.net_salary_range = {
+            value: { min: netMin, max: netMax },
+            label: 'Net Salary: ' + (netMin !== '' ? netMin : '0') + ' - ' + (netMax !== '' ? netMax : '∞')
+        };
+    }
+
+    return filters;
+}
+
+function renderPayrollFilterChips() {
+
+    var $bar = $('#advSearchChipsBar');
+    var $chips = $('#advSearchChips');
+    var keys = Object.keys(payrollAdvFilters);
+
+    $chips.empty();
+
+    if (!keys.length) {
+        $bar.hide();
+        $('#advSearchBadge').hide();
+        return;
+    }
+
+    keys.forEach(function (key) {
+
+        var filter = payrollAdvFilters[key];
+
+        var $remove = $('<button type="button" class="adv-chip-remove"></button>')
+            .attr('data-key', key)
+            .html('<i class="ri-close-line"></i>');
+
+        var $chip = $('<span class="adv-chip"></span>')
+            .attr('data-key', key)
+            .append($('<span></span>').text(filter.label))
+            .append($remove);
+
+        $chips.append($chip);
+    });
+
+    $chips.append(
+        $('<button type="button" class="adv-chip-clear-all" id="advClearAllChips"></button>')
+            .html('<i class="ri-close-circle-line"></i> Clear all')
+    );
+
+    $bar.show();
+
+    $('#advSearchBadge').text(keys.length).show();
+}
+
+function applyPayrollAdvFilters(closeModal) {
+
+    payrollAdvFilters = collectPayrollAdvFilters();
+
+    renderPayrollFilterChips();
+
+    if (dataTableInstance) {
+        dataTableInstance.draw();
+    }
+
+    if (closeModal && typeof bootstrap !== 'undefined') {
+        var modalEl = document.getElementById('payrollAdvSearchModal');
+        var instance = bootstrap.Modal.getInstance(modalEl);
+        if (instance) {
+            instance.hide();
+        }
+    }
+}
+
+function applyPayrollAdvFiltersToRequest(d) {
+
+    if (payrollAdvFilters.employee_id) {
+        d.employee_id = payrollAdvFilters.employee_id.value;
+    }
+
+    if (payrollAdvFilters.department_id) {
+        d.department_id = payrollAdvFilters.department_id.value;
+    }
+
+    if (payrollAdvFilters.designation_id) {
+        d.designation_id = payrollAdvFilters.designation_id.value;
+    }
+
+    if (payrollAdvFilters.pay_type) {
+        d.pay_type = payrollAdvFilters.pay_type.value;
+    }
+
+    if (payrollAdvFilters.payment_status) {
+        d.payment_status = payrollAdvFilters.payment_status.value;
+    }
+
+    if (payrollAdvFilters.status) {
+        d.status = payrollAdvFilters.status.value;
+    }
+
+    if (payrollAdvFilters.period) {
+        if (payrollAdvFilters.period.value.month) {
+            d.month = payrollAdvFilters.period.value.month;
+        }
+        if (payrollAdvFilters.period.value.year) {
+            d.year = payrollAdvFilters.period.value.year;
+        }
+    }
+
+    if (payrollAdvFilters.net_salary_range) {
+        if (payrollAdvFilters.net_salary_range.value.min !== '') {
+            d.net_salary_min = payrollAdvFilters.net_salary_range.value.min;
+        }
+        if (payrollAdvFilters.net_salary_range.value.max !== '') {
+            d.net_salary_max = payrollAdvFilters.net_salary_range.value.max;
+        }
+    }
+}

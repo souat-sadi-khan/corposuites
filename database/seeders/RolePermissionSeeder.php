@@ -199,6 +199,12 @@ class RolePermissionSeeder extends Seeder
             'payroll.create',
             'payroll.delete',
             'payroll.mark-paid',
+            'payroll.bulk-generate',
+
+            'expense-category.view',
+            'expense-category.create',
+            'expense-category.edit',
+            'expense-category.delete',
 
             'expense-claim.view',
             'expense-claim.create',

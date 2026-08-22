@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\ResignationController;
 use App\Http\Controllers\Admin\TerminationController;
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\AttendancePortalController;
+use App\Http\Controllers\Admin\AttendanceWidgetController;
 use App\Http\Controllers\Admin\HrmSettingsController;
 use App\Http\Controllers\Admin\HrmDetailExportController;
 use App\Http\Controllers\Admin\AttendanceAdjustmentController;
@@ -48,6 +49,8 @@ use App\Http\Controllers\Admin\MinimumWageRuleController;
 use App\Http\Controllers\Admin\PayrollComplianceReportController;
 use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\ExpenseClaimController;
+use App\Http\Controllers\Admin\ExpenseCategoryController;
+use App\Http\Controllers\Admin\ExpenseClaimReportController;
 use App\Http\Controllers\Admin\EmployeeLoanController;
 use App\Http\Controllers\Admin\PerformanceReviewController;
 use App\Http\Controllers\Admin\HrReportController;
@@ -994,6 +997,14 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::get('attendance-portal', [AttendancePortalController::class, 'portal'])->name('attendance-portal.index');
     Route::post('attendance-portal/check-in', [AttendancePortalController::class, 'checkIn'])->name('attendance-portal.check-in');
     Route::post('attendance-portal/check-out', [AttendancePortalController::class, 'checkOut'])->name('attendance-portal.check-out');
+    // Header attendance widget's own refresh call (see AttendanceWidgetController)
+    // — same self-service, ungated reasoning as the portal routes above.
+    Route::get('attendance-widget/status', [AttendanceWidgetController::class, 'status'])->name('attendance-widget.status');
+    // Self-service "Request Adjustment" for one of the employee's own past
+    // days — reuses the existing AttendanceAdjustment model/service, same
+    // ungated self-service reasoning as the routes above.
+    Route::get('attendance-portal/adjustment', [AttendancePortalController::class, 'adjustmentForm'])->name('attendance-portal.adjustment.form');
+    Route::post('attendance-portal/adjustment', [AttendancePortalController::class, 'storeAdjustment'])->name('attendance-portal.adjustment.store');
     // Unlike the portal above, this accepts an arbitrary employee_id — it's
     // an admin report over any employee's month, not a self-service view.
     Route::get('attendance-monthly', [AttendancePortalController::class, 'monthly'])->name('attendances.monthly')->middleware('permission:attendance.view,admin');
@@ -1075,20 +1086,37 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('payrolls/status/{id}', [PayrollController::class, 'updateStatus'])->name('payrolls.status')->middleware('permission:payroll.create,admin');
     Route::post('payrolls/{payroll}/mark-paid', [PayrollController::class, 'markAsPaid'])->name('payrolls.mark-paid')->middleware('permission:payroll.mark-paid,admin');
     Route::get('payrolls/{payroll}/payslip', [PayrollController::class, 'payslip'])->name('payrolls.payslip')->middleware('permission:payroll.view,admin');
+    Route::get('payrolls/bulk-generate', [PayrollController::class, 'bulkGenerateForm'])->name('payrolls.bulk-generate-form')->middleware('permission:payroll.bulk-generate,admin');
+    Route::post('payrolls/bulk-generate', [PayrollController::class, 'bulkGenerate'])->name('payrolls.bulk-generate')->middleware('permission:payroll.bulk-generate,admin');
+    Route::get('payrolls/how-to', [PayrollController::class, 'howTo'])->name('payrolls.how.to')->middleware('permission:payroll.view,admin');
     Route::resource('payrolls', PayrollController::class)->except(['show', 'edit', 'update'])
         ->middlewareFor(['index'], 'permission:payroll.view,admin')
         ->middlewareFor(['create', 'store'], 'permission:payroll.create,admin')
         ->middlewareFor(['destroy'], 'permission:payroll.delete,admin');
 
+    // HRM - Expense Categories (master for Expense Claims)
+    Route::post('expense-categories/status/{id}', [ExpenseCategoryController::class, 'updateStatus'])->name('expense-categories.status')->middleware('permission:expense-category.edit,admin');
+    Route::get('expense-categories/how-to', [ExpenseCategoryController::class, 'howTo'])->name('expense-categories.how.to')->middleware('permission:expense-category.view,admin');
+    Route::resource('expense-categories', ExpenseCategoryController::class)->except(['show'])
+        ->middlewareFor(['index'], 'permission:expense-category.view,admin')
+        ->middlewareFor(['create', 'store'], 'permission:expense-category.create,admin')
+        ->middlewareFor(['edit', 'update'], 'permission:expense-category.edit,admin')
+        ->middlewareFor(['destroy'], 'permission:expense-category.delete,admin');
+
     // HRM - Expense Claims
     Route::post('expense-claims/status/{id}', [ExpenseClaimController::class, 'updateStatus'])->name('expense-claims.status')->middleware('permission:expense-claim.edit,admin');
     Route::post('expense-claims/{expenseClaim}/approve', [ExpenseClaimController::class, 'approve'])->name('expense-claims.approve')->middleware('permission:expense-claim.approve,admin');
     Route::post('expense-claims/{expenseClaim}/reject', [ExpenseClaimController::class, 'reject'])->name('expense-claims.reject')->middleware('permission:expense-claim.reject,admin');
+    Route::post('expense-claims/{expenseClaim}/mark-reimbursed', [ExpenseClaimController::class, 'markReimbursed'])->name('expense-claims.mark-reimbursed')->middleware('permission:expense-claim.approve,admin');
+    Route::get('expense-claims/how-to', [ExpenseClaimController::class, 'howTo'])->name('expense-claims.how.to')->middleware('permission:expense-claim.view,admin');
     Route::resource('expense-claims', ExpenseClaimController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:expense-claim.view,admin')
         ->middlewareFor(['create', 'store'], 'permission:expense-claim.create,admin')
         ->middlewareFor(['edit', 'update'], 'permission:expense-claim.edit,admin')
         ->middlewareFor(['destroy'], 'permission:expense-claim.delete,admin');
+
+    // HRM - Expense Claims Report
+    Route::get('expense-claims-report', [ExpenseClaimReportController::class, 'index'])->name('expense-claims-report.index')->middleware('permission:expense-claim.view,admin');
 
     // HRM - Employee Loans
     Route::post('employee-loans/status/{id}', [EmployeeLoanController::class, 'updateStatus'])->name('employee-loans.status')->middleware('permission:employee-loan.edit,admin');
