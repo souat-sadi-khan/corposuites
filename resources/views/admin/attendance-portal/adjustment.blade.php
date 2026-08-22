@@ -35,7 +35,7 @@
                     </div>
                 @endif
 
-                <form id="adjustmentForm" class="row g-3 mt-1">
+                <form id="adjustmentForm" class="fm-body row g-3 mt-1">
                     <input type="hidden" name="adjustment_date" value="{{ $date->toDateString() }}">
 
                     <div class="col-6">

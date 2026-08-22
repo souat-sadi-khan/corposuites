@@ -19,6 +19,10 @@
     <!-- App CSS -->
     <link rel="stylesheet" href="{{ asset('assets/system/css/auth.css') }}">
 
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('nx-theme') || 'light');
+    </script>
+
 </head>
 
 <body>

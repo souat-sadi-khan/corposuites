@@ -5,12 +5,35 @@
     --cm-accent: #41abed;
     --cm-accent-2: #48a1d9;
     --cm-accent-soft: rgba(79, 82, 232, .14);
-    --cm-txt-1: #0f1117;
-    --cm-txt-2: #5d6070;
-    --cm-txt-3: #9496a8;
-    --cm-border: #e2e5ea;
+    --bg-base: #f3f4f7;
+    --bg-surface: #ffffff;
+    --bg-hover: #eef0f4;
+    --border: #e2e5ea;
+    --border-lt: #eceef2;
+    --tx-1: #0f1117;
+    --tx-2: #5d6070;
+    --tx-3: #9496a8;
+    --cm-txt-1: var(--tx-1);
+    --cm-txt-2: var(--tx-2);
+    --cm-txt-3: var(--tx-3);
+    --cm-border: var(--border);
     --cm-radius-card: 18px;
     --cm-ease: 0.3s ease;
+    --cm-square-fill: rgba(79, 82, 232, .12);
+    --cm-square-border: rgba(79, 82, 232, .32);
+}
+
+[data-theme="dark"] {
+    --bg-base: #08090c;
+    --bg-surface: #101116;
+    --bg-hover: #181921;
+    --border: #232430;
+    --border-lt: #1c1d28;
+    --tx-1: #eeeef5;
+    --tx-2: #7e8099;
+    --tx-3: #8f91a8;
+    --cm-square-fill: rgba(129, 140, 248, .18);
+    --cm-square-border: rgba(165, 180, 252, .52);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -31,6 +54,7 @@ body {
     font-size: 13.5px;
     line-height: 1.6;
     color: var(--cm-txt-1);
+    background: var(--bg-base);
     margin: 0;
 }
 a {
@@ -64,6 +88,10 @@ button {
     flex-shrink: 0;
 }
 
+[data-theme="dark"] .cm-brand {
+    background: linear-gradient(145deg, #111329 0%, #151735 35%, #101226 65%, #171933 100%);
+}
+
 .cm-brand::after {
     content: "";
     position: absolute;
@@ -74,6 +102,9 @@ button {
     background: linear-gradient(to right, transparent, #ffffff);
     clip-path: ellipse(100% 60% at 100% 50%);
     pointer-events: none;
+}
+[data-theme="dark"] .cm-brand::after {
+    background: linear-gradient(to right, transparent, var(--bg-surface));
 }
 
 
@@ -87,6 +118,12 @@ button {
     background-size: 44px 44px;
     mask-image: radial-gradient(ellipse 90% 80% at 30% 40%, #000 30%, transparent 80%);
     pointer-events: none;
+}
+
+[data-theme="dark"] .cm-grid {
+    background-image:
+        linear-gradient(rgba(129, 140, 248, .14) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(129, 140, 248, .14) 1px, transparent 1px);
 }
 
 /* Ambient glow blobs */
@@ -129,6 +166,34 @@ button {
     inset: 0;
     z-index: 0;
     pointer-events: none;
+}
+
+/* Mode-aware floating squares */
+.deco-square {
+    position: absolute;
+    width: 116px;
+    height: 116px;
+    background: var(--cm-square-fill);
+    border: 1px solid var(--cm-square-border);
+    box-shadow: 0 18px 40px rgba(79, 82, 232, .12);
+    transform: rotate(18deg);
+    animation: squareFloat 7s ease-in-out infinite alternate;
+}
+.deco-square-1 {
+    top: 13%;
+    left: 55%;
+}
+.deco-square-2 {
+    width: 62px;
+    height: 62px;
+    right: 8%;
+    bottom: 12%;
+    animation-delay: -3s;
+}
+
+@keyframes squareFloat {
+    from { translate: 0 0; }
+    to { translate: 10px -14px; }
 }
 
 /* Pulsing rings */
@@ -349,6 +414,7 @@ button {
     margin-bottom: 14px;
     animation: cmFadeUp .6s .1s ease both;
 }
+[data-theme="dark"] .cm-heading { color: #f1f2ff; }
 
 .cm-desc {
     font-size: 14.5px;
@@ -358,6 +424,7 @@ button {
     margin-bottom: 36px;
     animation: cmFadeUp .6s .18s ease both;
 }
+[data-theme="dark"] .cm-desc { color: #b7b9d4; }
 
 /* Typewriter feature box */
 .cm-typewriter-box {
@@ -373,6 +440,11 @@ button {
     box-shadow: 0 8px 32px rgba(79, 82, 232, .10);
     margin-bottom: 28px;
     animation: cmFadeUp .6s .26s ease both;
+}
+[data-theme="dark"] .cm-typewriter-box {
+    background: rgba(16, 17, 34, .62);
+    border-color: rgba(129, 140, 248, .32);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .25);
 }
 
 .cm-tw-icon {
@@ -397,6 +469,7 @@ button {
     letter-spacing: -.2px;
     min-height: 26px;
 }
+[data-theme="dark"] .cm-tw-text { color: #e4e5ff; }
 
 .cm-cursor {
     display: inline-block;
@@ -453,10 +526,16 @@ button {
     backdrop-filter: blur(6px);
     transition: background .2s ease, transform .2s ease;
 }
+[data-theme="dark"] .cm-tech-badge {
+    color: #c2c4e7;
+    background: rgba(16, 17, 34, .5);
+    border-color: rgba(129, 140, 248, .25);
+}
 .cm-tech-badge:hover {
     background: rgba(255, 255, 255, .75);
     transform: translateY(-1px);
 }
+[data-theme="dark"] .cm-tech-badge:hover { background: rgba(24, 25, 33, .9); }
 
 @keyframes cmFadeUp {
     from {
@@ -475,7 +554,7 @@ button {
 .cm-auth {
     width: 44%;
     height: 100%;
-    background: transparent;
+    background: var(--bg-surface);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -483,6 +562,28 @@ button {
     position: relative;
     z-index: 1;
     flex-shrink: 0;
+}
+
+.cm-theme-btn {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    z-index: 4;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-base);
+    color: var(--tx-2);
+    font-size: 18px;
+    transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+.cm-theme-btn:hover {
+    background: var(--bg-hover);
+    color: var(--cm-accent);
 }
 
 .cm-auth-card {
@@ -547,7 +648,8 @@ button {
     border: 1.5px solid var(--cm-border);
     border-radius: 11px;
     font-size: 14px;
-    background: #f8f9fb;
+    background: var(--bg-base);
+    color: var(--cm-txt-1);
     transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
     width: 100%;
 }
@@ -556,9 +658,23 @@ button {
 }
 .cm-input:focus {
     border-color: var(--cm-accent);
-    background: #fff;
+    background: var(--bg-surface);
     box-shadow: 0 0 0 4px var(--cm-accent-soft);
     outline: none;
+}
+[data-theme="dark"] .cm-input {
+    color: var(--tx-1) !important;
+    -webkit-text-fill-color: var(--tx-1);
+}
+[data-theme="dark"] .cm-input::placeholder {
+    color: var(--tx-3);
+    opacity: 1;
+}
+[data-theme="dark"] .cm-input:-webkit-autofill,
+[data-theme="dark"] .cm-input:-webkit-autofill:hover,
+[data-theme="dark"] .cm-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--tx-1);
+    box-shadow: 0 0 0 1000px var(--bg-base) inset, 0 0 0 4px var(--cm-accent-soft);
 }
 
 .cm-eye-btn {
@@ -671,6 +787,10 @@ button {
     .cm-auth {
         width: 100%;
         padding: 32px 24px 48px;
+    }
+    .cm-theme-btn {
+        top: 14px;
+        right: 18px;
     }
     .cm-trusted {
         display: none;

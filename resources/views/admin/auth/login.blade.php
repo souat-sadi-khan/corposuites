@@ -12,6 +12,9 @@
 
             <div class="shape-layer" aria-hidden="true">
 
+                <div class="deco-square deco-square-1"></div>
+                <div class="deco-square deco-square-2"></div>
+
                 <div class="deco-ring deco-ring-1"></div>
                 <div class="deco-ring deco-ring-2"></div>
                 <div class="deco-ring deco-ring-3"></div>
@@ -95,6 +98,14 @@
                         <span class="cm-tech-badge"><i class="ri-archive-line"></i> Inventory</span>
                         <span class="cm-tech-badge"><i class="ri-wallet-3-line"></i> Accounting</span>
                         <span class="cm-tech-badge"><i class="ri-line-chart-line"></i> Analytics</span>
+
+                        <span class="cm-tech-badge"><i class="ri-box-3-line"></i> Products</span>
+                        <span class="cm-tech-badge"><i class="ri-shopping-cart-2-line"></i> Sales</span>
+                        <span class="cm-tech-badge"><i class="ri-truck-line"></i> Purchase</span>
+                        <span class="cm-tech-badge"><i class="ri-briefcase-4-line"></i> Projects</span>
+                        <span class="cm-tech-badge"><i class="ri-pie-chart-2-line"></i> Finance</span>
+                        <span class="cm-tech-badge"><i class="ri-customer-service-2-line"></i> Support</span>
+
                     </div>
                 </div>
 
@@ -103,6 +114,9 @@
 
         {{-- ══════════════════════════ RIGHT PANEL — LOGIN FORM ══════════════════════════ --}}
         <div class="cm-auth">
+            <button type="button" class="cm-theme-btn" id="themeBtn" aria-label="Switch to dark mode" title="Toggle theme">
+                <i class="ri-moon-line"></i>
+            </button>
             <div class="cm-auth-card" id="regCard">
 
                 <h2 class="cm-auth-title">Welcome Back</h2>
@@ -160,7 +174,7 @@
         $(document).ready(function () {
             _ajaxFormHandler('.ajax_form');
         });
-        
+
         // ── Eye toggle ──
         const togglePassword = document.querySelector('#togglePassword');
         const passwordInput = document.querySelector('#password');
@@ -172,6 +186,21 @@
         });
 
         // ── Typewriter feature cycler ──
+        // Keep the login page in sync with the app-wide theme preference.
+        const themeBtn = document.querySelector('#themeBtn');
+        function setThemeIcon(theme) {
+            const isDark = theme === 'dark';
+            themeBtn.querySelector('i').className = isDark ? 'ri-sun-line' : 'ri-moon-line';
+            themeBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+        setThemeIcon(document.documentElement.getAttribute('data-theme'));
+        themeBtn.addEventListener('click', function() {
+            const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            localStorage.setItem('nx-theme', nextTheme);
+            setThemeIcon(nextTheme);
+        });
+
         const features = [
             { text: 'Customer Relationship Management', icon: 'ri-customer-service-2-line' },
             { text: 'Human Resource Management', icon: 'ri-team-line' },
