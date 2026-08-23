@@ -7,33 +7,28 @@
             <input type="text" id="leadSourceSearch" placeholder="Search Lead Sources">
         </div>
 
-        <div class="tl-filter-wrap">
-            <button class="tl-filter-btn" id="tlFilterBtn" title="Filter">
-                <i class="ri-equalizer-line"></i>
-            </button>
-
-            <div class="tl-filter-dd" id="tlFilterDd">
-                <div class="tl-filter-dd-title">
-                    Filter by Status
-                </div>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="1" checked>
-                    Active
-                </label>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="0" checked>
-                    Inactive
-                </label>
-            </div>
-        </div>
+        <button type="button" class="btn-nx-outline adv-search-btn" data-bs-toggle="modal" data-bs-target="#leadSourceAdvSearchModal" title="Advanced Search">
+            <i class="ri-filter-3-line"></i>
+            Advanced Search
+            <span class="adv-search-badge" id="advSearchBadge" style="display:none;">0</span>
+        </button>
 
         <div class="tl-spacer"></div>
+
+        <button id="openModal" data-url="{{ route('admin.lead-sources.how.to') }}" class="btn-nx-outline" title="How To">
+            <i class="ri-question-mark"></i>
+        </button>
 
         <!-- Add Button -->
         <button id="openModal" data-url="{{ route('admin.lead-sources.create') }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
             Add Lead Source
         </button>
+    </div>
+
+    <div class="adv-search-chips" id="advSearchChipsBar" style="display:none;">
+        <span class="adv-search-chips-label"><i class="ri-price-tag-3-line"></i> Filters:</span>
+        <div id="advSearchChips" class="d-flex align-items-center gap-2 flex-wrap"></div>
     </div>
 
     <!-- Table Card -->
@@ -62,6 +57,48 @@
                 <button class="tl-page-btn" id="tlNext" title="Next page">
                     <i class="ri-arrow-right-s-line"></i>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="leadSourceAdvSearchModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="nx-modal-box fm-modal-content">
+                <div class="modal-header fm-modal-head">
+                    <div>
+                        <h5 class="modal-title"><i class="ri-filter-3-line me-1"></i> Advanced Search</h5>
+                        <p>Combine filters to find the lead sources you need.</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body fm-modal-body fm-body">
+                    <div class="fm-grid">
+                        <div class="adv-search-section"><i class="ri-radar-line"></i> Lead Source Details</div>
+                        <div class="fm-field">
+                            <label>Record Status</label>
+                            <select id="advStatus" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">Active and Inactive</option>
+                                <option value="1">Active</option>
+                                <option value="0">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="fm-field">
+                            <label>Description</label>
+                            <select id="advHasDescription" class="form-select as-select" data-minimum-results-for-search="Infinity">
+                                <option value="">Any</option>
+                                <option value="1">Has a description</option>
+                                <option value="0">No description</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer fm-modal-foot">
+                    <span class="fm-foot-note"><i class="ri-information-line"></i> Leave a field empty to skip that filter</span>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn-nx-outline" id="advSearchReset"><i class="ri-refresh-line me-1"></i> Reset</button>
+                        <button type="button" class="btn-nx-primary" id="advSearchApply"><i class="ri-search-line me-1"></i> Apply Filters</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

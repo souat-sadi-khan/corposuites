@@ -333,9 +333,9 @@ display : none; /* jQuery slideToggle controls this */
 overflow: hidden;
 }
 /* Indent levels */
-.nav-sub                   .nav-row { padding-left: 15px; }
-.nav-sub .nav-sub          .nav-row { padding-left: 25px; }
-.nav-sub .nav-sub .nav-sub .nav-row { padding-left: 45px; }
+.nav-sub                   .nav-row { padding-left: 25px; }
+.nav-sub .nav-sub          .nav-row { padding-left: 30px; }
+.nav-sub .nav-sub .nav-sub .nav-row { padding-left: 55px; }
 
 /* ── 4C. Sidebar Footer ── */
 .sb-foot {

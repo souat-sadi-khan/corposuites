@@ -272,14 +272,17 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('approval-delegations', ApprovalDelegationController::class)->except(['show']);
 
     // CRM - Lead Sources
+    Route::get('lead-sources/how-to', [LeadSourceController::class, 'howTo'])->name('lead-sources.how.to');
     Route::post('lead-sources/status/{id}', [LeadSourceController::class, 'updateStatus'])->name('lead-sources.status');
     Route::resource('lead-sources', LeadSourceController::class)->except(['show']);
 
     // CRM - Lead Statuses
+    Route::get('lead-statuses/how-to', [LeadStatusController::class, 'howTo'])->name('lead-statuses.how.to');
     Route::post('lead-statuses/status/{id}', [LeadStatusController::class, 'updateStatus'])->name('lead-statuses.status');
     Route::resource('lead-statuses', LeadStatusController::class)->except(['show']);
 
     // CRM - Leads
+    Route::get('leads/how-to', [LeadController::class, 'howTo'])->name('leads.how.to');
     Route::post('leads/status/{id}', [LeadController::class, 'updateStatus'])->name('leads.status');
     Route::resource('leads', LeadController::class)->except(['show']);
 

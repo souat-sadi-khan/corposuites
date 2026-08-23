@@ -27,19 +27,19 @@
             </div>
             <div class="fm-field">
                 <label>Lead Source</label>
-                <select name="lead_source_id" class="form-select select">
+                <select name="lead_source_id" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="">No Source</option>
                     @foreach($leadSources as $leadSource)
-                        <option value="{{ $leadSource->id }}">{{ $leadSource->name }}</option>
+                        <option data-desc="{{ $leadSource->description }}" value="{{ $leadSource->id }}">{{ $leadSource->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field">
                 <label>Pipeline Stage</label>
-                <select name="lead_status_id" class="form-select select">
+                <select name="lead_status_id" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="">No Stage</option>
                     @foreach($leadStatuses as $leadStatus)
-                        <option value="{{ $leadStatus->id }}">{{ $leadStatus->name }}</option>
+                        <option data-desc="{{ $leadStatus->description }}" value="{{ $leadStatus->id }}">{{ $leadStatus->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -48,7 +48,7 @@
                 <select name="assigned_to" class="form-select select">
                     <option value="">Unassigned</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}">{{ $admin->name }}</option>
+                        <option data-desc="{{ $admin->email }}" value="{{ $admin->id }}">{{ $admin->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -58,7 +58,7 @@
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>

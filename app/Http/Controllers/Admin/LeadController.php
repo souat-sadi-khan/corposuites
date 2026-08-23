@@ -25,6 +25,12 @@ class LeadController extends Controller
         $this->leadService = $leadService;
     }
 
+    /** Display a modal with guidance for managing leads. */
+    public function howTo()
+    {
+        return view('admin.leads.doc');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -47,6 +53,10 @@ class LeadController extends Controller
             // Filter by lead status
             if ($request->lead_status_id) {
                 $query->where('lead_status_id', $request->lead_status_id);
+            }
+
+            if ($request->assigned_to) {
+                $query->where('assigned_to', $request->assigned_to);
             }
 
             // Search
@@ -91,8 +101,9 @@ class LeadController extends Controller
 
         $leadSources = LeadSource::active()->get();
         $leadStatuses = LeadStatus::active()->get();
+        $admins = Admin::all();
 
-        return view('admin.leads.index', compact('leadSources', 'leadStatuses'));
+        return view('admin.leads.index', compact('leadSources', 'leadStatuses', 'admins'));
     }
 
     /**

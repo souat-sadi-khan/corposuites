@@ -31,7 +31,7 @@
                 <select name="lead_source_id" class="form-select select">
                     <option value="">No Source</option>
                     @foreach($leadSources as $leadSource)
-                        <option value="{{ $leadSource->id }}" {{ old('lead_source_id', $lead->lead_source_id) == $leadSource->id ? 'selected' : '' }}>{{ $leadSource->name }}</option>
+                        <option data-desc="{{ $leadSource->description }}" value="{{ $leadSource->id }}" {{ old('lead_source_id', $lead->lead_source_id) == $leadSource->id ? 'selected' : '' }}>{{ $leadSource->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -40,7 +40,7 @@
                 <select name="lead_status_id" class="form-select select">
                     <option value="">No Stage</option>
                     @foreach($leadStatuses as $leadStatus)
-                        <option value="{{ $leadStatus->id }}" {{ old('lead_status_id', $lead->lead_status_id) == $leadStatus->id ? 'selected' : '' }}>{{ $leadStatus->name }}</option>
+                        <option data-desc="{{ $leadStatus->description }}" value="{{ $leadStatus->id }}" {{ old('lead_status_id', $lead->lead_status_id) == $leadStatus->id ? 'selected' : '' }}>{{ $leadStatus->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -49,7 +49,7 @@
                 <select name="assigned_to" class="form-select select">
                     <option value="">Unassigned</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}" {{ old('assigned_to', $lead->assigned_to) == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
+                        <option data-desc="{{ $admin->email }}" value="{{ $admin->id }}" {{ old('assigned_to', $lead->assigned_to) == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -59,7 +59,7 @@
             </div>
             <div class="fm-field fm-full">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $lead->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $lead->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>

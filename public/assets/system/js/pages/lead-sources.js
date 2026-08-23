@@ -19,13 +19,7 @@ var DataTableLeadSources = function () {
                 url: $('#leadSourceTable').data('url'),
                 data: function (d) {
                     d.search = $('#leadSourceSearch').val();
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
-                    });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
+                    applyLeadSourceAdvFiltersToRequest(d);
                 }
             },
             columns: [
@@ -63,6 +57,7 @@ var DataTableLeadSources = function () {
         init: function () {
             initDataTable();
             _statusUpdate();
+            initLeadSourceAdvSearch();
         }
     };
 }();
@@ -97,18 +92,72 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.page('next').draw('page');
     });
 
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
-    });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
-    });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
+});
+
+var leadSourceAdvFilters = {};
+
+function initLeadSourceAdvSearch() {
+    if (!$('#leadSourceAdvSearchModal').length) return;
+
+    $('.as-select').select2({ width: '100%', dropdownParent: $('#leadSourceAdvSearchModal') });
+    $('#advSearchApply').on('click', function () { applyLeadSourceAdvFilters(true); });
+    $('#advSearchReset').on('click', resetLeadSourceAdvFieldsUI);
+
+    $(document).on('click', '.adv-chip-remove', function () {
+        delete leadSourceAdvFilters[$(this).data('key')];
+        clearLeadSourceAdvField($(this).data('key'));
+        renderLeadSourceFilterChips();
         dataTableInstance.draw();
     });
-});
+    $(document).on('click', '#advClearAllChips', function () {
+        leadSourceAdvFilters = {};
+        resetLeadSourceAdvFieldsUI();
+        renderLeadSourceFilterChips();
+        dataTableInstance.draw();
+    });
+}
+
+function resetLeadSourceAdvFieldsUI() {
+    $('#advStatus, #advHasDescription').val('').trigger('change.select2');
+}
+
+function clearLeadSourceAdvField(key) {
+    key === 'status' ? $('#advStatus').val('').trigger('change.select2') : $('#advHasDescription').val('').trigger('change.select2');
+}
+
+function collectLeadSourceAdvFilters() {
+    var filters = {};
+    var $status = $('#advStatus');
+    var $description = $('#advHasDescription');
+    if ($status.val() !== '') filters.status = { value: $status.val(), label: 'Status: ' + $status.find('option:selected').text() };
+    if ($description.val() !== '') filters.has_description = { value: $description.val(), label: 'Description: ' + $description.find('option:selected').text() };
+    return filters;
+}
+
+function renderLeadSourceFilterChips() {
+    var $bar = $('#advSearchChipsBar'), $chips = $('#advSearchChips'), keys = Object.keys(leadSourceAdvFilters);
+    $chips.empty();
+    if (!keys.length) { $bar.hide(); $('#advSearchBadge').hide(); return; }
+    keys.forEach(function (key) {
+        var filter = leadSourceAdvFilters[key];
+        $chips.append($('<span class="adv-chip"></span>').append($('<span></span>').text(filter.label)).append($('<button type="button" class="adv-chip-remove"><i class="ri-close-line"></i></button>').attr('data-key', key)));
+    });
+    $chips.append('<button type="button" class="adv-chip-clear-all" id="advClearAllChips"><i class="ri-close-circle-line"></i> Clear all</button>');
+    $bar.show();
+    $('#advSearchBadge').text(keys.length).show();
+}
+
+function applyLeadSourceAdvFilters(closeModal) {
+    leadSourceAdvFilters = collectLeadSourceAdvFilters();
+    renderLeadSourceFilterChips();
+    dataTableInstance.draw();
+    if (closeModal && typeof bootstrap !== 'undefined') {
+        var instance = bootstrap.Modal.getInstance(document.getElementById('leadSourceAdvSearchModal'));
+        if (instance) instance.hide();
+    }
+}
+
+function applyLeadSourceAdvFiltersToRequest(d) {
+    if (leadSourceAdvFilters.status) d.status = leadSourceAdvFilters.status.value;
+    if (leadSourceAdvFilters.has_description) d.has_description = leadSourceAdvFilters.has_description.value;
+}

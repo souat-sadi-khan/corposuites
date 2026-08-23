@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <div class="sec-hdr">
+    <div class="sec-hdr mb-3">
         <div>
             <h2>CRM Overview</h2>
             <div class="sec-sub">Snapshot across leads, pipeline, activities, and quotations</div>
@@ -112,8 +112,8 @@
         </div>
     </div>
 
-    <div class="twin-row mb-3">
-        <div class="nx-card">
+    <div class="twin-row">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Leads by Source</div>
@@ -128,7 +128,7 @@
             </div>
         </div>
 
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Leads by Pipeline Stage</div>
@@ -145,7 +145,7 @@
     </div>
 
     <div class="twin-row mb-3">
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Upcoming Follow Ups</div>
@@ -181,7 +181,7 @@
             </div>
         </div>
 
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Quotations by Status</div>

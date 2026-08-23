@@ -22,6 +22,12 @@ class LeadStatusController extends Controller
         $this->leadStatusService = $leadStatusService;
     }
 
+    /** Display a modal with guidance for managing lead statuses. */
+    public function howTo()
+    {
+        return view('admin.lead-statuses.doc');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -34,6 +40,14 @@ class LeadStatusController extends Controller
             if ($request->status) {
                 $statuses = explode(',', $request->status);
                 $query->whereIn('status', $statuses);
+            }
+
+            if ($request->filled('has_description')) {
+                $request->boolean('has_description')
+                    ? $query->whereNotNull('description')->where('description', '!=', '')
+                    : $query->where(function ($query) {
+                        $query->whereNull('description')->orWhere('description', '');
+                    });
             }
 
             // Search

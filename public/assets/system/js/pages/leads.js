@@ -19,15 +19,7 @@ var DataTableLeads = function () {
                 url: $('#leadTable').data('url'),
                 data: function (d) {
                     d.search = $('#leadSearch').val();
-                    d.lead_source_id = $('#leadSourceFilter').val();
-                    d.lead_status_id = $('#leadStatusFilter').val();
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
-                    });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
+                    applyLeadAdvFiltersToRequest(d);
                 }
             },
             columns: [
@@ -69,6 +61,7 @@ var DataTableLeads = function () {
         init: function () {
             initDataTable();
             _statusUpdate();
+            initLeadAdvSearch();
         }
     };
 }();
@@ -95,11 +88,6 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.draw();
     });
 
-    // Source / Stage filters
-    $('#leadSourceFilter, #leadStatusFilter').on('change', function () {
-        dataTableInstance.draw();
-    });
-
     // Previous / Next
     $('#tlPrev').on('click', function () {
         dataTableInstance.page('previous').draw('page');
@@ -108,18 +96,119 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.page('next').draw('page');
     });
 
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
+});
+
+var leadAdvFilters = {};
+
+function _selectOptionTemplate(option) {
+    if (!option.id || !option.element) {
+        return option.text;
+    }
+
+    var $option = $(option.element);
+
+    var logo = $option.attr('data-logo');
+    var desc = $option.attr('data-desc');
+
+    var $opt = $('<div class="sel-opt-rich"></div>');
+
+    // Avatar
+    if (logo) {
+        $opt.append(
+            '<div class="sel-opt-rich-avatar">' +
+                '<img class="sel-opt-rich-img" src="' + logo + '" alt="">' +
+            '</div>'
+        );
+    }
+
+    // Info
+    var $info = $('<div class="sel-opt-rich-info"></div>');
+
+    $info.append(
+        $('<div class="sel-opt-rich-name"></div>').text(option.text)
+    );
+
+    if (desc) {
+        $info.append(
+            $('<div class="sel-opt-rich-desc"></div>').text(desc)
+        );
+    }
+
+    $opt.append($info);
+
+    return $opt;
+}
+
+function initLeadAdvSearch() {
+    if (!$('#leadAdvSearchModal').length) return;
+    $('.as-select').select2({
+        width: '100%',
+        dropdownParent: $('#leadAdvSearchModal'),
+        templateResult: _selectOptionTemplate
     });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
-    });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
+    $('#advSearchApply').on('click', function () { applyLeadAdvFilters(true); });
+    $('#advSearchReset').on('click', resetLeadAdvFieldsUI);
+    $(document).on('click', '.adv-chip-remove', function () {
+        var key = $(this).data('key');
+        delete leadAdvFilters[key];
+        clearLeadAdvField(key);
+        renderLeadFilterChips();
         dataTableInstance.draw();
     });
-});
+    $(document).on('click', '#advClearAllChips', function () {
+        leadAdvFilters = {};
+        resetLeadAdvFieldsUI();
+        renderLeadFilterChips();
+        dataTableInstance.draw();
+    });
+}
+
+function resetLeadAdvFieldsUI() {
+    $('#advLeadSource, #advLeadStatus, #advAssignedTo, #advStatus').val('').trigger('change.select2');
+}
+
+function clearLeadAdvField(key) {
+    var fields = { lead_source_id: '#advLeadSource', lead_status_id: '#advLeadStatus', assigned_to: '#advAssignedTo', status: '#advStatus' };
+    $(fields[key]).val('').trigger('change.select2');
+}
+
+function collectLeadAdvFilters() {
+    var filters = {};
+    [
+        ['lead_source_id', '#advLeadSource', 'Source'],
+        ['lead_status_id', '#advLeadStatus', 'Stage'],
+        ['assigned_to', '#advAssignedTo', 'Assigned To'],
+        ['status', '#advStatus', 'Status']
+    ].forEach(function (item) {
+        var $field = $(item[1]);
+        if ($field.val() !== '') filters[item[0]] = { value: $field.val(), label: item[2] + ': ' + $field.find('option:selected').text() };
+    });
+    return filters;
+}
+
+function renderLeadFilterChips() {
+    var $bar = $('#advSearchChipsBar'), $chips = $('#advSearchChips'), keys = Object.keys(leadAdvFilters);
+    $chips.empty();
+    if (!keys.length) { $bar.hide(); $('#advSearchBadge').hide(); return; }
+    keys.forEach(function (key) {
+        var filter = leadAdvFilters[key];
+        $chips.append($('<span class="adv-chip"></span>').append($('<span></span>').text(filter.label)).append($('<button type="button" class="adv-chip-remove"><i class="ri-close-line"></i></button>').attr('data-key', key)));
+    });
+    $chips.append('<button type="button" class="adv-chip-clear-all" id="advClearAllChips"><i class="ri-close-circle-line"></i> Clear all</button>');
+    $bar.show();
+    $('#advSearchBadge').text(keys.length).show();
+}
+
+function applyLeadAdvFilters(closeModal) {
+    leadAdvFilters = collectLeadAdvFilters();
+    renderLeadFilterChips();
+    dataTableInstance.draw();
+    if (closeModal && typeof bootstrap !== 'undefined') {
+        var instance = bootstrap.Modal.getInstance(document.getElementById('leadAdvSearchModal'));
+        if (instance) instance.hide();
+    }
+}
+
+function applyLeadAdvFiltersToRequest(d) {
+    Object.keys(leadAdvFilters).forEach(function (key) { d[key] = leadAdvFilters[key].value; });
+}

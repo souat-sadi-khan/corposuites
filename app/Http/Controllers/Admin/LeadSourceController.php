@@ -22,6 +22,12 @@ class LeadSourceController extends Controller
         $this->leadSourceService = $leadSourceService;
     }
 
+    /** Display a modal with guidance for managing lead sources. */
+    public function howTo()
+    {
+        return view('admin.lead-sources.doc');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -34,6 +40,14 @@ class LeadSourceController extends Controller
             if ($request->status) {
                 $statuses = explode(',', $request->status);
                 $query->whereIn('status', $statuses);
+            }
+
+            if ($request->filled('has_description')) {
+                $request->boolean('has_description')
+                    ? $query->whereNotNull('description')->where('description', '!=', '')
+                    : $query->where(function ($query) {
+                        $query->whereNull('description')->orWhere('description', '');
+                    });
             }
 
             // Search
