@@ -120,28 +120,76 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Team leave calendar (Phase F2). Renders a month view of who is on leave.
+     * A fixed, deterministic color per leave type (no schema change needed —
+     * LeaveType has no color column) so the SAME leave type always renders
+     * in the same shade everywhere on the calendar, both in the legend and
+     * on every event chip, and both the browser view and the JSON events
+     * feed below read from this one palette so they can never disagree.
+     */
+    public const LEAVE_TYPE_PALETTE = [
+        '#6366f1', '#0ea5e9', '#f59e0b', '#ec4899', '#14b8a6',
+        '#8b5cf6', '#f97316', '#22c55e', '#e11d48', '#0891b2',
+    ];
+
+    public static function colorForLeaveType(int $leaveTypeId): string
+    {
+        return self::LEAVE_TYPE_PALETTE[$leaveTypeId % count(self::LEAVE_TYPE_PALETTE)];
+    }
+
+    /**
+     * Team leave calendar. Renders a month/week/list view of who is on
+     * leave, with a filter row (employee/leave type/department, plus a
+     * "show rejected/cancelled" toggle) and a leave-type colour legend built
+     * from the SAME palette calendarEvents() below uses to colour each
+     * event, so the legend can never show a colour the calendar itself
+     * doesn't actually use.
      */
     public function calendar()
     {
         $this->requirePermission('leave-request.view');
-        return view('admin.leave-requests.calendar');
+
+        $leaveTypes = LeaveType::active()->orderBy('name')->get()
+            ->map(function ($type) {
+                $type->calendar_color = self::colorForLeaveType($type->id);
+                return $type;
+            });
+        $departments = \App\Models\Department::active()->orderBy('name')->get();
+        $employees = Employee::active()->orderBy('first_name')->get();
+
+        return view('admin.leave-requests.calendar', compact('leaveTypes', 'departments', 'employees'));
     }
 
     /**
-     * Calendar events feed (AJAX) for the team leave calendar.
-     * Shows approved and pending leave; self-service admins see only their own.
+     * Calendar events feed (AJAX) for the team leave calendar. Shows
+     * approved and pending leave by default; a "show rejected/cancelled"
+     * toggle on the calendar can additionally include those. Self-service
+     * admins always see only their own leave, same as before.
      */
     public function calendarEvents(Request $request)
     {
         $this->requirePermission('leave-request.view');
+        $statuses = $request->boolean('show_rejected')
+            ? ['approved', 'pending', 'rejected', 'cancelled']
+            : ['approved', 'pending'];
+
         $query = LeaveRequest::query()
-            ->with(['employee', 'leaveType'])
-            ->whereIn('approval_status', ['approved', 'pending']);
+            ->with(['employee.department', 'leaveType'])
+            ->whereIn('approval_status', $statuses);
 
         // Phase D2: an admin linked to an employee only sees their own leave.
         if ($employeeId = $this->selfEmployeeId()) {
             $query->where('employee_id', $employeeId);
+        } elseif ($request->filled('employee_id')) {
+            $query->where('employee_id', $request->input('employee_id'));
+        }
+
+        if ($request->filled('leave_type_id')) {
+            $query->where('leave_type_id', $request->input('leave_type_id'));
+        }
+        if ($request->filled('department_id')) {
+            $query->whereHas('employee', function ($eq) use ($request) {
+                $eq->where('department_id', $request->input('department_id'));
+            });
         }
 
         // Constrain to the range FullCalendar requests, when provided.
@@ -151,9 +199,12 @@ class LeaveRequestController extends Controller
         }
 
         $events = $query->get()->map(function ($leave) {
-            $approved = $leave->approval_status === 'approved';
             $name = $leave->employee->full_name ?? ('#' . $leave->employee_id);
             $type = $leave->leaveType->name ?? 'Leave';
+            $color = self::colorForLeaveType($leave->leave_type_id);
+            $initials = $leave->employee
+                ? strtoupper(substr($leave->employee->first_name, 0, 1) . substr($leave->employee->last_name, 0, 1))
+                : '?';
 
             return [
                 'id' => $leave->id,
@@ -162,13 +213,20 @@ class LeaveRequestController extends Controller
                 // FullCalendar treats all-day end as exclusive, so add a day.
                 'end' => $leave->end_date->copy()->addDay()->format('Y-m-d'),
                 'allDay' => true,
-                'color' => $approved ? '#16a34a' : '#f59e0b',
+                'backgroundColor' => $color,
+                'borderColor' => $color,
+                'classNames' => ['lc-event', 'lc-event-' . $leave->approval_status],
                 'extendedProps' => [
+                    'employee' => $name,
+                    'initials' => $initials,
+                    'department' => $leave->employee->department->name ?? null,
+                    'leaveType' => $type,
                     'status' => $leave->approval_status,
                     'duration' => $leave->duration_type === 'half_day'
                         ? ('Half day (' . ($leave->half_day_session ?? '') . ')')
                         : ($leave->total_days . ' day(s)'),
                     'description' => $name . ' — ' . $type . ' — ' . ucfirst($leave->approval_status),
+                    'detailsUrl' => route('admin.leave-requests.details', $leave->id),
                 ],
             ];
         });
@@ -260,6 +318,63 @@ class LeaveRequestController extends Controller
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Read-only "View Details" modal — the full leave request plus its
+     * approval workflow's own progress: every configured step, who is
+     * (or was) an approver on it, and whether that step is approved/
+     * rejected/in-progress/not-yet-reached, alongside the actual recorded
+     * WorkflowInstanceApproval entries per step. Falls back to a plain
+     * "direct approval, no workflow configured" explanation when this
+     * leave request has no workflowInstance at all (today's reality for
+     * every existing leave request, since no active WorkflowDefinition
+     * exists for LeaveRequest yet — see the fallback-safe approve()/reject()
+     * above), so the modal is honest about there being nothing further to
+     * show rather than rendering an empty/misleading stepper.
+     */
+    public function details(LeaveRequest $leaveRequest)
+    {
+        $this->requirePermission('leave-request.view');
+        $leaveRequest->load(['employee.department', 'employee.designation', 'leaveType']);
+
+        $instance = $leaveRequest->workflowInstances()
+            ->with(['workflowDefinition', 'currentStep', 'approvals.approver', 'approvals.workflowStep'])
+            ->latest('id')
+            ->first();
+
+        $steps = [];
+        if ($instance) {
+            $currentStepOrder = $instance->currentStep?->step_order;
+            $definitionSteps = $instance->workflowDefinition
+                ? $instance->workflowDefinition->steps()->with('approvers')->orderBy('step_order')->get()
+                : collect();
+
+            foreach ($definitionSteps as $step) {
+                $stepApprovals = $instance->approvals->where('workflow_step_id', $step->id)->values();
+
+                if ($step->step_order < $currentStepOrder) {
+                    $stepStatus = 'approved';
+                } elseif ($step->step_order == $currentStepOrder) {
+                    $stepStatus = match ($instance->current_status) {
+                        'approved' => 'approved',
+                        'rejected' => 'rejected',
+                        'cancelled' => 'cancelled',
+                        default => 'pending',
+                    };
+                } else {
+                    $stepStatus = 'not_reached';
+                }
+
+                $steps[] = [
+                    'step' => $step,
+                    'status' => $stepStatus,
+                    'approvals' => $stepApprovals,
+                ];
+            }
+        }
+
+        return view('admin.leave-requests.details', compact('leaveRequest', 'instance', 'steps'));
     }
 
     /**

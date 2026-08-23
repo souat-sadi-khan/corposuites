@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Helpers\Images;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\LeaveBalanceRequest;
+use App\Http\Requests\Admin\LeaveBalanceGroupRequest;
 use App\Models\Employee;
 use App\Models\LeaveBalance;
 use App\Models\LeaveType;
@@ -13,7 +13,6 @@ use App\Services\LeaveBalanceService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Yajra\DataTables\Facades\DataTables;
 
 class LeaveBalanceController extends Controller
 {
@@ -29,97 +28,180 @@ class LeaveBalanceController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource — ONE ROW PER EMPLOYEE PER YEAR
+     * (not one row per employee+leave-type+year the way the underlying
+     * `leave_balances` table itself is still shaped). Every leave type an
+     * employee has a balance for in that year is rolled up into one
+     * summary row here; the "Manage" action opens the full per-type
+     * breakdown (see manageForm()/manage() below).
+     *
+     * Deliberately NOT Yajra here — this is a GROUPED, in-memory rollup of
+     * an already-fetched (batch, not per-row) query, not a straight
+     * Eloquent/Collection passthrough Yajra's engines are built for — so
+     * this hand-builds the exact same draw/recordsTotal/recordsFiltered/
+     * data JSON contract the DataTables.net client already expects from
+     * every other server-side table in this project, just without routing
+     * through Yajra for this one grouped screen.
      */
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = LeaveBalance::query()->with(['employee', 'leaveType']);
+            $query = LeaveBalance::query()->with(['employee.department', 'employee.designation', 'leaveType']);
 
-            // Filter by status
             if ($request->status) {
-                $statuses = explode(',', $request->status);
-                $query->whereIn('status', $statuses);
+                $query->whereIn('status', explode(',', $request->status));
             }
-
-            // Filter by employee
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
             }
-
-            // Search
-            if ($request->search) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('employee', function ($eq) use ($search) {
-                        $eq->where('first_name', 'like', "%{$search}%")
-                           ->orWhere('last_name', 'like', "%{$search}%")
-                           ->orWhere('employee_code', 'like', "%{$search}%");
-                    })->orWhereHas('leaveType', function ($lq) use ($search) {
-                        $lq->where('name', 'like', "%{$search}%");
-                    });
-                });
+            if ($request->filled('year')) {
+                $query->where('year', $request->input('year'));
             }
 
-            $query->orderBy('year', 'DESC');
+            $groups = $query->get()
+                ->groupBy(fn ($row) => $row->employee_id . '|' . $row->year)
+                ->map(function ($items, $key) {
+                    [$employeeId, $year] = explode('|', $key);
+                    $employee = $items->first()->employee;
 
-            return DataTables::eloquent($query)
-                ->addColumn('status_badge', function ($row) {
-                    $checked = $row->status ? 'checked' : '';
-                    return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.leave-balances.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
+                    return (object) [
+                        'key' => $key,
+                        'employee_id' => (int) $employeeId,
+                        'year' => (int) $year,
+                        'employee' => $employee,
+                        'types_count' => $items->count(),
+                        'active_count' => $items->where('status', true)->count(),
+                        'total_allocated' => (float) $items->sum('allocated_days'),
+                        'total_used' => (float) $items->sum('used_days'),
+                        'total_carried' => (float) $items->sum('carried_days'),
+                        'total_remaining' => (float) $items->sum(fn ($b) => $b->remaining_days),
+                    ];
                 })
-                ->addColumn('employee_name', function ($row) {
-                    $avatar = Images::show($row->employee->photo);
+                ->values();
 
-                    return '
+            if ($request->filled('search')) {
+                $search = mb_strtolower($request->input('search'));
+                $groups = $groups->filter(function ($row) use ($search) {
+                    $name = mb_strtolower($row->employee->full_name ?? '');
+                    $code = mb_strtolower($row->employee->employee_code ?? '');
+                    return str_contains($name, $search)
+                        || str_contains($code, $search)
+                        || str_contains((string) $row->year, $search);
+                })->values();
+            }
+
+            $groups = $groups->sortByDesc(fn ($row) => $row->year . '-' . ($row->employee->full_name ?? ''))->values();
+
+            $recordsTotal = $groups->count();
+            $start = (int) $request->input('start', 0);
+            $length = (int) $request->input('length', 9);
+            $length = $length > 0 ? $length : $recordsTotal;
+
+            $page = $groups->slice($start, $length)->values();
+
+            $data = $page->map(function ($row) {
+                $avatar = Images::show($row->employee->photo ?? null);
+
+                return [
+                    'id' => $row->key,
+                    'employee_name' => '
                         <div class="d-flex align-items-center">
-                            <div class="mr-2 employee-avatar">
-                                ' . $avatar . '
-                            </div>
+                            <div class="mr-2 employee-avatar">' . $avatar . '</div>
                             <div>
-                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <b class="tl-name-txt">' . e($row->employee->full_name ?? '—') . '</b>
                                 <br>
-                                <small>' . e($row->employee->employee_code) . '</small>
+                                <small>' . e($row->employee->employee_code ?? '') . '</small>
                             </div>
-                        </div>
-                    ';
-                })
-                ->addColumn('leave_type_name', function ($row) {
-                    return ($row->leaveType->name ?? '-') . '<br><small>' . $row->year . '</small>';
-                })
-                ->addColumn('balance', function ($row) {
-                    return number_format($row->allocated_days, 2) . ' allocated / ' . number_format($row->used_days, 2) . ' used<br><small>' . number_format($row->remaining_days, 2) . ' remaining</small>';
-                })
-                ->addColumn('action', function ($row) {
-                    return view('admin.leave-balances.action', compact('row'))->render();
-                })
-                ->rawColumns(['status_badge', 'employee_name', 'leave_type_name', 'balance', 'action'])
-                ->make(true);
+                        </div>',
+                    'year_label' => '<b>' . $row->year . '</b>',
+                    'types_summary' => $row->types_count . ' leave type' . ($row->types_count === 1 ? '' : 's')
+                        . '<br><small class="text-muted">' . $row->active_count . ' active</small>',
+                    'balance' => number_format($row->total_allocated, 2) . ' allocated / ' . number_format($row->total_used, 2) . ' used'
+                        . '<br><small>' . number_format($row->total_remaining, 2) . ' remaining' . ($row->total_carried > 0 ? ' · ' . number_format($row->total_carried, 2) . ' carried' : '') . '</small>',
+                    'action' => view('admin.leave-balances.action', [
+                        'employeeId' => $row->employee_id,
+                        'year' => $row->year,
+                        'typesCount' => $row->types_count,
+                    ])->render(),
+                ];
+            });
+
+            return response()->json([
+                'draw' => (int) $request->input('draw', 1),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsTotal,
+                'data' => $data,
+            ]);
         }
 
         return view('admin.leave-balances.index');
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Manage form (create) — pick an Employee + Year, then add one line per
+     * leave type. Blank slate: no existing group yet.
      */
     public function create()
     {
-        $employees = Employee::active()->get();
-        $leaveTypes = LeaveType::active()->get();
+        $employees = Employee::active()->orderBy('first_name')->get();
+        $leaveTypes = LeaveType::active()->orderBy('name')->get();
 
-        return view('admin.leave-balances.create', compact('employees', 'leaveTypes'));
+        return view('admin.leave-balances.manage', [
+            'employee' => null,
+            'year' => now()->year,
+            'existingItems' => [],
+            'employees' => $employees,
+            'leaveTypes' => $leaveTypes,
+        ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Manage form (edit) — an EXISTING employee+year group, pre-populated
+     * with every leave type it currently has a balance row for.
      */
-    public function store(LeaveBalanceRequest $request)
+    public function edit(Employee $employee, int $year)
+    {
+        $leaveTypes = LeaveType::active()->orderBy('name')->get();
+
+        $existingItems = LeaveBalance::where('employee_id', $employee->id)
+            ->where('year', $year)
+            ->with('leaveType')
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'leave_type_id' => $b->leave_type_id,
+                'leave_type_name' => $b->leaveType->name ?? ('#' . $b->leave_type_id),
+                'allocated_days' => $b->allocated_days,
+                'used_days' => $b->used_days,
+                'carried_days' => $b->carried_days,
+                'carry_expires_on' => optional($b->carry_expires_on)->toDateString(),
+                'status' => (bool) $b->status,
+                'is_encashable' => (bool) ($b->leaveType->is_encashable ?? false),
+                'remaining_days' => $b->remaining_days,
+            ])
+            ->values();
+
+        return view('admin.leave-balances.manage', [
+            'employee' => $employee,
+            'year' => $year,
+            'existingItems' => $existingItems,
+            'employees' => Employee::active()->orderBy('first_name')->get(),
+            'leaveTypes' => $leaveTypes,
+        ]);
+    }
+
+    /**
+     * Store — a brand new employee+year group.
+     */
+    public function store(LeaveBalanceGroupRequest $request)
     {
         DB::beginTransaction();
 
         try {
-            $leaveBalance = $this->leaveBalanceService->create($request->validated());
+            $employeeId = (int) $request->input('employee_id');
+            $year = (int) $request->input('year');
+
+            $saved = $this->leaveBalanceService->saveGroup($employeeId, $year, $request->input('items', []));
 
             $this->logActivity([
                 'actor_type' => 'admin',
@@ -127,61 +209,10 @@ class LeaveBalanceController extends Controller
                 'module' => 'leave-balances',
                 'action' => 'create',
                 'model' => 'LeaveBalance',
-                'model_id' => $leaveBalance->id,
-                'description' => 'Leave balance created for employee #' . $leaveBalance->employee_id,
-                'new_data' => $leaveBalance->toArray(),
-                'old_data' => null
-            ]);
-
-            DB::commit();
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Leave balance created successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(LeaveBalance $leaveBalance)
-    {
-        $employees = Employee::active()->get();
-        $leaveTypes = LeaveType::active()->get();
-
-        return view('admin.leave-balances.edit', compact('leaveBalance', 'employees', 'leaveTypes'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(LeaveBalanceRequest $request, LeaveBalance $leaveBalance)
-    {
-        DB::beginTransaction();
-
-        try {
-            $oldData = $leaveBalance->toArray();
-            $updatedLeaveBalance = $this->leaveBalanceService->update($leaveBalance, $request->validated());
-
-            $this->logActivity([
-                'actor_type' => 'admin',
-                'actor_id' => auth()->guard('admin')->id(),
-                'module' => 'leave-balances',
-                'action' => 'update',
-                'model' => 'LeaveBalance',
-                'model_id' => $leaveBalance->id,
-                'description' => 'Leave balance updated for employee #' . $leaveBalance->employee_id,
-                'new_data' => $updatedLeaveBalance->toArray(),
-                'old_data' => $oldData
+                'model_id' => null,
+                'description' => "Leave balance record created for employee #{$employeeId}, year {$year} ({$saved->count()} leave type(s)).",
+                'new_data' => $saved->toArray(),
+                'old_data' => null,
             ]);
 
             DB::commit();
@@ -189,28 +220,71 @@ class LeaveBalanceController extends Controller
             return response()->json([
                 'status' => true,
                 'goto' => route('admin.leave-balances.index'),
-                'message' => 'Leave balance updated successfully.'
+                'message' => 'Leave balance record saved successfully.',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'status' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Update — an existing employee+year group (upsert-and-prune, see
+     * LeaveBalanceService::saveGroup()).
      */
-    public function destroy(LeaveBalance $leaveBalance)
+    public function update(LeaveBalanceGroupRequest $request, Employee $employee, int $year)
     {
         DB::beginTransaction();
 
         try {
-            $oldData = $leaveBalance->toArray();
+            $oldData = LeaveBalance::where('employee_id', $employee->id)->where('year', $year)->get()->toArray();
 
-            $this->leaveBalanceService->delete($leaveBalance);
+            $saved = $this->leaveBalanceService->saveGroup($employee->id, $year, $request->input('items', []));
+
+            $this->logActivity([
+                'actor_type' => 'admin',
+                'actor_id' => auth()->guard('admin')->id(),
+                'module' => 'leave-balances',
+                'action' => 'update',
+                'model' => 'LeaveBalance',
+                'model_id' => null,
+                'description' => "Leave balance record updated for employee #{$employee->id}, year {$year} ({$saved->count()} leave type(s)).",
+                'new_data' => $saved->toArray(),
+                'old_data' => $oldData,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'status' => true,
+                'goto' => route('admin.leave-balances.index'),
+                'message' => 'Leave balance record updated successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete an ENTIRE employee+year group (every leave type under it) —
+     * the "Delete" action on the grouped index row.
+     */
+    public function destroyGroup(Employee $employee, int $year)
+    {
+        DB::beginTransaction();
+
+        try {
+            $oldData = LeaveBalance::where('employee_id', $employee->id)->where('year', $year)->get()->toArray();
+            $count = $this->leaveBalanceService->deleteGroup($employee->id, $year);
 
             $this->logActivity([
                 'actor_type' => 'admin',
@@ -218,23 +292,24 @@ class LeaveBalanceController extends Controller
                 'module' => 'leave-balances',
                 'action' => 'delete',
                 'model' => 'LeaveBalance',
-                'model_id' => $oldData['id'],
-                'description' => 'Leave balance deleted for employee #' . $oldData['employee_id'],
+                'model_id' => null,
+                'description' => "Leave balance record deleted for employee #{$employee->id}, year {$year} ({$count} leave type(s)).",
                 'new_data' => null,
-                'old_data' => $oldData
+                'old_data' => $oldData,
             ]);
 
             DB::commit();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Leave balance deleted successfully.'
+                'message' => "Deleted {$count} leave type balance(s) for {$year}.",
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'status' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -341,7 +416,8 @@ class LeaveBalanceController extends Controller
     }
 
     /**
-     * Update status (AJAX switch toggle)
+     * Update status (AJAX switch toggle) — per single leave-type line,
+     * used from inside the Manage form.
      */
     public function updateStatus(Request $request, int $id)
     {

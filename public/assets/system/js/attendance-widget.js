@@ -8,16 +8,31 @@
  * in AttendancePortalController — this file only drives the UI and posts to
  * the SAME endpoints the dedicated "My Attendance" page already uses, so
  * there is exactly one place that decides whether a punch is valid.
+ *
+ * The actual Check In / Check Out action now always goes through the shared
+ * #awPunchModal (markup lives in header.blade.php, rendered once, globally)
+ * instead of a native window.prompt() — it shows the employee's real
+ * current location (an embedded OpenStreetMap iframe, no API key / no new
+ * mapping library dependency) and an optional note before the punch is
+ * actually sent. window.awOpenPunchModal() is exposed on `window` so BOTH
+ * the header widget's own buttons AND the dedicated "My Attendance" page's
+ * buttons (see attendance-portal/index.blade.php) can trigger the exact
+ * same modal/flow — one implementation, two entry points, so they can never
+ * drift out of sync with each other.
  */
 $(function () {
-    if (!$('#attendanceWidgetBtn').length) {
-        return;
+    if (!$('#awPunchModal').length) {
+        return; // no employee-linked widget on this page at all
     }
 
     var awBusy = false;
+    var awPunchModalEl = document.getElementById('awPunchModal');
+    var awPunchModal = new bootstrap.Modal(awPunchModalEl);
+    var awPunchState = { url: null, latitude: null, longitude: null, ready: false };
 
     function awSetMessage(text, kind) {
         var $msg = $('#awMessage');
+        if (!$msg.length) return;
         $msg.removeClass('is-error is-success').text(text || '');
         if (kind) $msg.addClass('is-' + kind);
     }
@@ -42,75 +57,122 @@ $(function () {
             });
     }
 
-    function awPunch(url, actionLabel, notes) {
+    function awPunchResetModal(actionLabel) {
+        awPunchState = { url: null, latitude: null, longitude: null, ready: false };
+        $('#awPunchModalTitle').html(
+            (actionLabel && actionLabel.toLowerCase().indexOf('out') !== -1 ? '<i class="ri-logout-circle-fill"></i> Check Out' : '<i class="ri-login-circle-fill"></i> Check In')
+        );
+        $('#awPunchConfirmLabel').text('Confirm');
+        $('#awPunchLoading').removeClass('d-none');
+        $('#awPunchLocationContent').addClass('d-none');
+        $('#awPunchLocationError').addClass('d-none');
+        $('#awPunchNotes').val('');
+        $('#awPunchMessage').removeClass('is-error is-success').text('');
+        $('#awPunchConfirmBtn').prop('disabled', true);
+    }
+
+    function awPunchShowLocation(position) {
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        awPunchState.latitude = lat;
+        awPunchState.longitude = lng;
+        awPunchState.ready = true;
+
+        var d = 0.003; // a small bbox around the point for the embed frame
+        var bbox = (lng - d) + ',' + (lat - d) + ',' + (lng + d) + ',' + (lat + d);
+        $('#awPunchMapFrame').attr('src', 'https://www.openstreetmap.org/export/embed.html?bbox=' + bbox + '&layer=mapnik&marker=' + lat + ',' + lng);
+        $('#awPunchMapLink').attr('href', 'https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=17/' + lat + '/' + lng);
+        $('#awPunchCoordsText').text(lat.toFixed(6) + ', ' + lng.toFixed(6));
+
+        $('#awPunchLoading').addClass('d-none');
+        $('#awPunchLocationError').addClass('d-none');
+        $('#awPunchLocationContent').removeClass('d-none');
+        $('#awPunchConfirmBtn').prop('disabled', false);
+    }
+
+    function awPunchShowLocationError(message) {
+        $('#awPunchLoading').addClass('d-none');
+        $('#awPunchLocationContent').addClass('d-none');
+        $('#awPunchLocationErrorText').text(message);
+        $('#awPunchLocationError').removeClass('d-none');
+        $('#awPunchConfirmBtn').prop('disabled', true);
+    }
+
+    /**
+     * Opens the shared punch modal and immediately starts resolving the
+     * device's current location — exposed on window so both this file's
+     * own Check In/Out buttons AND the "My Attendance" page's buttons can
+     * call it. `url` is the check-in/check-out endpoint to post to.
+     */
+    window.awOpenPunchModal = function (url, actionLabel) {
         if (awBusy) return;
 
+        awPunchResetModal(actionLabel);
+        awPunchState.url = url;
+        awPunchModal.show();
+
         if (!navigator.geolocation) {
-            awSetMessage('Location services are unavailable on this device.', 'error');
+            awPunchShowLocationError('Location services are unavailable on this device.');
             return;
         }
 
-        awBusy = true;
-        awSetMessage(actionLabel + ' …'); // "Checking in ..." / "Checking out ..."
-        $('#awBody .aw-action button').prop('disabled', true);
-
         navigator.geolocation.getCurrentPosition(
-            function (position) {
-                $.post(url, {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    source: 'browser_geolocation',
-                    notes: notes
-                }).done(function (response) {
-                    if (response.status) {
-                        // Refresh FIRST (it replaces #awMessage along with the
-                        // rest of #awBody), then show the success message in
-                        // the newly-rendered element — otherwise it would be
-                        // set and instantly wiped out in the same tick.
-                        awRefresh().done(function () {
-                            awSetMessage(response.message, 'success');
-                        });
-                    } else {
-                        awSetMessage(response.message, 'error');
-                        $('#awBody .aw-action button').prop('disabled', false);
-                    }
-                }).fail(function (xhr) {
-                    var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Unable to record attendance.';
-                    awSetMessage(message, 'error');
-                    $('#awBody .aw-action button').prop('disabled', false);
-                }).always(function () {
-                    awBusy = false;
-                });
-            },
-            function () {
-                awSetMessage('Please allow location access to continue.', 'error');
-                $('#awBody .aw-action button').prop('disabled', false);
-                awBusy = false;
-            },
+            awPunchShowLocation,
+            function () { awPunchShowLocationError('Please allow location access to continue, then try again.'); },
             { enableHighAccuracy: true, timeout: 15000 }
         );
-    }
+    };
+
+    $('#awPunchConfirmBtn').on('click', function () {
+        if (awBusy || !awPunchState.ready || !awPunchState.url) return;
+
+        awBusy = true;
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+        $('#awPunchMessage').removeClass('is-error is-success').text('Working …');
+
+        $.post(awPunchState.url, {
+            latitude: awPunchState.latitude,
+            longitude: awPunchState.longitude,
+            source: 'browser_geolocation',
+            notes: $('#awPunchNotes').val()
+        }).done(function (response) {
+            if (response.status) {
+                awPunchModal.hide();
+                awRefresh().done(function () {
+                    awSetMessage(response.message, 'success');
+                });
+                // My Attendance page (if this modal was opened from there)
+                // reloads to pick up the fresh table/report — see its own
+                // trigger wiring below.
+                if (typeof window.awOnPunchSuccess === 'function') {
+                    window.awOnPunchSuccess(response);
+                }
+            } else {
+                $('#awPunchMessage').removeClass('is-success').addClass('is-error').text(response.message);
+                $btn.prop('disabled', false);
+            }
+        }).fail(function (xhr) {
+            var message = (xhr.responseJSON && xhr.responseJSON.message) || 'Unable to record attendance.';
+            $('#awPunchMessage').removeClass('is-success').addClass('is-error').text(message);
+            $btn.prop('disabled', false);
+        }).always(function () {
+            awBusy = false;
+        });
+    });
 
     // Delegated from #attendanceWidgetDd (a stable container that never gets
     // replaced — only its #awBody child does) rather than document: theme.js
     // registers `$('.tb-dd').on('click', e => e.stopPropagation())` on every
-    // dropdown (including this one) so an in-dropdown click doesn't bubble up
-    // and trigger the global click-anywhere-closes-all-dropdowns handler.
+    // dropdown (including this one) so an in-dropdown click doesn't bubble
+    // up and trigger the global click-anywhere-closes-all-dropdowns handler.
     // That same stopPropagation would silently swallow a document-level
     // delegated handler before it ever saw the click.
-    // A plain prompt() for the optional note — matches this project's own
-    // "native prompt for a single quick-action text field" convention
-    // (e.g. the Project Timesheet reject flow) rather than a full modal,
-    // since check-in/out is now something that can happen several times a
-    // day and shouldn't gain extra friction. Clicking Cancel just means "no
-    // note" — it never blocks the actual check-in/out, only skips the text.
     $('#attendanceWidgetDd').on('click', '#awCheckInBtn', function () {
-        var notes = window.prompt('Add a note for this check-in (optional):', '');
-        awPunch(window.attendanceWidgetRoutes.checkIn, 'Checking in', notes);
+        window.awOpenPunchModal(window.attendanceWidgetRoutes.checkIn, 'Check In');
     });
 
     $('#attendanceWidgetDd').on('click', '#awCheckOutBtn', function () {
-        var notes = window.prompt('Add a note for this check-out (optional):', '');
-        awPunch(window.attendanceWidgetRoutes.checkOut, 'Checking out', notes);
+        window.awOpenPunchModal(window.attendanceWidgetRoutes.checkOut, 'Check Out');
     });
 });

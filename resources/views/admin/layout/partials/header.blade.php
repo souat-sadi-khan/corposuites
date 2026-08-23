@@ -46,6 +46,67 @@
                 checkOut: '{{ route('admin.attendance-portal.check-out') }}'
             };
         </script>
+
+        {{--
+            Shared Check In / Check Out modal — rendered once, globally, right
+            here (header.blade.php is included on every admin page) so BOTH the
+            header widget's buttons AND the dedicated "My Attendance" page's
+            buttons trigger this exact same modal/flow via
+            window.awOpenPunchModal(url, actionLabel) in attendance-widget.js,
+            rather than each having its own separate window.prompt()-based
+            flow. Shows the real current location (an embedded OpenStreetMap
+            iframe — no API key, no new JS mapping library, per this project's
+            own "don't add a dependency for one screen" precedent) plus an
+            optional note, before the punch is actually sent.
+        --}}
+        <div class="modal fade" id="awPunchModal" tabindex="-1" aria-hidden="true" aria-labelledby="awPunchModalTitle">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content aw-punch-modal">
+                    <div class="modal-header">
+                        <h6 class="modal-title" id="awPunchModalTitle"><i class="ri-login-circle-fill"></i> Check In</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="aw-punch-location">
+                            <div class="aw-punch-loading" id="awPunchLoading">
+                                <span class="spinner-border spinner-border-sm"></span> Getting your current location…
+                            </div>
+                            <div class="aw-punch-location-content d-none" id="awPunchLocationContent">
+                                <div class="aw-punch-map-wrap">
+                                    <iframe id="awPunchMapFrame" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                </div>
+                                <div class="aw-punch-coords">
+                                    <i class="ri-map-pin-fill"></i>
+                                    <span id="awPunchCoordsText"></span>
+                                    <a href="#" target="_blank" rel="noopener" id="awPunchMapLink" class="aw-punch-map-link">
+                                        Open in Maps <i class="ri-external-link-line"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="aw-punch-location-error d-none" id="awPunchLocationError">
+                                <i class="ri-error-warning-line"></i>
+                                <span id="awPunchLocationErrorText"></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label small fw-semibold mb-1" for="awPunchNotes">
+                                <i class="ri-sticky-note-line"></i> Note <span class="text-muted">(optional)</span>
+                            </label>
+                            <textarea class="form-control form-control-sm" id="awPunchNotes" rows="2" maxlength="1000" placeholder="e.g. Client visit, WFH, back from lunch..."></textarea>
+                        </div>
+
+                        <div class="small mt-2 aw-punch-message" id="awPunchMessage"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-nx-outline btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-nx-primary btn-sm" id="awPunchConfirmBtn" disabled>
+                            <i class="ri-checkbox-circle-line"></i> <span id="awPunchConfirmLabel">Confirm</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 
     <div class="tb-search">

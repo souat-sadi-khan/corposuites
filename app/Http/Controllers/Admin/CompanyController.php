@@ -22,6 +22,12 @@ class CompanyController extends Controller
         $this->companyService = $companyService;
     }
 
+    /** Display a modal with guidance for managing CRM companies. */
+    public function howTo()
+    {
+        return view('admin.companies.doc');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -34,6 +40,18 @@ class CompanyController extends Controller
             if ($request->status) {
                 $statuses = explode(',', $request->status);
                 $query->whereIn('status', $statuses);
+            }
+
+            if ($request->industry) {
+                $query->where('industry', $request->industry);
+            }
+
+            if ($request->filled('has_website')) {
+                $request->boolean('has_website')
+                    ? $query->whereNotNull('website')->where('website', '!=', '')
+                    : $query->where(function ($query) {
+                        $query->whereNull('website')->orWhere('website', '');
+                    });
             }
 
             // Search
@@ -70,7 +88,14 @@ class CompanyController extends Controller
                 ->make(true);
         }
 
-        return view('admin.companies.index');
+        $industries = Company::query()
+            ->whereNotNull('industry')
+            ->where('industry', '!=', '')
+            ->distinct()
+            ->orderBy('industry')
+            ->pluck('industry');
+
+        return view('admin.companies.index', compact('industries'));
     }
 
     /**

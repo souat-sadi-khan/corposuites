@@ -11,27 +11,7 @@
     <div class="tl-toolbar">
         <div class="tl-search">
             <i class="ri-search-line"></i>
-            <input type="text" id="leaveBalanceSearch" placeholder="Search Leave Balances">
-        </div>
-
-        <div class="tl-filter-wrap">
-            <button class="tl-filter-btn" id="tlFilterBtn" title="Filter">
-                <i class="ri-equalizer-line"></i>
-            </button>
-
-            <div class="tl-filter-dd" id="tlFilterDd">
-                <div class="tl-filter-dd-title">
-                    Filter by Status
-                </div>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="1" checked>
-                    Active
-                </label>
-                <label class="tl-filter-chk">
-                    <input type="checkbox" value="0" checked>
-                    Inactive
-                </label>
-            </div>
+            <input type="text" id="leaveBalanceSearch" placeholder="Search by employee or year">
         </div>
 
         <div class="tl-spacer"></div>
@@ -46,7 +26,7 @@
         @if(Auth::guard('admin')->user()?->can('leave-balance.create'))
         <button id="openModal" data-url="{{ route('admin.leave-balances.create', request('employee_id') ? ['employee_id' => request('employee_id')] : []) }}" class="btn-nx-primary">
             <i class="ri-add-line"></i>
-            Add Leave Balance
+            Add Leave Balance Record
         </button>
         @endif
     </div>
@@ -59,9 +39,9 @@
                     <tr>
                         <th>ID</th>
                         <th>Employee</th>
-                        <th>Leave Type / Year</th>
+                        <th>Year</th>
+                        <th>Leave Types</th>
                         <th>Balance</th>
-                        <th>Status</th>
                         <th class="no-sort text-end">Actions</th>
                     </tr>
                 </thead>

@@ -668,6 +668,21 @@ hr.pf-div { border: none; border-top: 1px solid var(--border-lt); margin: 0; }
 .aw-message.is-error { color: var(--red); font-weight: 600; }
 .aw-message.is-success { color: var(--green); font-weight: 600; }
 
+/* Shared Check In / Check Out modal (header.blade.php + attendance-widget.js) */
+.aw-punch-modal .modal-title { display: flex; align-items: center; gap: 7px; font-size: 15px; font-weight: 700; }
+.aw-punch-location { min-height: 64px; }
+.aw-punch-loading { display: flex; align-items: center; gap: 8px; justify-content: center; padding: 18px 0; font-size: 12.5px; color: var(--tx-3); font-weight: 600; }
+.aw-punch-location-content { animation: awFadeIn .18s ease; }
+.aw-punch-map-wrap { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-lt); background: var(--bg-base); }
+.aw-punch-map-wrap iframe { width: 100%; height: 170px; border: 0; display: block; }
+.aw-punch-coords { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; color: var(--tx-2); }
+.aw-punch-coords i { color: var(--accent); }
+.aw-punch-coords span { font-weight: 700; color: var(--tx-1); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.aw-punch-map-link { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; color: var(--accent); font-weight: 600; text-decoration: none; }
+.aw-punch-map-link:hover { text-decoration: underline; }
+.aw-punch-location-error { display: flex; align-items: center; gap: 7px; padding: 12px; border-radius: 10px; background: var(--red-s); color: var(--red); font-size: 12px; font-weight: 600; }
+@keyframes awFadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
 /* "My Attendance" self-service page */
 .myatt-hero {
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
@@ -709,6 +724,14 @@ hr.pf-div { border: none; border-top: 1px solid var(--border-lt); margin: 0; }
 .myatt-flash.is-error { color: var(--red); }
 
 .myatt-stats .stat-val-sm, .myatt-stat-val-sm { font-size: 18px !important; }
+
+.myatt-sessions-card { padding: 12px 16px; }
+.myatt-sessions-title { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--tx-3); margin-bottom: 8px; }
+.myatt-session-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 0; font-size: 12.5px; border-top: 1px dashed var(--border-lt); }
+.myatt-session-row:first-of-type { border-top: none; padding-top: 0; }
+.myatt-session-time { font-weight: 700; color: var(--tx-1); }
+.myatt-session-source { font-size: 10.5px; padding: 2px 7px; border-radius: 6px; background: var(--accent-s); color: var(--accent); font-weight: 600; }
+.myatt-session-note { font-size: 11.5px; color: var(--tx-3); display: inline-flex; align-items: center; gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .myatt-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -1032,6 +1055,17 @@ box-shadow: var(--shadow-lg); padding: 10px 12px; min-width: 165px;
 display: none; align-items: center; gap: 8px; background: var(--accent-s); border: 1px solid var(--accent-m);
 border-radius: 8px; padding: 6px 12px; font-size: 12.5px; font-weight: 600; color: var(--accent); flex-shrink: 0; white-space: nowrap;
 }
+
+/* Advanced Search (Attendance list) */
+.att-adv-toggle { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+.att-adv-toggle.is-active { background: var(--accent-s); border-color: var(--accent-m); color: var(--accent); }
+.att-adv-count { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; }
+.att-adv-panel { padding: 14px 16px; margin-bottom: 12px; animation: dropIn .15s ease; }
+.att-adv-status-chks { display: flex; flex-wrap: wrap; gap: 6px; }
+.att-adv-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 999px; background: var(--bg-base); border: 1px solid var(--border-lt); cursor: pointer; color: var(--tx-2); }
+.att-adv-chip input { width: 13px; height: 13px; accent-color: var(--accent); margin: 0; }
+.att-adv-chip:has(input:checked) { background: var(--accent-s); border-color: var(--accent-m); color: var(--accent); }
+.att-adv-chip-block { width: 100%; justify-content: flex-start; padding: 8px 10px; }
 .tl-selected-chip input { width: 14px; height: 14px; accent-color: var(--accent); }
 .tl-spacer { flex: 1; min-width: 4px; }
 

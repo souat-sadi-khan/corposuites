@@ -253,7 +253,7 @@ class AttendanceReportService
 
         $records = Attendance::where('employee_id', $employee->id)
             ->whereBetween('attendance_date', [$from->toDateString(), $to->toDateString()])
-            ->with('leaveRequest.leaveType')
+            ->with(['leaveRequest.leaveType', 'punches'])
             ->get()
             ->keyBy(fn ($row) => $row->attendance_date->toDateString());
 
@@ -285,7 +285,7 @@ class AttendanceReportService
 
         $recordsByEmployee = Attendance::whereIn('employee_id', $employeeIds)
             ->whereBetween('attendance_date', [$from->toDateString(), $to->toDateString()])
-            ->with('leaveRequest.leaveType')
+            ->with(['leaveRequest.leaveType', 'punches'])
             ->get()
             ->groupBy('employee_id');
 

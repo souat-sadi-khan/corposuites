@@ -1,5 +1,11 @@
 <div class="tl-actions">
     @php $isSelfService = (bool) optional(auth()->guard('admin')->user())->employee_id; @endphp
+
+    <!-- View Details (full request + approval workflow progress) -->
+    <button class="tl-icon-btn" id="openModal" data-url="{{ route('admin.leave-requests.details', $row->id) }}" title="View Details">
+        <i class="ri-eye-line"></i>
+    </button>
+
     @if($row->approval_status === 'pending' && !$isSelfService)
         <!-- Approve -->
         @if(Auth::guard('admin')->user()?->can('leave-request.approve'))

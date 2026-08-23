@@ -34,7 +34,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">No Lead</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}">{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}">{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -42,13 +42,14 @@
                 <label>Notes</label>
                 <textarea class="form-control" name="notes" rows="3" placeholder="Additional notes about this contact"></textarea>
             </div>
-            <div class="fm-field fm-full">
+            <input type="hidden" name="status" value="1">
+            {{-- <div class="fm-field fm-full">
                 <label>Status</label>
                 <select name="status" class="form-select">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>
-            </div>
+            </div> --}}
         </div>
     </div>
 

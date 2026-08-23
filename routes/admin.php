@@ -287,14 +287,17 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::resource('leads', LeadController::class)->except(['show']);
 
     // CRM - Contacts
+    Route::get('contacts/how-to', [ContactController::class, 'howTo'])->name('contacts.how.to');
     Route::post('contacts/status/{id}', [ContactController::class, 'updateStatus'])->name('contacts.status');
     Route::resource('contacts', ContactController::class)->except(['show']);
 
     // CRM - Companies
+    Route::get('companies/how-to', [CompanyController::class, 'howTo'])->name('companies.how.to');
     Route::post('companies/status/{id}', [CompanyController::class, 'updateStatus'])->name('companies.status');
     Route::resource('companies', CompanyController::class)->except(['show']);
 
     // CRM - Customer Relationship History
+    Route::get('relationship-histories/how-to', [RelationshipHistoryController::class, 'howTo'])->name('relationship-histories.how.to');
     Route::post('relationship-histories/status/{id}', [RelationshipHistoryController::class, 'updateStatus'])->name('relationship-histories.status');
     Route::resource('relationship-histories', RelationshipHistoryController::class)->except(['show']);
 
@@ -1055,18 +1058,24 @@ Route::middleware(['isAdmin'])->group(function () {
         ->middlewareFor(['destroy'], 'permission:attendance-adjustment.delete,admin');
 
     // HRM - Leave Balances
+    // Grouped one-employee-one-year-one-record UI over the still-unchanged,
+    // still-per-leave-type `leave_balances` table (see LeaveBalanceService's
+    // own doc comment for why the underlying rows themselves didn't need to
+    // change).
+    Route::get('leave-balances/manage/{employee}/{year}', [LeaveBalanceController::class, 'edit'])->name('leave-balances.manage.edit')->middleware('permission:leave-balance.edit,admin');
+    Route::put('leave-balances/manage/{employee}/{year}', [LeaveBalanceController::class, 'update'])->name('leave-balances.manage.update')->middleware('permission:leave-balance.edit,admin');
+    Route::delete('leave-balances/group/{employee}/{year}', [LeaveBalanceController::class, 'destroyGroup'])->name('leave-balances.group.destroy')->middleware('permission:leave-balance.delete,admin');
     Route::post('leave-balances/status/{id}', [LeaveBalanceController::class, 'updateStatus'])->name('leave-balances.status')->middleware('permission:leave-balance.edit,admin');
     Route::post('leave-balances/generate', [LeaveBalanceController::class, 'generate'])->name('leave-balances.generate')->middleware('permission:leave-balance.generate,admin');
     Route::post('leave-balances/{leaveBalance}/encash', [LeaveBalanceController::class, 'encash'])->name('leave-balances.encash')->middleware('permission:leave-balance.encash,admin');
-    Route::resource('leave-balances', LeaveBalanceController::class)->except(['show'])
-        ->middlewareFor(['index'], 'permission:leave-balance.view,admin')
-        ->middlewareFor(['create', 'store'], 'permission:leave-balance.create,admin')
-        ->middlewareFor(['edit', 'update'], 'permission:leave-balance.edit,admin')
-        ->middlewareFor(['destroy'], 'permission:leave-balance.delete,admin');
+    Route::get('leave-balances', [LeaveBalanceController::class, 'index'])->name('leave-balances.index')->middleware('permission:leave-balance.view,admin');
+    Route::get('leave-balances/create', [LeaveBalanceController::class, 'create'])->name('leave-balances.create')->middleware('permission:leave-balance.create,admin');
+    Route::post('leave-balances', [LeaveBalanceController::class, 'store'])->name('leave-balances.store')->middleware('permission:leave-balance.create,admin');
 
     // HRM - Leave Requests
     Route::get('leave-requests/calendar', [LeaveRequestController::class, 'calendar'])->name('leave-requests.calendar')->middleware('permission:leave-request.view,admin');
     Route::get('leave-requests/calendar-events', [LeaveRequestController::class, 'calendarEvents'])->name('leave-requests.calendar-events')->middleware('permission:leave-request.view,admin');
+    Route::get('leave-requests/{leaveRequest}/details', [LeaveRequestController::class, 'details'])->name('leave-requests.details')->middleware('permission:leave-request.view,admin');
     Route::post('leave-requests/status/{id}', [LeaveRequestController::class, 'updateStatus'])->name('leave-requests.status')->middleware('permission:leave-request.edit,admin');
     Route::post('leave-requests/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('leave-requests.approve')->middleware('permission:leave-request.approve,admin');
     Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject')->middleware('permission:leave-request.reject,admin');

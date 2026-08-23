@@ -23,9 +23,7 @@ class ContactController extends Controller
         $this->contactService = $contactService;
     }
 
-    /**
-     * Display a modal for how to use the employee documents.
-     */
+    /** Display a modal with guidance for managing CRM contacts. */
     public function howTo()
     {
         return view('admin.contacts.doc');
@@ -43,6 +41,18 @@ class ContactController extends Controller
             if ($request->status) {
                 $statuses = explode(',', $request->status);
                 $query->whereIn('status', $statuses);
+            }
+
+            if ($request->lead_id) {
+                $query->where('lead_id', $request->lead_id);
+            }
+
+            if ($request->filled('has_company')) {
+                $request->boolean('has_company')
+                    ? $query->whereNotNull('company_name')->where('company_name', '!=', '')
+                    : $query->where(function ($query) {
+                        $query->whereNull('company_name')->orWhere('company_name', '');
+                    });
             }
 
             // Search
@@ -82,7 +92,9 @@ class ContactController extends Controller
                 ->make(true);
         }
 
-        return view('admin.contacts.index');
+        $leads = Lead::active()->get();
+
+        return view('admin.contacts.index', compact('leads'));
     }
 
     /**

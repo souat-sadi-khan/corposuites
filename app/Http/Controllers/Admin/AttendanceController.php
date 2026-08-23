@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\AttendanceRequest;
 use App\Models\Attendance;
 use App\Models\AttendanceAdjustment;
 use App\Models\Employee;
+use App\Services\AttendanceReportService;
 use App\Services\AttendanceService;
 use App\Traits\ActivityLogger;
 use Illuminate\Http\Request;
@@ -20,20 +21,29 @@ class AttendanceController extends Controller
 
     protected $attendanceService;
 
-    public function __construct(AttendanceService $attendanceService)
+    public function __construct(AttendanceService $attendanceService, protected AttendanceReportService $reportService)
     {
         $this->attendanceService = $attendanceService;
     }
 
     /**
      * Display a listing of the resource.
+     *
+     * Advanced search: the plain admin/inactive toggle + free-text search
+     * already existed; this adds a real advanced-filter panel (date range,
+     * department/designation/shift/employee type/employment status via the
+     * employee relation, attendance status, and a "missing checkout only"
+     * quick toggle) reusing the EXACT same option lists
+     * (AttendanceReportService::filterOptions()) the Attendance Report and
+     * Monthly Sheet already use, so the same dropdown never shows different
+     * choices on different screens.
      */
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Attendance::query()->with(['employee', 'employeeAdjustments']);
+            $query = Attendance::query()->with(['employee.department', 'employee.designation', 'employeeAdjustments']);
 
-            // Filter by status
+            // Filter by active/inactive status (the pre-existing toggle)
             if ($request->status) {
                 $statuses = explode(',', $request->status);
                 $query->whereIn('status', $statuses);
@@ -42,6 +52,38 @@ class AttendanceController extends Controller
             // Filter by employee
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
+            }
+
+            // Advanced search — date range
+            if ($request->filled('date_from')) {
+                $query->whereDate('attendance_date', '>=', $request->input('date_from'));
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('attendance_date', '<=', $request->input('date_to'));
+            }
+
+            // Advanced search — attendance status (present/absent/late/...)
+            if ($request->filled('attendance_status')) {
+                $query->whereIn('attendance_status', explode(',', $request->input('attendance_status')));
+            }
+
+            // Advanced search — missing checkout only (checked in, never
+            // checked out, on a genuinely past day) — same definition the
+            // "Missing Checkout" badge in the timing column already uses.
+            if ($request->boolean('missing_checkout_only')) {
+                $query->whereNotNull('check_in')
+                    ->whereNull('check_out')
+                    ->whereDate('attendance_date', '<', today());
+            }
+
+            // Advanced search — Department / Designation / Shift / Employee
+            // Type / Employment Status, all via the employee relation
+            foreach (['department_id', 'designation_id', 'shift_id', 'employee_type_id', 'employment_status_id'] as $field) {
+                if ($request->filled($field)) {
+                    $query->whereHas('employee', function ($eq) use ($field, $request) {
+                        $eq->where($field, $request->input($field));
+                    });
+                }
             }
 
             // Search
@@ -127,7 +169,9 @@ class AttendanceController extends Controller
                 ->make(true);
         }
 
-        return view('admin.attendances.index');
+        $filters = $this->reportService->filterOptions();
+
+        return view('admin.attendances.index', compact('filters'));
     }
 
     /**

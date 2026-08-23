@@ -11,7 +11,7 @@
         <div class="fm-grid">
             <div class="fm-field">
                 <label>Type <span class="req">*</span></label>
-                <select name="type" class="form-select" required>
+                <select name="type" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="call">Call</option>
                     <option value="email">Email</option>
                     <option value="meeting">Meeting</option>
@@ -32,7 +32,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}">{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}">{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -41,7 +41,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}">{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email . ' - '. $contact->phone }}" value="{{ $contact->id }}">{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>

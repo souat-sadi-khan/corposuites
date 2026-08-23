@@ -25,6 +25,12 @@ class RelationshipHistoryController extends Controller
         $this->relationshipHistoryService = $relationshipHistoryService;
     }
 
+    /** Display a modal with guidance for relationship history. */
+    public function howTo()
+    {
+        return view('admin.relationship-histories.doc');
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -42,6 +48,18 @@ class RelationshipHistoryController extends Controller
             // Filter by type
             if ($request->type) {
                 $query->where('type', $request->type);
+            }
+
+            if (in_array($request->related_type, ['lead', 'contact', 'company'], true)) {
+                $query->whereNotNull($request->related_type . '_id');
+            }
+
+            if ($request->interaction_date_from) {
+                $query->whereDate('interaction_date', '>=', $request->interaction_date_from);
+            }
+
+            if ($request->interaction_date_to) {
+                $query->whereDate('interaction_date', '<=', $request->interaction_date_to);
             }
 
             // Search

@@ -30,6 +30,27 @@ var DataTableAttendances = function () {
                     if (statuses.length) {
                         d.status = statuses.join(',');
                     }
+
+                    // Advanced Search panel — every field is optional; only
+                    // the ones actually set get sent, so an untouched panel
+                    // behaves exactly like before this feature existed.
+                    if ($('#attAdvDateFrom').val()) d.date_from = $('#attAdvDateFrom').val();
+                    if ($('#attAdvDateTo').val()) d.date_to = $('#attAdvDateTo').val();
+                    if ($('#attAdvDepartment').val()) d.department_id = $('#attAdvDepartment').val();
+                    if ($('#attAdvDesignation').val()) d.designation_id = $('#attAdvDesignation').val();
+                    if ($('#attAdvShift').val()) d.shift_id = $('#attAdvShift').val();
+                    if ($('#attAdvEmployeeType').val()) d.employee_type_id = $('#attAdvEmployeeType').val();
+                    if ($('#attAdvEmploymentStatus').val()) d.employment_status_id = $('#attAdvEmploymentStatus').val();
+                    if (!employeeId && $('#attAdvEmployee').val()) d.employee_id = $('#attAdvEmployee').val();
+                    if ($('#attAdvMissingCheckout').is(':checked')) d.missing_checkout_only = 1;
+
+                    var attStatuses = [];
+                    $('.att-adv-status-chk:checked').each(function () {
+                        attStatuses.push($(this).val());
+                    });
+                    if (attStatuses.length) {
+                        d.attendance_status = attStatuses.join(',');
+                    }
                 }
             },
             columns: [
@@ -118,6 +139,48 @@ document.addEventListener('DOMContentLoaded', function () {
         $('#tlFilterDd').removeClass('is-open');
     });
     $('#tlFilterDd input').on('change', function () {
+        dataTableInstance.draw();
+    });
+
+    // =====================================================
+    // Advanced Search panel
+    // =====================================================
+    $('#attAdvSearchToggle').on('click', function () {
+        $('#attAdvPanel').toggleClass('d-none');
+    });
+
+    function attAdvActiveCount() {
+        var count = 0;
+        $('#attAdvDateFrom, #attAdvDateTo, #attAdvDepartment, #attAdvDesignation, #attAdvShift, #attAdvEmployeeType, #attAdvEmploymentStatus, #attAdvEmployee').each(function () {
+            if ($(this).val()) count++;
+        });
+        count += $('.att-adv-status-chk:checked').length;
+        if ($('#attAdvMissingCheckout').is(':checked')) count++;
+        return count;
+    }
+
+    function attAdvUpdateBadge() {
+        var count = attAdvActiveCount();
+        var $badge = $('#attAdvCount');
+        if (count > 0) {
+            $badge.text(count).removeClass('d-none');
+            $('#attAdvSearchToggle').addClass('is-active');
+        } else {
+            $badge.addClass('d-none');
+            $('#attAdvSearchToggle').removeClass('is-active');
+        }
+    }
+
+    $('#attAdvApply').on('click', function () {
+        attAdvUpdateBadge();
+        dataTableInstance.draw();
+    });
+
+    $('#attAdvReset').on('click', function () {
+        $('#attAdvPanel select').val('').trigger('change'); // select2-aware reset
+        $('#attAdvDateFrom, #attAdvDateTo').val('');
+        $('.att-adv-status-chk, #attAdvMissingCheckout').prop('checked', false);
+        attAdvUpdateBadge();
         dataTableInstance.draw();
     });
 });

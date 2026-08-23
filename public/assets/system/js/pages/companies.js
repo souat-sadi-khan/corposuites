@@ -19,13 +19,7 @@ var DataTableCompanies = function () {
                 url: $('#companyTable').data('url'),
                 data: function (d) {
                     d.search = $('#companySearch').val();
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
-                    });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
+                    applyCompanyAdvFiltersToRequest(d);
                 }
             },
             columns: [
@@ -65,6 +59,7 @@ var DataTableCompanies = function () {
         init: function () {
             initDataTable();
             _statusUpdate();
+            initCompanyAdvSearch();
         }
     };
 }();
@@ -99,18 +94,73 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.page('next').draw('page');
     });
 
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
-    });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
-    });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
+});
+
+var companyAdvFilters = {};
+
+function initCompanyAdvSearch() {
+    if (!$('#companyAdvSearchModal').length) return;
+    $('.as-select').select2({ width: '100%', dropdownParent: $('#companyAdvSearchModal') });
+    $('#advSearchApply').on('click', function () { applyCompanyAdvFilters(true); });
+    $('#advSearchReset').on('click', resetCompanyAdvFieldsUI);
+    $(document).on('click', '.adv-chip-remove', function () {
+        var key = $(this).data('key');
+        delete companyAdvFilters[key];
+        clearCompanyAdvField(key);
+        renderCompanyFilterChips();
         dataTableInstance.draw();
     });
-});
+    $(document).on('click', '#advClearAllChips', function () {
+        companyAdvFilters = {};
+        resetCompanyAdvFieldsUI();
+        renderCompanyFilterChips();
+        dataTableInstance.draw();
+    });
+}
+
+function resetCompanyAdvFieldsUI() { $('#advIndustry, #advHasWebsite, #advStatus').val('').trigger('change.select2'); }
+
+function clearCompanyAdvField(key) {
+    var fields = { industry: '#advIndustry', has_website: '#advHasWebsite', status: '#advStatus' };
+    $(fields[key]).val('').trigger('change.select2');
+}
+
+function collectCompanyAdvFilters() {
+    var filters = {};
+    [
+        ['industry', '#advIndustry', 'Industry'],
+        ['has_website', '#advHasWebsite', 'Website'],
+        ['status', '#advStatus', 'Status']
+    ].forEach(function (item) {
+        var $field = $(item[1]);
+        if ($field.val() !== '') filters[item[0]] = { value: $field.val(), label: item[2] + ': ' + $field.find('option:selected').text() };
+    });
+    return filters;
+}
+
+function renderCompanyFilterChips() {
+    var $bar = $('#advSearchChipsBar'), $chips = $('#advSearchChips'), keys = Object.keys(companyAdvFilters);
+    $chips.empty();
+    if (!keys.length) { $bar.hide(); $('#advSearchBadge').hide(); return; }
+    keys.forEach(function (key) {
+        var filter = companyAdvFilters[key];
+        $chips.append($('<span class="adv-chip"></span>').append($('<span></span>').text(filter.label)).append($('<button type="button" class="adv-chip-remove"><i class="ri-close-line"></i></button>').attr('data-key', key)));
+    });
+    $chips.append('<button type="button" class="adv-chip-clear-all" id="advClearAllChips"><i class="ri-close-circle-line"></i> Clear all</button>');
+    $bar.show();
+    $('#advSearchBadge').text(keys.length).show();
+}
+
+function applyCompanyAdvFilters(closeModal) {
+    companyAdvFilters = collectCompanyAdvFilters();
+    renderCompanyFilterChips();
+    dataTableInstance.draw();
+    if (closeModal && typeof bootstrap !== 'undefined') {
+        var instance = bootstrap.Modal.getInstance(document.getElementById('companyAdvSearchModal'));
+        if (instance) instance.hide();
+    }
+}
+
+function applyCompanyAdvFiltersToRequest(d) {
+    Object.keys(companyAdvFilters).forEach(function (key) { d[key] = companyAdvFilters[key].value; });
+}

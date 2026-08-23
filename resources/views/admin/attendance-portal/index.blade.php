@@ -30,12 +30,12 @@
     </div>
 
     <div class="myatt-hero-actions">
-        <button id="checkIn" class="myatt-btn myatt-btn-in" {{ $attendance?->check_in ? 'disabled' : '' }}>
+        <button id="checkIn" class="myatt-btn myatt-btn-in" {{ $todayStatus['can_check_in'] ? '' : 'disabled' }}>
             <i class="ri-login-circle-fill"></i>
             <span>Check In</span>
             @if($attendance?->check_in)<small>{{ \Carbon\Carbon::parse($attendance->check_in)->format('h:i A') }}</small>@endif
         </button>
-        <button id="checkOut" class="myatt-btn myatt-btn-out" {{ !$attendance?->check_in || $attendance?->check_out ? 'disabled' : '' }}>
+        <button id="checkOut" class="myatt-btn myatt-btn-out" {{ $todayStatus['can_check_out'] ? '' : 'disabled' }}>
             <i class="ri-logout-circle-fill"></i>
             <span>Check Out</span>
             @if($attendance?->check_out)<small>{{ \Carbon\Carbon::parse($attendance->check_out)->format('h:i A') }}</small>@endif
@@ -43,6 +43,28 @@
     </div>
 </div>
 <p id="attendanceMessage" class="myatt-flash"></p>
+
+@if(!empty($todayStatus['sessions']))
+    {{-- Today's individual punch sessions — needed now that more than one
+         check-in/check-out cycle can happen in a single day; a plain
+         single check_in/check_out pair on the hero above can't show that. --}}
+    <div class="nx-card fm-body mb-3 myatt-sessions-card">
+        <div class="myatt-sessions-title"><i class="ri-list-check-2"></i> Today's Sessions</div>
+        @foreach($todayStatus['sessions'] as $session)
+            <div class="myatt-session-row">
+                <span class="myatt-session-time">
+                    {{ $session['check_in'] ?? '--' }} &rarr; {{ $session['check_out'] ?? ($session['is_open'] ? 'now' : '--') }}
+                </span>
+                @if($session['source'])
+                    <span class="myatt-session-source">{{ $session['source'] }}</span>
+                @endif
+                @if($session['notes'])
+                    <span class="myatt-session-note" title="{{ $session['notes'] }}"><i class="ri-sticky-note-line"></i> {{ $session['notes'] }}</span>
+                @endif
+            </div>
+        @endforeach
+    </div>
+@endif
 
 <div class="nx-card fm-body mb-3">
     <form class="row g-2 align-items-end" method="GET">
@@ -97,6 +119,7 @@
                     <th>Check In</th>
                     <th>Check Out</th>
                     <th>Worked</th>
+                    <th>Source</th>
                     <th>Notes</th>
                 </tr>
             </thead>
@@ -127,7 +150,19 @@
                         </td>
                         <td>{{ $day['record']?->check_in ? \Carbon\Carbon::parse($day['record']->check_in)->format('h:i A') : '--' }}</td>
                         <td>{{ $day['record']?->check_out ? \Carbon\Carbon::parse($day['record']->check_out)->format('h:i A') : '--' }}</td>
-                        <td>{{ $day['worked_label'] }}</td>
+                        <td>
+                            {{ $day['worked_label'] }}
+                            @php($punchCount = $day['record']?->punches->count() ?? 0)
+                            @if($punchCount > 2)
+                                @php($sessionList = $day['record']->punches->map(fn ($p) => ucfirst(str_replace('_', ' ', $p->punch_type)) . ' ' . $p->punched_at->format('h:i A') . ($p->source ? ' via ' . $p->source_label : ''))->implode(' | '))
+                                <span class="myatt-badge myatt-badge-off" title="{{ $sessionList }}">
+                                    <i class="ri-list-check-2"></i> {{ intdiv($punchCount, 2) }} sessions
+                                </span>
+                            @endif
+                        </td>
+                        <td class="small">
+                            {{ $day['record']?->check_in_source_label ?: '--' }}
+                        </td>
                         <td class="text-muted small">
                             {{ $day['holiday']?->name ?: $day['record']?->remarks }}
                             @if($adjustment)
@@ -142,7 +177,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center text-muted py-4">No records for this range.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-4">No records for this range.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -152,30 +187,24 @@
 
 @push('scripts')
 <script>
-function punch(url){
-    var $btn = event ? $(event.currentTarget) : null;
-    if(!navigator.geolocation){$('#attendanceMessage').removeClass('is-success').addClass('is-error').text('Location services are unavailable.');return;}
-    $('#checkIn, #checkOut').prop('disabled', true);
-    $('#attendanceMessage').removeClass('is-error is-success').text('Working …');
-    navigator.geolocation.getCurrentPosition(function(p){
-        $.post(url,{latitude:p.coords.latitude,longitude:p.coords.longitude,source:'browser_geolocation'})
-            .done(function(r){
-                $('#attendanceMessage').removeClass('is-error is-success').addClass(r.status ? 'is-success' : 'is-error').text(r.message);
-                if (r.status) { setTimeout(function(){ location.reload(); }, 700); }
-                else { $('#checkIn').prop('disabled', {{ $attendance?->check_in ? 'true' : 'false' }}); $('#checkOut').prop('disabled', {{ !$attendance?->check_in || $attendance?->check_out ? 'true' : 'false' }}); }
-            })
-            .fail(function(x){
-                $('#attendanceMessage').removeClass('is-success').addClass('is-error').text(x.responseJSON?.message||'Unable to record attendance.');
-                $('#checkIn').prop('disabled', {{ $attendance?->check_in ? 'true' : 'false' }});
-                $('#checkOut').prop('disabled', {{ !$attendance?->check_in || $attendance?->check_out ? 'true' : 'false' }});
-            });
-    },function(){
-        $('#attendanceMessage').removeClass('is-success').addClass('is-error').text('Please allow location access to continue.');
-        $('#checkIn').prop('disabled', {{ $attendance?->check_in ? 'true' : 'false' }});
-        $('#checkOut').prop('disabled', {{ !$attendance?->check_in || $attendance?->check_out ? 'true' : 'false' }});
-    },{enableHighAccuracy:true,timeout:15000});
-}
-$('#checkIn').click(function(e){ punch('{{ route('admin.attendance-portal.check-in') }}'); });
-$('#checkOut').click(function(e){ punch('{{ route('admin.attendance-portal.check-out') }}'); });
+// Both buttons open the SAME shared #awPunchModal (location + note)
+// that the header widget uses — window.awOpenPunchModal() is defined once
+// in attendance-widget.js (loaded globally) so this page never re-implements
+// the geolocation/confirm flow itself. window.awOnPunchSuccess() is this
+// page's own hook, called by that shared flow right after a successful
+// punch, so the report/table below reloads with fresh data.
+window.awOnPunchSuccess = function () {
+    $('#attendanceMessage').removeClass('is-error').addClass('is-success').text('Recorded. Refreshing…');
+    setTimeout(function () { location.reload(); }, 500);
+};
+
+$('#checkIn').click(function () {
+    if (typeof window.awOpenPunchModal !== 'function') { return; }
+    window.awOpenPunchModal('{{ route('admin.attendance-portal.check-in') }}', 'Check In');
+});
+$('#checkOut').click(function () {
+    if (typeof window.awOpenPunchModal !== 'function') { return; }
+    window.awOpenPunchModal('{{ route('admin.attendance-portal.check-out') }}', 'Check Out');
+});
 </script>
 @endpush

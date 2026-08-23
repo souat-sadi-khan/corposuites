@@ -19,13 +19,7 @@ var DataTableContacts = function () {
                 url: $('#contactTable').data('url'),
                 data: function (d) {
                     d.search = $('#contactSearch').val();
-                    var statuses = [];
-                    $('#tlFilterDd input:checked').each(function () {
-                        statuses.push($(this).val());
-                    });
-                    if (statuses.length) {
-                        d.status = statuses.join(',');
-                    }
+                    applyContactAdvFiltersToRequest(d);
                 }
             },
             columns: [
@@ -66,6 +60,7 @@ var DataTableContacts = function () {
         init: function () {
             initDataTable();
             _statusUpdate();
+            initContactAdvSearch();
         }
     };
 }();
@@ -100,18 +95,118 @@ document.addEventListener('DOMContentLoaded', function () {
         dataTableInstance.page('next').draw('page');
     });
 
-    // Filter dropdown
-    $('#tlFilterBtn').on('click', function (e) {
-        e.stopPropagation();
-        $('#tlFilterDd').toggleClass('is-open');
+});
+
+var contactAdvFilters = {};
+
+function _selectOptionTemplate(option) {
+    if (!option.id || !option.element) {
+        return option.text;
+    }
+
+    var $option = $(option.element);
+
+    var logo = $option.attr('data-logo');
+    var desc = $option.attr('data-desc');
+
+    var $opt = $('<div class="sel-opt-rich"></div>');
+
+    // Avatar
+    if (logo) {
+        $opt.append(
+            '<div class="sel-opt-rich-avatar">' +
+                '<img class="sel-opt-rich-img" src="' + logo + '" alt="">' +
+            '</div>'
+        );
+    }
+
+    // Info
+    var $info = $('<div class="sel-opt-rich-info"></div>');
+
+    $info.append(
+        $('<div class="sel-opt-rich-name"></div>').text(option.text)
+    );
+
+    if (desc) {
+        $info.append(
+            $('<div class="sel-opt-rich-desc"></div>').text(desc)
+        );
+    }
+
+    $opt.append($info);
+
+    return $opt;
+}
+
+function initContactAdvSearch() {
+    if (!$('#contactAdvSearchModal').length) return;
+    $('.as-select').select2({
+        width: '100%',
+        dropdownParent: $('#contactAdvSearchModal'),
+        templateResult: _selectOptionTemplate
     });
-    $('#tlFilterDd').on('click', function (e) {
-        e.stopPropagation();
-    });
-    $(document).on('click', function () {
-        $('#tlFilterDd').removeClass('is-open');
-    });
-    $('#tlFilterDd input').on('change', function () {
+    $('#advSearchApply').on('click', function () { applyContactAdvFilters(true); });
+    $('#advSearchReset').on('click', resetContactAdvFieldsUI);
+    $(document).on('click', '.adv-chip-remove', function () {
+        var key = $(this).data('key');
+        delete contactAdvFilters[key];
+        clearContactAdvField(key);
+        renderContactFilterChips();
         dataTableInstance.draw();
     });
-});
+    $(document).on('click', '#advClearAllChips', function () {
+        contactAdvFilters = {};
+        resetContactAdvFieldsUI();
+        renderContactFilterChips();
+        dataTableInstance.draw();
+    });
+}
+
+function resetContactAdvFieldsUI() {
+    $('#advLead, #advHasCompany, #advStatus').val('').trigger('change.select2');
+}
+
+function clearContactAdvField(key) {
+    var fields = { lead_id: '#advLead', has_company: '#advHasCompany', status: '#advStatus' };
+    $(fields[key]).val('').trigger('change.select2');
+}
+
+function collectContactAdvFilters() {
+    var filters = {};
+    [
+        ['lead_id', '#advLead', 'Lead'],
+        ['has_company', '#advHasCompany', 'Company'],
+        ['status', '#advStatus', 'Status']
+    ].forEach(function (item) {
+        var $field = $(item[1]);
+        if ($field.val() !== '') filters[item[0]] = { value: $field.val(), label: item[2] + ': ' + $field.find('option:selected').text() };
+    });
+    return filters;
+}
+
+function renderContactFilterChips() {
+    var $bar = $('#advSearchChipsBar'), $chips = $('#advSearchChips'), keys = Object.keys(contactAdvFilters);
+    $chips.empty();
+    if (!keys.length) { $bar.hide(); $('#advSearchBadge').hide(); return; }
+    keys.forEach(function (key) {
+        var filter = contactAdvFilters[key];
+        $chips.append($('<span class="adv-chip"></span>').append($('<span></span>').text(filter.label)).append($('<button type="button" class="adv-chip-remove"><i class="ri-close-line"></i></button>').attr('data-key', key)));
+    });
+    $chips.append('<button type="button" class="adv-chip-clear-all" id="advClearAllChips"><i class="ri-close-circle-line"></i> Clear all</button>');
+    $bar.show();
+    $('#advSearchBadge').text(keys.length).show();
+}
+
+function applyContactAdvFilters(closeModal) {
+    contactAdvFilters = collectContactAdvFilters();
+    renderContactFilterChips();
+    dataTableInstance.draw();
+    if (closeModal && typeof bootstrap !== 'undefined') {
+        var instance = bootstrap.Modal.getInstance(document.getElementById('contactAdvSearchModal'));
+        if (instance) instance.hide();
+    }
+}
+
+function applyContactAdvFiltersToRequest(d) {
+    Object.keys(contactAdvFilters).forEach(function (key) { d[key] = contactAdvFilters[key].value; });
+}

@@ -1,6 +1,6 @@
 <?php
 namespace App\Http\Controllers\Admin;
-use App\Http\Controllers\Controller; use App\Models\Attendance; use App\Models\AttendanceAdjustment; use App\Models\AttendancePunch; use App\Models\Employee; use App\Models\Holiday; use App\Services\AttendanceAdjustmentService; use App\Services\AttendanceReportService; use App\Traits\ExportsCsv; use App\Traits\ExportsHtmlSpreadsheet; use Carbon\Carbon; use Illuminate\Http\Request;
+use App\Http\Controllers\Controller; use App\Models\Attendance; use App\Models\AttendanceAdjustment; use App\Models\AttendancePunch; use App\Models\Employee; use App\Models\Holiday; use App\Services\AttendanceAdjustmentService; use App\Services\AttendanceReportService; use App\Services\AttendanceStatusService; use App\Traits\ExportsCsv; use App\Traits\ExportsHtmlSpreadsheet; use Carbon\Carbon; use Illuminate\Http\Request;
 class AttendancePortalController extends Controller {
     use ExportsHtmlSpreadsheet, ExportsCsv;
 
@@ -18,6 +18,11 @@ class AttendancePortalController extends Controller {
     {
         $employee = $this->employee();
         $attendance = Attendance::where('employee_id', $employee->id)->whereDate('attendance_date', today())->first();
+        // Single source of truth for "can I check in/out right now" and
+        // today's session breakdown — the exact same resolver the header
+        // widget uses, so the two can never disagree with each other or
+        // with what the check-in/check-out endpoints will actually accept.
+        $todayStatus = AttendanceStatusService::forEmployee($employee);
 
         [$from, $to, $month] = $this->resolveRange($request);
         $report = $this->reportService->build($employee, $from, $to);
@@ -30,7 +35,7 @@ class AttendancePortalController extends Controller {
             ->get()
             ->keyBy(fn ($row) => $row->adjustment_date->toDateString());
 
-        return view('admin.attendance-portal.index', compact('employee', 'attendance', 'report', 'from', 'to', 'month', 'adjustments'));
+        return view('admin.attendance-portal.index', compact('employee', 'attendance', 'report', 'from', 'to', 'month', 'adjustments', 'todayStatus'));
     }
 
     /**
@@ -396,6 +401,7 @@ class AttendancePortalController extends Controller {
         $headers = [
             'Employee Code', 'Employee Name', 'Department', 'Designation',
             'Date', 'Day', 'Status', 'Check In', 'Check Out',
+            'Check In Source', 'Sessions',
             'Worked Hours', 'Overtime Hours', 'Leave Type', 'Leave Duration',
             'Adjustment Status', 'Remarks',
         ];
@@ -421,6 +427,8 @@ class AttendancePortalController extends Controller {
                         ucwords(str_replace('_', ' ', $day['bucket'])),
                         $record?->check_in ? Carbon::parse($record->check_in)->format('h:i A') : '',
                         $record?->check_out ? Carbon::parse($record->check_out)->format('h:i A') : '',
+                        $record?->check_in_source_label ?? '',
+                        $record && $record->punches->count() > 2 ? intdiv($record->punches->count(), 2) : ($record?->check_in ? 1 : ''),
                         $day['worked_label'] === '--' ? '' : $day['worked_label'],
                         $record?->overtime_hours > 0 ? $record->overtime_hours : '',
                         $day['leave_type'] ?? '',

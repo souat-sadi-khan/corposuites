@@ -175,6 +175,7 @@
                                             . '|' . ($rec?->check_in ? \Carbon\Carbon::parse($rec->check_in)->format('h:i A') : '--')
                                             . '|' . ($rec?->check_out ? \Carbon\Carbon::parse($rec->check_out)->format('h:i A') : '--')
                                             . '|' . $day['worked_label']
+                                            . '|' . ($rec?->check_in_source_label ?: '--') . ($rec && $rec->punches->count() > 2 ? ' (' . intdiv($rec->punches->count(), 2) . ' sessions)' : '')
                                             . '|' . ($rec?->overtime_hours > 0 ? $rec->overtime_hours . 'h' : '--')
                                             . '|' . ($day['holiday']?->name ?: ucwords(str_replace('_', ' ', $day['bucket'])))
                                             . '|' . ($day['leave_type'] ? $day['leave_type'] . ' · ' . $day['leave_duration_label'] : '—')
@@ -309,11 +310,11 @@
 <script>
 (function () {
     var $tip = $('#msheetTip');
-    var labels = ['', 'Date', 'Check In', 'Check Out', 'Worked', 'Overtime', 'Status', 'Leave', 'Notes', 'Adjustment'];
+    var labels = ['', 'Date', 'Check In', 'Check Out', 'Worked', 'Source', 'Overtime', 'Status', 'Leave', 'Notes', 'Adjustment'];
 
     $(document).on('mouseenter', '.msheet-day-cell', function (e) {
         var parts = ($(this).data('tip') || '').toString().split('|');
-        if (parts.length < 10) return;
+        if (parts.length < 11) return;
 
         var html = '<strong>' + parts[0] + '</strong>';
         for (var i = 1; i < parts.length; i++) {
@@ -321,6 +322,7 @@
             // showing a meaningless "—" on every present/absent/weekend
             // tooltip too (PART 4: don't overload every cell with info).
             if (labels[i] === 'Leave' && parts[i] === '—') continue;
+            if (labels[i] === 'Source' && parts[i] === '--') continue;
             html += '<div class="msheet-tip-row"><span>' + labels[i] + '</span><b>' + parts[i] + '</b></div>';
         }
         $tip.html(html).css('display', 'block');
