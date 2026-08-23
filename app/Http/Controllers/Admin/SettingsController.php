@@ -254,6 +254,18 @@ class SettingsController extends Controller
             );
         }
 
+        if ($request->hasFile('printable_logo')) {
+            $printable_logo = Images::upload('system', $request->printable_logo);
+
+            SystemSetting::updateOrCreate(
+                ['key' => 'printable_logo'],
+                [
+                    'value' => $printable_logo,
+                    'group' => 'branding'
+                ]
+            );
+        }
+
         if ($request->hasFile('email_logo')) {
             $email_logo = Images::upload('system', $request->email_logo);
 
@@ -307,7 +319,7 @@ class SettingsController extends Controller
         }
 
         $admin = Auth::guard('admin')->user();
-        
+
         $activities = ActivityLog::where('actor_type', 'user')
             ->where('actor_id', $adminId)
             ->whereIn('action', ['create','update','delete','login'])

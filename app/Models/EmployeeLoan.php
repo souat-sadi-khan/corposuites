@@ -13,7 +13,7 @@ class EmployeeLoan extends Model implements Approvable
     use HasFactory, HasWorkflow;
 
     protected $fillable = [
-        'employee_id', 'loan_amount', 'installments', 'installment_amount',
+        'employee_id', 'loan_amount', 'installments', 'installment_amount', 'deduct_from_salary',
         'paid_amount', 'start_date', 'reason', 'approval_status', 'status'
     ];
 
@@ -21,11 +21,12 @@ class EmployeeLoan extends Model implements Approvable
         'loan_amount' => 'decimal:2',
         'installment_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'deduct_from_salary' => 'boolean',
         'start_date' => 'date',
         'status' => 'boolean',
     ];
 
-    protected $appends = ['remaining_balance'];
+    protected $appends = ['remaining_balance', 'is_fully_paid'];
 
     public function employee(): BelongsTo
     {
@@ -35,6 +36,11 @@ class EmployeeLoan extends Model implements Approvable
     public function getRemainingBalanceAttribute()
     {
         return round($this->loan_amount - $this->paid_amount, 2);
+    }
+
+    public function getIsFullyPaidAttribute(): bool
+    {
+        return $this->remaining_balance <= 0;
     }
 
     public function scopeActive($query)

@@ -37,6 +37,7 @@ use App\Http\Controllers\Admin\TerminationController;
 use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\AttendancePortalController;
 use App\Http\Controllers\Admin\AttendanceWidgetController;
+use App\Http\Controllers\Admin\AttendanceReportController;
 use App\Http\Controllers\Admin\HrmSettingsController;
 use App\Http\Controllers\Admin\HrmDetailExportController;
 use App\Http\Controllers\Admin\AttendanceAdjustmentController;
@@ -995,8 +996,17 @@ Route::middleware(['isAdmin'])->group(function () {
     // Self-service kiosk — an employee checking THEMSELVES in/out, resolved
     // from their own linked employee record, never someone else's.
     Route::get('attendance-portal', [AttendancePortalController::class, 'portal'])->name('attendance-portal.index');
-    Route::post('attendance-portal/check-in', [AttendancePortalController::class, 'checkIn'])->name('attendance-portal.check-in');
-    Route::post('attendance-portal/check-out', [AttendancePortalController::class, 'checkOut'])->name('attendance-portal.check-out');
+    // Module 12: dedicated 'attendance.self-check-in' permission (was just
+    // auth + a linked-employee check, no permission at all) — deliberately
+    // its OWN permission, not 'attendance.create' (which governs an admin
+    // creating/backdating ANY employee's record from the admin Attendance
+    // screen — a very different capability). Every admin account that
+    // already had an employee_id when this permission was introduced was
+    // backfilled with it directly, so nobody who could already self-check-in
+    // lost that ability the moment this shipped — see the sync note kept
+    // alongside every other permission rollout in this project's changelog.
+    Route::post('attendance-portal/check-in', [AttendancePortalController::class, 'checkIn'])->name('attendance-portal.check-in')->middleware('permission:attendance.self-check-in,admin');
+    Route::post('attendance-portal/check-out', [AttendancePortalController::class, 'checkOut'])->name('attendance-portal.check-out')->middleware('permission:attendance.self-check-in,admin');
     // Header attendance widget's own refresh call (see AttendanceWidgetController)
     // — same self-service, ungated reasoning as the portal routes above.
     Route::get('attendance-widget/status', [AttendanceWidgetController::class, 'status'])->name('attendance-widget.status');
@@ -1007,7 +1017,23 @@ Route::middleware(['isAdmin'])->group(function () {
     Route::post('attendance-portal/adjustment', [AttendancePortalController::class, 'storeAdjustment'])->name('attendance-portal.adjustment.store');
     // Unlike the portal above, this accepts an arbitrary employee_id — it's
     // an admin report over any employee's month, not a self-service view.
-    Route::get('attendance-monthly', [AttendancePortalController::class, 'monthly'])->name('attendances.monthly')->middleware('permission:attendance.view,admin');
+    // Module 12: dedicated 'attendance.report' permission (was reusing
+    // 'attendance.view') for both this Monthly Sheet AND the sibling
+    // Attendance Report below, matching PART 14's own suggested conceptual
+    // vocabulary — kept identical between the two screens on purpose, the
+    // same "deliberately shared gating" already established when the
+    // Attendance Report was first built (see Module 6's own note). Every
+    // role that already had 'attendance.view' was backfilled with
+    // 'attendance.report' too, so nobody who could already see these two
+    // screens lost access the moment this shipped.
+    Route::get('attendance-monthly', [AttendancePortalController::class, 'monthly'])->name('attendances.monthly')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-monthly/export/pdf', [AttendancePortalController::class, 'monthlyExportPdf'])->name('attendances.monthly.export.pdf')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-monthly/export/excel', [AttendancePortalController::class, 'monthlyExportExcel'])->name('attendances.monthly.export.excel')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-monthly/export/csv', [AttendancePortalController::class, 'monthlyExportCsv'])->name('attendances.monthly.export.csv')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-report', [AttendanceReportController::class, 'index'])->name('attendances.report')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-report/export/pdf', [AttendanceReportController::class, 'exportPdf'])->name('attendances.report.export.pdf')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-report/export/excel', [AttendanceReportController::class, 'exportExcel'])->name('attendances.report.export.excel')->middleware('permission:attendance.report,admin');
+    Route::get('attendance-report/export/csv', [AttendanceReportController::class, 'exportCsv'])->name('attendances.report.export.csv')->middleware('permission:attendance.report,admin');
     Route::post('attendances/status/{id}', [AttendanceController::class, 'updateStatus'])->name('attendances.status')->middleware('permission:attendance.edit,admin');
     Route::resource('attendances', AttendanceController::class)->except(['show'])
         ->middlewareFor(['index'], 'permission:attendance.view,admin')

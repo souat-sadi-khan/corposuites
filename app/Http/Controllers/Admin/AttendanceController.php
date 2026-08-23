@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AttendanceRequest;
 use App\Models\Attendance;
+use App\Models\AttendanceAdjustment;
 use App\Models\Employee;
 use App\Services\AttendanceService;
 use App\Traits\ActivityLogger;
@@ -29,7 +31,7 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Attendance::query()->with('employee');
+            $query = Attendance::query()->with(['employee', 'employeeAdjustments']);
 
             // Filter by status
             if ($request->status) {
@@ -63,7 +65,20 @@ class AttendanceController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.attendances.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('date_formatted', function ($row) {
                     return $row->attendance_date ? $row->attendance_date->format('d-m-Y') : '-';
@@ -75,6 +90,13 @@ class AttendanceController extends Controller
 
                     if ($row->overtime_hours > 0) {
                         $line .= '<br><small class="text-warning">OT: ' . number_format($row->overtime_hours, 2) . 'h</small>';
+                    }
+
+                    // PART 9's own example ("09:10 AM → Missing Checkout")
+                    // — only for a genuinely past day, never today (still in
+                    // progress) or a future-dated row.
+                    if ($row->check_in && !$row->check_out && $row->attendance_date->isBefore(today())) {
+                        $line .= '<br><span class="badge bg-danger-subtle text-danger"><i class="ri-error-warning-fill"></i> Missing Checkout</span>';
                     }
 
                     return $line;
@@ -95,14 +117,73 @@ class AttendanceController extends Controller
                     $label = ucwords(str_replace('_', ' ', $row->attendance_status));
                     return '<span class="badge bg-' . $color . '-subtle text-' . $color . '">' . $label . '</span>';
                 })
+                ->addColumn('adjustment_badge', function ($row) {
+                    return $this->adjustmentIndicator($row);
+                })
                 ->addColumn('action', function ($row) {
                     return view('admin.attendances.action', compact('row'))->render();
                 })
-                ->rawColumns(['status_badge', 'employee_name', 'timing', 'location', 'attendance_status_badge', 'action'])
+                ->rawColumns(['status_badge', 'employee_name', 'timing', 'location', 'attendance_status_badge', 'adjustment_badge', 'action'])
                 ->make(true);
         }
 
         return view('admin.attendances.index');
+    }
+
+    /**
+     * PART 9 integration: shows the adjustment status for this exact
+     * employee+date (Pending/Approved/Rejected), and — reusing the EXISTING
+     * AttendanceAdjustment module, no duplicate correction system — a
+     * "Request Adjustment" quick action that opens its create form
+     * pre-filled, whenever it's actually eligible (a genuinely past-or-today
+     * date with no already-pending request for it).
+     */
+    private function adjustmentIndicator(Attendance $row): string
+    {
+        $adjustment = $this->matchingAdjustment($row);
+        $map = ['pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger'];
+
+        $html = '';
+        if ($adjustment) {
+            $color = $map[$adjustment->approval_status] ?? 'secondary';
+            $html .= '<span class="badge bg-' . $color . '-subtle text-' . $color . '">'
+                . ucfirst($adjustment->approval_status) . '</span> ';
+        }
+
+        $alreadyPending = $adjustment && $adjustment->approval_status === 'pending';
+        $canRequest = !$row->attendance_date->isAfter(today())
+            && !$alreadyPending
+            && auth()->guard('admin')->user()?->can('attendance-adjustment.create');
+
+        if ($canRequest) {
+            $url = route('admin.attendance-adjustments.create', [
+                'employee_id' => $row->employee_id,
+                'date' => $row->attendance_date->toDateString(),
+            ]);
+            $html .= '<button class="tl-icon-btn" id="openModal" data-url="' . $url . '" title="Request Adjustment">'
+                . '<i class="ri-edit-2-line"></i></button>';
+        } elseif ($html === '') {
+            $html = '<span class="text-muted">—</span>';
+        }
+
+        return $html;
+    }
+
+    /**
+     * Matches this row's employee_id+attendance_date against the batch-
+     * eager-loaded employeeAdjustments relation (Attendance::index() eager-
+     * loads it once per page) — an in-memory lookup, never a per-row query.
+     * Pending requests are matched first (the ones an admin most needs to
+     * see), falling back to the most recent decided one otherwise.
+     */
+    private function matchingAdjustment(Attendance $row): ?AttendanceAdjustment
+    {
+        $sameDate = $row->relationLoaded('employeeAdjustments')
+            ? $row->employeeAdjustments->filter(fn ($adj) => $adj->adjustment_date->isSameDay($row->attendance_date))
+            : collect();
+
+        return $sameDate->firstWhere('approval_status', 'pending')
+            ?? $sameDate->sortByDesc('id')->first();
     }
 
     /**

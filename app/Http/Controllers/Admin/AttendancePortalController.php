@@ -1,7 +1,9 @@
 <?php
 namespace App\Http\Controllers\Admin;
-use App\Http\Controllers\Controller; use App\Models\Attendance; use App\Models\AttendanceAdjustment; use App\Models\Employee; use App\Models\Holiday; use App\Services\AttendanceAdjustmentService; use App\Services\AttendanceReportService; use Carbon\Carbon; use Illuminate\Http\Request;
+use App\Http\Controllers\Controller; use App\Models\Attendance; use App\Models\AttendanceAdjustment; use App\Models\AttendancePunch; use App\Models\Employee; use App\Models\Holiday; use App\Services\AttendanceAdjustmentService; use App\Services\AttendanceReportService; use App\Traits\ExportsCsv; use App\Traits\ExportsHtmlSpreadsheet; use Carbon\Carbon; use Illuminate\Http\Request;
 class AttendancePortalController extends Controller {
+    use ExportsHtmlSpreadsheet, ExportsCsv;
+
     public function __construct(private AttendanceReportService $reportService)
     {
     }
@@ -97,35 +99,34 @@ class AttendancePortalController extends Controller {
      * also drives which "Month" dropdown value (if any) is pre-selected in
      * the filter form.
      */
+    /**
+     * Delegates to AttendanceReportService::resolveRange() — moved there so
+     * the admin Attendance Report (and later exports) share the exact same
+     * "Month OR explicit Date From/Date To" parsing instead of a second copy
+     * of this logic. Kept as a private wrapper here purely so every existing
+     * call site in this controller doesn't need to change.
+     */
     private function resolveRange(Request $request): array
     {
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $from = Carbon::parse($request->input('date_from'))->startOfDay();
-            $to = Carbon::parse($request->input('date_to'))->endOfDay();
-            if ($to->lt($from)) {
-                [$from, $to] = [$to, $from];
-            }
-            // Cap at 3 months so a mistyped/abusive range can't force the
-            // report to compute over years of days in one request.
-            if ($from->diffInDays($to) > 92) {
-                $to = $from->copy()->addDays(92);
-            }
-
-            return [$from, $to, null];
-        }
-
-        $month = $request->input('month', now()->format('Y-m'));
-        $start = Carbon::parse($month . '-01');
-
-        return [$start->copy()->startOfMonth(), $start->copy()->endOfMonth(), $month];
+        return $this->reportService->resolveRange($request);
     }
 
+    /**
+     * Multiple check-in/check-out CYCLES per day are allowed (lunch break, a
+     * trip out and back, etc.) — the only thing ever rejected is a check-in
+     * while a session is still open. See AttendancePunch's own migration doc
+     * comment for the full design: this row's own check_in/attendance_status
+     * still reflect the day's FIRST session (late-detection is judged once,
+     * at the start of the day), check_out/its source reflect the LATEST
+     * session, and worked_minutes accumulates across every closed session.
+     */
     public function checkIn(Request $request)
     {
         $data = $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'source' => 'nullable|in:browser_geolocation,fingerprint,face,id_card',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         $geofenceError = $this->geofenceError($data['latitude'], $data['longitude']);
@@ -133,26 +134,14 @@ class AttendancePortalController extends Controller {
             return response()->json(['status' => false, 'message' => $geofenceError], 422);
         }
 
-        $employee = $this->employee();
-        $today = today()->toDateString();
-        $attendance = Attendance::firstOrNew(['employee_id' => $employee->id, 'attendance_date' => $today]);
-
-        if ($attendance->exists && $attendance->check_in) {
-            return response()->json(['status' => false, 'message' => 'You have already checked in today.'], 422);
-        }
-
-        $late = $this->isLate(now(), $employee);
-        $attendance->fill([
-            'check_in' => now()->format('H:i:s'),
-            'check_in_latitude' => $data['latitude'],
-            'check_in_longitude' => $data['longitude'],
-            'check_in_source' => $data['source'] ?? 'browser_geolocation',
-            'attendance_status' => $late ? 'late' : 'present',
-            'status' => true,
+        $result = $this->performCheckIn($this->employee(), now(), [
+            'latitude' => $data['latitude'],
+            'longitude' => $data['longitude'],
+            'source' => $data['source'] ?? 'browser_geolocation',
+            'notes' => $data['notes'] ?? null,
         ]);
-        $attendance->save();
 
-        return response()->json(['status' => true, 'message' => $late ? 'Checked in late.' : 'Checked in successfully.']);
+        return response()->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 422);
     }
 
     public function checkOut(Request $request)
@@ -161,6 +150,7 @@ class AttendancePortalController extends Controller {
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'source' => 'nullable|in:browser_geolocation,fingerprint,face,id_card',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         $geofenceError = $this->geofenceError($data['latitude'], $data['longitude']);
@@ -168,61 +158,35 @@ class AttendancePortalController extends Controller {
             return response()->json(['status' => false, 'message' => $geofenceError], 422);
         }
 
-        $employee = $this->employee();
+        $result = $this->performCheckOut($this->employee(), now(), [
+            'latitude' => $data['latitude'],
+            'longitude' => $data['longitude'],
+            'source' => $data['source'] ?? 'browser_geolocation',
+            'notes' => $data['notes'] ?? null,
+        ]);
 
-        // Prefer today's own record (the normal case). If there isn't one,
-        // fall back to an still-open punch from yesterday — an overnight
-        // shift (e.g. check-in 22:00, check-out 06:00) checks out on the
-        // calendar day AFTER its attendance_date, so looking up by today()
-        // alone would never find it and would wrongly report "check in
-        // before checking out". Only an OPEN yesterday record qualifies for
-        // this fallback, so a normal employee who simply hasn't checked in
-        // yet today doesn't get matched against yesterday's already-closed
-        // punch and told they've "already checked out".
-        $attendance = Attendance::where('employee_id', $employee->id)
-                ->whereDate('attendance_date', today())
-                ->first()
-            ?? Attendance::where('employee_id', $employee->id)
-                ->whereDate('attendance_date', today()->subDay())
-                ->whereNotNull('check_in')
-                ->whereNull('check_out')
-                ->first();
-
-        if (!$attendance || !$attendance->check_in) {
-            return response()->json(['status' => false, 'message' => 'Check in before checking out.'], 422);
-        }
-
-        if ($attendance->check_out) {
-            return response()->json(['status' => false, 'message' => 'You have already checked out today.'], 422);
-        }
-
-        $checkOutTime = now();
-
-        $update = [
-            'check_out' => $checkOutTime->format('H:i:s'),
-            'check_out_latitude' => $data['latitude'],
-            'check_out_longitude' => $data['longitude'],
-            'check_out_source' => $data['source'] ?? 'browser_geolocation',
-        ];
-
-        $checkoutStatus = $this->checkoutStatus($employee, $attendance->check_in, $checkOutTime, $attendance->attendance_status);
-        if ($checkoutStatus) {
-            $update['attendance_status'] = $checkoutStatus;
-        }
-
-        $attendance->update($update);
-
-        return response()->json(['status' => true, 'message' => 'Checked out successfully.']);
+        return response()->json(['status' => $result['status'], 'message' => $result['message']], $result['status'] ? 200 : 422);
     }
 
     /**
-     * Called directly by an external biometric/fingerprint/face device — see
-     * the "Attendance Device Token" field + guide on the HRM Settings page.
-     * No login/browser session is involved; the device authenticates itself
-     * with the X-Attendance-Token header instead (checked below). This
-     * route is deliberately registered OUTSIDE the isAdmin-protected route
-     * group and exempted from CSRF (see routes/admin.php + bootstrap/app.php)
-     * so a real device can reach it.
+     * Called directly by an external biometric/fingerprint/face/card device
+     * — see the "Attendance Device Token" field + guide on the HRM Settings
+     * page. No login/browser session is involved; the device authenticates
+     * itself with the X-Attendance-Token header instead (checked below).
+     * This route is deliberately registered OUTSIDE the isAdmin-protected
+     * route group and exempted from CSRF (see routes/admin.php +
+     * bootstrap/app.php) so a real device can reach it.
+     *
+     * A device can punch multiple sessions a day too (an employee tapping
+     * out for lunch and back in again is completely normal on a real
+     * card/fingerprint reader) — same performCheckIn()/performCheckOut()
+     * used by the interactive endpoints above. The one deliberate
+     * difference: a rejected punch here (e.g. a duplicate signal from a
+     * flaky reader re-sending the same tap) is reported back as a harmless
+     * "already recorded" success rather than an error — a physical device
+     * can't show a person a rejection dialog the way a web button can, so
+     * this preserves the original devicePunch() behavior of silently
+     * absorbing a redundant signal instead of surfacing it as a failure.
      */
     public function devicePunch(Request $request)
     {
@@ -238,6 +202,7 @@ class AttendancePortalController extends Controller {
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'source' => 'required|in:fingerprint,face,id_card',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         $employee = Employee::where('employee_code', $data['employee_code'])->first();
@@ -246,33 +211,119 @@ class AttendancePortalController extends Controller {
         }
 
         $when = Carbon::parse($data['occurred_at']);
-        $attendance = Attendance::firstOrNew(['employee_id' => $employee->id, 'attendance_date' => $when->toDateString()]);
-        $prefix = $data['event'] === 'check_in' ? 'check_in' : 'check_out';
+        $meta = [
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
+            'source' => $data['source'],
+            'notes' => $data['notes'] ?? null,
+        ];
 
-        if ($attendance->$prefix) {
+        $result = $data['event'] === 'check_in'
+            ? $this->performCheckIn($employee, $when, $meta)
+            : $this->performCheckOut($employee, $when, $meta);
+
+        if (!$result['status']) {
             return response()->json(['status' => true, 'message' => 'Punch already recorded.']);
         }
 
-        $values = [
-            $prefix => $when->format('H:i:s'),
-            $prefix . '_latitude' => $data['latitude'] ?? null,
-            $prefix . '_longitude' => $data['longitude'] ?? null,
-            $prefix . '_source' => $data['source'],
-            'status' => true,
-        ];
+        return response()->json(['status' => true, 'message' => 'Punch recorded successfully.']);
+    }
 
-        if ($data['event'] === 'check_in') {
-            $values['attendance_status'] = $this->isLate($when, $employee) ? 'late' : 'present';
-        } else {
-            $checkoutStatus = $this->checkoutStatus($employee, $attendance->check_in, $when, $attendance->attendance_status);
-            if ($checkoutStatus) {
-                $values['attendance_status'] = $checkoutStatus;
-            }
+    /**
+     * @return array{status: bool, message: string, attendance?: Attendance, punch?: AttendancePunch}
+     */
+    private function performCheckIn(Employee $employee, Carbon $when, array $meta): array
+    {
+        $latest = AttendancePunch::latestFor($employee->id, $when);
+        if ($latest && $latest->punch_type === 'check_in') {
+            return ['status' => false, 'message' => 'You are already checked in — check out before checking in again.'];
         }
 
-        $attendance->fill($values)->save();
+        $dateKey = $when->toDateString();
+        $attendance = Attendance::firstOrNew(['employee_id' => $employee->id, 'attendance_date' => $dateKey]);
 
-        return response()->json(['status' => true, 'message' => 'Punch recorded successfully.']);
+        // Late-detection and the row's own check_in/attendance_status only
+        // ever reflect the FIRST session of the day — a later session (after
+        // an earlier check-out) doesn't re-judge lateness or overwrite them.
+        $isFirstSessionToday = !$attendance->exists || !$attendance->check_in;
+
+        if ($isFirstSessionToday) {
+            $late = $this->isLate($when, $employee);
+            $attendance->fill([
+                'check_in' => $when->format('H:i:s'),
+                'check_in_latitude' => $meta['latitude'] ?? null,
+                'check_in_longitude' => $meta['longitude'] ?? null,
+                'check_in_source' => $meta['source'],
+                'attendance_status' => $late ? 'late' : 'present',
+                'status' => true,
+            ]);
+        }
+        $attendance->save();
+
+        $punch = AttendancePunch::create([
+            'employee_id' => $employee->id,
+            'attendance_id' => $attendance->id,
+            'attendance_date' => $dateKey,
+            'punch_type' => 'check_in',
+            'punched_at' => $when,
+            'latitude' => $meta['latitude'] ?? null,
+            'longitude' => $meta['longitude'] ?? null,
+            'source' => $meta['source'],
+            'notes' => $meta['notes'] ?? null,
+        ]);
+
+        $message = $isFirstSessionToday
+            ? ($attendance->attendance_status === 'late' ? 'Checked in late.' : 'Checked in successfully.')
+            : 'Checked back in successfully.';
+
+        return ['status' => true, 'message' => $message, 'attendance' => $attendance, 'punch' => $punch];
+    }
+
+    /**
+     * @return array{status: bool, message: string, attendance?: Attendance, punch?: AttendancePunch}
+     */
+    private function performCheckOut(Employee $employee, Carbon $when, array $meta): array
+    {
+        $latest = AttendancePunch::latestFor($employee->id, $when);
+        if (!$latest || $latest->punch_type !== 'check_in') {
+            return ['status' => false, 'message' => 'Check in before checking out.'];
+        }
+
+        // The open punch already knows exactly which day's Attendance row it
+        // belongs to — no more separate "is this an overnight shift, look at
+        // yesterday's row instead" guesswork, since that link was recorded
+        // the moment the session was opened.
+        $attendance = $latest->attendance_id ? Attendance::find($latest->attendance_id) : null;
+        if (!$attendance) {
+            return ['status' => false, 'message' => 'Check in before checking out.'];
+        }
+
+        $sessionMinutes = max(0, (int) round(abs($when->diffInSeconds($latest->punched_at)) / 60));
+        $attendance->worked_minutes = (int) $attendance->worked_minutes + $sessionMinutes;
+        $attendance->check_out = $when->format('H:i:s');
+        $attendance->check_out_latitude = $meta['latitude'] ?? null;
+        $attendance->check_out_longitude = $meta['longitude'] ?? null;
+        $attendance->check_out_source = $meta['source'];
+
+        $checkoutStatus = $this->checkoutStatus($employee, $attendance, $attendance->worked_minutes);
+        if ($checkoutStatus) {
+            $attendance->attendance_status = $checkoutStatus;
+        }
+        $attendance->save();
+
+        $punch = AttendancePunch::create([
+            'employee_id' => $employee->id,
+            'attendance_id' => $attendance->id,
+            'attendance_date' => $attendance->attendance_date->toDateString(),
+            'punch_type' => 'check_out',
+            'punched_at' => $when,
+            'latitude' => $meta['latitude'] ?? null,
+            'longitude' => $meta['longitude'] ?? null,
+            'source' => $meta['source'],
+            'notes' => $meta['notes'] ?? null,
+        ]);
+
+        return ['status' => true, 'message' => 'Checked out successfully.', 'attendance' => $attendance, 'punch' => $punch];
     }
 
     /**
@@ -285,36 +336,151 @@ class AttendancePortalController extends Controller {
      */
     public function monthly(Request $request)
     {
+        return view('admin.attendances.monthly', $this->buildMonthlyData($request));
+    }
+
+    /**
+     * PDF export of the Monthly Attendance Sheet — same "reuse the existing
+     * <x-print-document> shell instead of a server-side PDF library"
+     * convention already established for the Attendance Report's own PDF
+     * export (Module 9), and runs through the EXACT SAME buildMonthlyData()
+     * as the browser view, so the export can never drift from — or silently
+     * ignore — whatever filters (department/designation/shift/employee
+     * type/employment status/employee, or the late/missing-checkout/
+     * overtime "only" toggles) are currently applied on the sheet.
+     */
+    public function monthlyExportPdf(Request $request)
+    {
+        $data = $this->buildMonthlyData($request);
+        $data['filterSummary'] = $this->reportService->filterSummary($request, $data['filters']);
+
+        return view('admin.attendances.monthly-pdf', $data);
+    }
+
+    /**
+     * "Excel" export of the Monthly Attendance Sheet — see
+     * App\Traits\ExportsHtmlSpreadsheet's own doc comment for why this is a
+     * styled HTML table served as .xls (no maatwebsite/excel or any other
+     * new dependency) rather than the plain-values .csv-tagged-as-excel
+     * convention HrmDetailExportController already has. Same
+     * buildMonthlyData() pipeline as the browser view and the PDF export.
+     */
+    public function monthlyExportExcel(Request $request)
+    {
+        $data = $this->buildMonthlyData($request);
+        $data['filterSummary'] = $this->reportService->filterSummary($request, $data['filters']);
+
+        return $this->htmlSpreadsheetResponse('admin.attendances.monthly-excel', $data, 'monthly_attendance_sheet');
+    }
+
+    /**
+     * PART 11's "clean machine-readable CSV" for the Monthly Sheet.
+     * Deliberately NOT the same wide one-column-per-day grid the on-screen
+     * sheet/PDF/Excel exports all share — a grid's day columns are named
+     * "01".."31" and their COUNT changes every month (28-31), which fails
+     * PART 11's own "use stable column names" CSV requirement outright (a
+     * consumer reading this month's file wouldn't get the same header row
+     * next month). Instead this is one row per EMPLOYEE PER DAY — a fixed,
+     * never-changing column set regardless of month length, and a shape
+     * that's actually easier for payroll/BI tooling to import than a wide
+     * grid would be. Same buildMonthlyData() pipeline as every other
+     * output format.
+     */
+    public function monthlyExportCsv(Request $request)
+    {
+        $data = $this->buildMonthlyData($request);
+        $employees = $data['employees'];
+        $reports = $data['reports'];
+        $adjustments = $data['adjustments'];
+
+        $headers = [
+            'Employee Code', 'Employee Name', 'Department', 'Designation',
+            'Date', 'Day', 'Status', 'Check In', 'Check Out',
+            'Worked Hours', 'Overtime Hours', 'Leave Type', 'Leave Duration',
+            'Adjustment Status', 'Remarks',
+        ];
+
+        $rows = (function () use ($employees, $reports, $adjustments) {
+            foreach ($employees as $employee) {
+                $report = $reports[$employee->id] ?? null;
+                if (!$report) {
+                    continue;
+                }
+
+                foreach ($report['days'] as $day) {
+                    $record = $day['record'];
+                    $adjustment = $adjustments->get($employee->id . '|' . $day['date']->toDateString());
+
+                    yield [
+                        $employee->employee_code,
+                        $employee->full_name,
+                        $employee->department?->name ?? '',
+                        $employee->designation?->name ?? '',
+                        $day['date']->format('Y-m-d'),
+                        $day['date']->format('l'),
+                        ucwords(str_replace('_', ' ', $day['bucket'])),
+                        $record?->check_in ? Carbon::parse($record->check_in)->format('h:i A') : '',
+                        $record?->check_out ? Carbon::parse($record->check_out)->format('h:i A') : '',
+                        $day['worked_label'] === '--' ? '' : $day['worked_label'],
+                        $record?->overtime_hours > 0 ? $record->overtime_hours : '',
+                        $day['leave_type'] ?? '',
+                        $day['leave_type'] ? $day['leave_duration_label'] : '',
+                        $adjustment ? ucfirst($adjustment->approval_status) : '',
+                        $record?->remarks ?? '',
+                    ];
+                }
+            }
+        })();
+
+        return $this->csvResponse('monthly_attendance_sheet', $headers, $rows);
+    }
+
+    /**
+     * The one shared pipeline both the on-screen sheet and its PDF export
+     * read from (mirrors AttendanceReportController::buildReportData()'s own
+     * "single source of truth for every output format" shape).
+     */
+    private function buildMonthlyData(Request $request): array
+    {
         $month = $request->input('month', now()->format('Y-m'));
         $start = Carbon::parse($month . '-01');
         $from = $start->copy()->startOfMonth();
         $to = $start->copy()->endOfMonth();
 
-        $departments = \App\Models\Department::active()->orderBy('name')->get();
-
-        $employeesQuery = Employee::active()->with('department')->orderBy('first_name');
-        if ($request->filled('department_id')) {
-            $employeesQuery->where('department_id', $request->input('department_id'));
-        }
-        if ($request->filled('employee_id')) {
-            $employeesQuery->where('id', $request->input('employee_id'));
-        }
-        $employees = $employeesQuery->get();
-
-        $allEmployeesForFilter = Employee::active()->orderBy('first_name')->get();
+        // Same advanced-search filter set (department/designation/shift/
+        // employee type/employment status/employee + late/missing-checkout/
+        // overtime "only" toggles) as the admin Attendance Report — shared
+        // via AttendanceReportService so the two screens can never disagree
+        // about what a given filter combination matches.
+        $employees = $this->reportService->filteredEmployeesQuery($request)->get();
         $reports = $employees->isNotEmpty() ? $this->reportService->buildForEmployees($employees, $from, $to) : [];
+        [$employees, $reports] = $this->reportService->narrowToActivityFilters($employees, $reports, $request);
 
-        // The header row needs to know which day columns are a weekend
-        // per THIS app's own configurable weekend-days setting — Carbon's
-        // built-in isWeekend() always means Saturday/Sunday regardless of
-        // what's actually configured, which would disagree with every data
-        // row (already correctly computed by AttendanceReportService).
-        $weekendDays = collect(explode(',', (string) get_settings('leave_weekend_days', '5,6')))
-            ->filter(fn ($d) => $d !== '')
-            ->map(fn ($d) => (int) $d)
-            ->all();
+        $filters = $this->reportService->filterOptions();
 
-        return view('admin.attendances.monthly', compact('month', 'from', 'to', 'employees', 'departments', 'allEmployeesForFilter', 'reports', 'weekendDays'));
+        // PART 9 integration: one query for every adjustment request made by
+        // ANY of the currently-shown employees across the whole visible
+        // month, keyed by "employeeId|Y-m-d" — so each day cell can look up
+        // its own adjustment status/eligibility with zero extra queries per
+        // cell (mirrors the exact "keyBy date" batch-fetch portal() already
+        // uses for a single employee, just extended to many).
+        $adjustments = $employees->isNotEmpty()
+            ? AttendanceAdjustment::whereIn('employee_id', $employees->pluck('id'))
+                ->whereBetween('adjustment_date', [$from->toDateString(), $to->toDateString()])
+                ->get()
+                ->keyBy(fn ($row) => $row->employee_id . '|' . $row->adjustment_date->toDateString())
+            : collect();
+
+        // The header row needs to know which day columns are a weekend —
+        // via the shared WeekendCalendarService (called directly from the
+        // 3 monthly-sheet views per date), NOT Carbon's own built-in
+        // isWeekend() (always Sat/Sun) or a bare day-of-week array, since
+        // this app's weekend calculation can now also be date-parity-based
+        // (even/odd calendar dates), which has no fixed day-of-week set at
+        // all. Nothing to precompute here anymore — kept as a comment
+        // pointer since this is a common place a future edit might look.
+
+        return compact('month', 'from', 'to', 'employees', 'filters', 'reports', 'adjustments');
     }
  private function employee(): Employee { $employee=auth()->guard('admin')->user()?->employee; abort_unless($employee,403,'This account is not linked to an employee.'); return $employee; }
 
@@ -342,23 +508,36 @@ class AttendancePortalController extends Controller {
      * threshold would misjudge a part-time 4-hour shift and a full 8-hour
      * shift the same way. Falls back to the HRM Settings "Default Shift"
      * window (start/end) only for employees with no shift assigned.
-     * Handles overnight shifts (end time earlier than start time) by
-     * treating the shift as crossing midnight.
+     *
+     * Takes the day's TOTAL worked minutes so far (summed across every
+     * closed session, not just the one that just ended) — with multiple
+     * check-in/out cycles now allowed per day, judging half-day/early-leave
+     * against only the most recent session's own span would wrongly flag a
+     * lunch-break-shortened final session as a half day even when the
+     * day's cumulative hours were actually complete.
      *
      * Worked hours below the half-day threshold => 'half_day'. Worked
      * hours at or above that threshold but still short of the full shift
      * => 'early_leave' — a distinct, lighter-weight signal than half_day
-     * (most of the shift was worked, just not checked out on time).
-     * Worked hours meeting or exceeding the full shift duration leave the
-     * status untouched (still 'present'/'late' from check-in).
+     * (most of the shift was worked, just not quite enough to call it
+     * complete). Worked hours meeting or exceeding the full shift duration
+     * revert back to whichever of 'present'/'late' the FIRST check-in of
+     * the day determined — re-derived fresh from $attendance's own stored
+     * check_in time (never from whatever attendance_status currently holds)
+     * specifically because an EARLIER, still-partial checkout in the same
+     * day may have already (correctly, at the time) set it to half_day/
+     * early_leave; a later session bringing the day's total up to a full
+     * shift needs to be able to genuinely REVERT that, not just leave a
+     * now-stale classification sitting there.
      *
-     * Returns null when neither rule applies (no check-in yet, already on
-     * leave/absent, or the full shift was worked) so the caller can leave
-     * the existing attendance_status untouched.
+     * Returns null only when neither rule applies AND there's nothing to
+     * revert to — i.e. already on leave/absent, or no usable shift window —
+     * so the caller can leave the existing attendance_status untouched in
+     * those specific cases.
      */
-    private function checkoutStatus(Employee $employee, ?string $checkIn, Carbon $checkOutTime, ?string $currentStatus): ?string
+    private function checkoutStatus(Employee $employee, Attendance $attendance, int $totalWorkedMinutes): ?string
     {
-        if (!$checkIn || in_array($currentStatus, ['on_leave', 'absent'], true)) {
+        if (in_array($attendance->attendance_status, ['on_leave', 'absent'], true)) {
             return null;
         }
 
@@ -376,15 +555,7 @@ class AttendancePortalController extends Controller {
             return null;
         }
 
-        $checkInTime = Carbon::parse($checkOutTime->toDateString() . ' ' . $checkIn);
-        if ($checkInTime->gt($checkOutTime)) {
-            // Check-out landed on the calendar day after check-in (an
-            // overnight shift, e.g. checked in 22:00, checked out 05:00) —
-            // the check-in instant is actually the day before checkout.
-            $checkInTime->subDay();
-        }
-
-        $workedHours = $checkInTime->diffInMinutes($checkOutTime) / 60;
+        $workedHours = $totalWorkedMinutes / 60;
 
         $thresholdPercent = (float) get_settings('hrm_half_day_threshold_percent', 50);
         $thresholdHours = $shiftDurationHours * ($thresholdPercent / 100);
@@ -393,7 +564,17 @@ class AttendancePortalController extends Controller {
             return 'half_day';
         }
 
-        return $workedHours < $shiftDurationHours ? 'early_leave' : null;
+        if ($workedHours < $shiftDurationHours) {
+            return 'early_leave';
+        }
+
+        if (!$attendance->check_in) {
+            return null;
+        }
+
+        $checkInMoment = Carbon::parse($attendance->attendance_date->toDateString() . ' ' . $attendance->check_in);
+
+        return $this->isLate($checkInMoment, $employee) ? 'late' : 'present';
     }
 
     /**

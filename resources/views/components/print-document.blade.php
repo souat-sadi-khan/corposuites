@@ -39,7 +39,7 @@
     $companyEmail = get_settings('company_email');
     $companyWebsite = get_settings('company_website');
     $companyTax = get_settings('company_tax_number');
-    $companyLogo = get_settings('system_logo');
+    $companyLogo = get_settings('printable_logo');
 
     $generatedBy = auth()->guard('admin')->check()
         ? auth()->guard('admin')->user()->name
@@ -196,10 +196,11 @@
 
     <div class="doc-header">
         <div class="doc-header-company">
-            @if($companyLogo)
-                <img class="doc-logo" src="{{ asset($companyLogo) }}" alt="Logo">
-            @endif
             <div>
+                @if($companyLogo)
+                    <img class="doc-logo" src="{{ asset($companyLogo) }}" alt="Logo">
+                @endif
+
                 <div class="doc-company-name">{{ $companyName }}</div>
 
                 @if($companyAddress)

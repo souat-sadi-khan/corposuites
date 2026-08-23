@@ -11,19 +11,19 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" class="form-select select" required data-placeholder="Select Employee">
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ (request('employee_id') == $employee->id || $employees->count() === 1) ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}" {{ (request('employee_id') == $employee->id || $employees->count() === 1) ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
-            <div class="fm-field fm-full">
+            <div class="fm-field">
                 <label>Leave Type <span class="req">*</span></label>
-                <select name="leave_type_id" class="form-select select" required>
+                <select name="leave_type_id" class="form-select select" required data-placeholder="Select Leave Type">
                     <option value="">Select Leave Type</option>
                     @foreach($leaveTypes as $leaveType)
-                        <option value="{{ $leaveType->id }}">{{ $leaveType->name }}</option>
+                        <option data-desc="{{ $leaveType->description }}" value="{{ $leaveType->id }}">{{ $leaveType->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -43,20 +43,20 @@
             </div>
             <div class="fm-field">
                 <label>Start Date <span class="req">*</span></label>
-                <input type="date" class="form-control" name="start_date" id="startDate" required>
+                <input type="date" class="form-control" name="start_date" id="startDate" value="{{ date('Y-m-d') }}" required>
             </div>
             <div class="fm-field" id="endDateWrap">
                 <label>End Date <span class="req">*</span></label>
                 <input type="date" class="form-control" name="end_date" id="endDate" required>
             </div>
-            <div class="fm-field fm-full">
+            <div class="fm-field">
                 <label>Attachment</label>
                 <input type="file" class="form-control" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                 <small class="text-muted">Required for some leave types (e.g. medical). Max 4MB.</small>
             </div>
-            <div class="fm-field fm-full">
+            <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>

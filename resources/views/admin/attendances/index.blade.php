@@ -58,6 +58,7 @@
                         <th>Timing</th>
                         <th>Location</th>
                         <th>Attendance</th>
+                        <th>Adjustment</th>
                         <th>Status</th>
                         <th class="no-sort text-end">Actions</th>
                     </tr>

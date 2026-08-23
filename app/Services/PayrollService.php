@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\Employee;
+use App\Models\EmployeeLoan;
 use App\Models\Payroll;
 use App\Models\SalaryStructure;
 use App\Models\SalaryStructureItem;
@@ -14,8 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollService
 {
-    public function __construct(private LeaveRequestService $leaveRequests)
-    {
+    public function __construct(
+        private LeaveRequestService $leaveRequests,
+        private EmployeeLoanService $employeeLoans
+    ) {
     }
 
     public function create(array $data): Payroll
@@ -42,6 +45,10 @@ class PayrollService
         $totals['total_earnings'] += $overtime['amount'];
         $totals['net_salary'] += $overtime['amount'];
 
+        $loanDeduction = $this->resolveLoanDeduction((int) $data['employee_id'], (int) $data['month'], (int) $data['year']);
+        $totals['total_deductions'] += $loanDeduction['amount'];
+        $totals['net_salary'] -= $loanDeduction['amount'];
+
         $payroll = Payroll::create(array_merge(
             Arr::except($data, ['occurrence_counts']),
             [
@@ -51,6 +58,7 @@ class PayrollService
                 'overtime_hours' => $overtime['hours'],
                 'overtime_amount' => $overtime['amount'],
                 'attendance_deduction' => $attendanceDeduction,
+                'loan_deduction' => $loanDeduction['amount'],
                 'total_deductions' => round($totals['total_deductions'], 2),
                 'net_salary' => round($totals['net_salary'], 2),
             ]
@@ -67,6 +75,19 @@ class PayrollService
                     'occurrence_count' => $resolved['occurrence_count'],
                 ]);
             }
+        }
+
+        // Actually apply each matched loan's installment against its own
+        // paid_amount (via the same recordPayment() a manual repayment
+        // would use), and keep a per-loan breakdown row so delete() can
+        // reverse exactly this run's effect later.
+        foreach ($loanDeduction['breakdown'] as $entry) {
+            $payroll->loanDeductions()->create([
+                'employee_loan_id' => $entry['loan']->id,
+                'amount' => $entry['amount'],
+            ]);
+
+            $this->employeeLoans->recordPayment($entry['loan'], $entry['amount']);
         }
 
         return $payroll;
@@ -181,6 +202,17 @@ class PayrollService
 
     public function delete(Payroll $payroll): bool
     {
+        // Reverse exactly what this run auto-deducted off each loan's
+        // paid_amount before removing the payroll — otherwise a deleted
+        // (e.g. mistakenly generated) payroll would leave those loans
+        // permanently understated by an installment that was never
+        // actually collected.
+        foreach ($payroll->loanDeductions as $deduction) {
+            if ($deduction->employeeLoan) {
+                $this->employeeLoans->recordPayment($deduction->employeeLoan, -(float) $deduction->amount);
+            }
+        }
+
         return $payroll->delete();
     }
 
@@ -448,6 +480,60 @@ class PayrollService
         }
 
         return round($deduction, 2);
+    }
+
+    /**
+     * Auto-cut employee loan installments for this pay period, entirely
+     * optional via the global `hrm_loan_deduction_enabled` HRM Setting.
+     * Even when that master switch is on, only loans that are (a) an
+     * approved, active EmployeeLoan record, (b) individually opted in via
+     * their own `deduct_from_salary` flag, (c) already started
+     * (`start_date` on or before this period), and (d) not already fully
+     * repaid, are matched — the same "global toggle + per-record opt-in"
+     * shape used nowhere else in this project for a deduction rule, since
+     * every prior one (late/early/absent) is company-wide with no
+     * per-employee exception.
+     *
+     * Each matched loan contributes min(installment_amount,
+     * remaining_balance) — capping the very last installment at whatever
+     * is actually still owed, so a loan can never be overpaid by a cent
+     * through automatic deduction.
+     *
+     * @return array{amount: float, breakdown: array<int, array{loan: EmployeeLoan, amount: float}>}
+     */
+    protected function resolveLoanDeduction(int $employeeId, int $month, int $year): array
+    {
+        if (!get_settings('hrm_loan_deduction_enabled', false)) {
+            return ['amount' => 0.0, 'breakdown' => []];
+        }
+
+        [, $periodEnd] = $this->payPeriod($year, $month);
+
+        $loans = EmployeeLoan::query()
+            ->where('employee_id', $employeeId)
+            ->where('status', 1)
+            ->where('approval_status', 'approved')
+            ->where('deduct_from_salary', true)
+            ->whereDate('start_date', '<=', $periodEnd)
+            ->get()
+            ->filter(fn (EmployeeLoan $loan) => (float) $loan->remaining_balance > 0);
+
+        $amount = 0.0;
+        $breakdown = [];
+
+        foreach ($loans as $loan) {
+            $installment = min((float) $loan->installment_amount, (float) $loan->remaining_balance);
+
+            if ($installment <= 0) {
+                continue;
+            }
+
+            $installment = round($installment, 2);
+            $amount += $installment;
+            $breakdown[] = ['loan' => $loan, 'amount' => $installment];
+        }
+
+        return ['amount' => round($amount, 2), 'breakdown' => $breakdown];
     }
 
     protected function countAttendanceStatus(int $employeeId, string $status, Carbon $periodStart, Carbon $periodEnd): int

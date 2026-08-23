@@ -42,7 +42,7 @@ $(function () {
             });
     }
 
-    function awPunch(url, actionLabel) {
+    function awPunch(url, actionLabel, notes) {
         if (awBusy) return;
 
         if (!navigator.geolocation) {
@@ -59,7 +59,8 @@ $(function () {
                 $.post(url, {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
-                    source: 'browser_geolocation'
+                    source: 'browser_geolocation',
+                    notes: notes
                 }).done(function (response) {
                     if (response.status) {
                         // Refresh FIRST (it replaces #awMessage along with the
@@ -97,11 +98,19 @@ $(function () {
     // and trigger the global click-anywhere-closes-all-dropdowns handler.
     // That same stopPropagation would silently swallow a document-level
     // delegated handler before it ever saw the click.
+    // A plain prompt() for the optional note — matches this project's own
+    // "native prompt for a single quick-action text field" convention
+    // (e.g. the Project Timesheet reject flow) rather than a full modal,
+    // since check-in/out is now something that can happen several times a
+    // day and shouldn't gain extra friction. Clicking Cancel just means "no
+    // note" — it never blocks the actual check-in/out, only skips the text.
     $('#attendanceWidgetDd').on('click', '#awCheckInBtn', function () {
-        awPunch(window.attendanceWidgetRoutes.checkIn, 'Checking in');
+        var notes = window.prompt('Add a note for this check-in (optional):', '');
+        awPunch(window.attendanceWidgetRoutes.checkIn, 'Checking in', notes);
     });
 
     $('#attendanceWidgetDd').on('click', '#awCheckOutBtn', function () {
-        awPunch(window.attendanceWidgetRoutes.checkOut, 'Checking out');
+        var notes = window.prompt('Add a note for this check-out (optional):', '');
+        awPunch(window.attendanceWidgetRoutes.checkOut, 'Checking out', notes);
     });
 });

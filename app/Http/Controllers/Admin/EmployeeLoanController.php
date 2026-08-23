@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeeLoanRequest;
 use App\Models\Employee;
@@ -33,15 +34,51 @@ class EmployeeLoanController extends Controller
         if ($request->ajax()) {
             $query = EmployeeLoan::query()->with('employee');
 
-            // Filter by status
-            if ($request->status) {
-                $statuses = explode(',', $request->status);
-                $query->whereIn('status', $statuses);
+            // Record status — only applied when the Advanced Search
+            // "Record Status" field is actually set (same convention
+            // Payroll/Salary Structures use once graduated to Adv Search).
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
             }
 
             // Filter by employee
             if ($request->employee_id) {
                 $query->where('employee_id', $request->employee_id);
+            }
+
+            // Filter by approval status
+            if ($request->approval_status) {
+                $query->where('approval_status', $request->approval_status);
+            }
+
+            // Filter by whether the loan is opted in to automatic salary deduction
+            if ($request->filled('deduct_from_salary')) {
+                $query->where('deduct_from_salary', $request->deduct_from_salary);
+            }
+
+            // Filter by payment state (derived from paid_amount vs loan_amount)
+            if ($request->payment_state === 'fully_paid') {
+                $query->whereColumn('paid_amount', '>=', 'loan_amount');
+            } elseif ($request->payment_state === 'outstanding') {
+                $query->whereColumn('paid_amount', '<', 'loan_amount');
+            }
+
+            // Filter by loan amount range
+            if ($request->filled('loan_amount_min')) {
+                $query->where('loan_amount', '>=', $request->loan_amount_min);
+            }
+
+            if ($request->filled('loan_amount_max')) {
+                $query->where('loan_amount', '<=', $request->loan_amount_max);
+            }
+
+            // Filter by start date range
+            if ($request->filled('start_date_from')) {
+                $query->whereDate('start_date', '>=', $request->start_date_from);
+            }
+
+            if ($request->filled('start_date_to')) {
+                $query->whereDate('start_date', '<=', $request->start_date_to);
             }
 
             // Search
@@ -62,13 +99,32 @@ class EmployeeLoanController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.employee-loans.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('loan_summary', function ($row) {
-                    return number_format($row->loan_amount, 2) . ' in ' . $row->installments . ' installment(s)<br><small>' . number_format($row->installment_amount, 2) . ' / installment</small>';
+                    $line = format_currency($row->loan_amount) . ' in ' . $row->installments . ' installment(s)<br><small>' . format_currency($row->installment_amount) . ' / installment</small>';
+
+                    $line .= $row->deduct_from_salary
+                        ? '<br><span class="badge bg-info-subtle text-info">Auto-deducted from salary</span>'
+                        : '<br><span class="badge bg-secondary-subtle text-secondary">Manual repayment only</span>';
+
+                    return $line;
                 })
                 ->addColumn('balance', function ($row) {
-                    return 'Paid: ' . number_format($row->paid_amount, 2) . '<br><small>Remaining: ' . number_format($row->remaining_balance, 2) . '</small>';
+                    return 'Paid: ' . format_currency($row->paid_amount) . '<br><small>Remaining: ' . format_currency($row->remaining_balance) . '</small>';
                 })
                 ->addColumn('approval_badge', function ($row) {
                     $map = ['pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger'];
@@ -82,7 +138,9 @@ class EmployeeLoanController extends Controller
                 ->make(true);
         }
 
-        return view('admin.employee-loans.index');
+        $employees = Employee::active()->get();
+
+        return view('admin.employee-loans.index', compact('employees'));
     }
 
     /**
@@ -103,7 +161,10 @@ class EmployeeLoanController extends Controller
         DB::beginTransaction();
 
         try {
-            $employeeLoan = $this->employeeLoanService->create($request->validated());
+            $data = $request->validated();
+            $data['deduct_from_salary'] = $request->boolean('deduct_from_salary');
+
+            $employeeLoan = $this->employeeLoanService->create($data);
 
             $this->logActivity([
                 'actor_type' => 'admin',
@@ -159,7 +220,11 @@ class EmployeeLoanController extends Controller
 
         try {
             $oldData = $employeeLoan->toArray();
-            $updatedEmployeeLoan = $this->employeeLoanService->update($employeeLoan, $request->validated());
+
+            $data = $request->validated();
+            $data['deduct_from_salary'] = $request->boolean('deduct_from_salary');
+
+            $updatedEmployeeLoan = $this->employeeLoanService->update($employeeLoan, $data);
 
             $this->logActivity([
                 'actor_type' => 'admin',

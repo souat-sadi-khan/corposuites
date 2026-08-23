@@ -19,6 +19,7 @@ class EmployeeLoanRequest extends FormRequest
             'installments' => 'required|integer|min:1|max:120',
             'start_date' => 'required|date',
             'reason' => 'nullable|string|max:1000',
+            'deduct_from_salary' => 'nullable|boolean',
             'status' => 'required|boolean',
         ];
     }

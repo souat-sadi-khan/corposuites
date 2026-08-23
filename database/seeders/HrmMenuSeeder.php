@@ -65,11 +65,15 @@ class HrmMenuSeeder extends Seeder
         // actually want day to day, ahead of the admin management screens.
         $this->menu($hrmModule->id, 'hrm.attendance-portal', $attendance->id, 'My Attendance', 'ri-user-follow-line', 'admin.attendance-portal.index', 1, null);
         $this->menu($hrmModule->id, 'hrm.attendances', $attendance->id, 'Attendance', 'ri-fingerprint-line', 'admin.attendances.index', 2, 'attendance.view');
-        $this->menu($hrmModule->id, 'hrm.attendances-monthly', $attendance->id, 'Monthly Sheet', 'ri-calendar-todo-line', 'admin.attendances.monthly', 3, 'attendance.view');
-        $this->menu($hrmModule->id, 'hrm.attendance-adjustments', $attendance->id, 'Attendance Adjustments', 'ri-time-zone-line', 'admin.attendance-adjustments.index', 4, 'attendance-adjustment.view');
-        $this->menu($hrmModule->id, 'hrm.leave-balances', $attendance->id, 'Leave Balances', 'ri-donut-chart-line', 'admin.leave-balances.index', 5, 'leave-balance.view');
-        $this->menu($hrmModule->id, 'hrm.leave-requests', $attendance->id, 'Leave Requests', 'ri-mail-send-line', 'admin.leave-requests.index', 6, 'leave-request.view');
-        $this->menu($hrmModule->id, 'hrm.leave-calendar', $attendance->id, 'Leave Calendar', 'ri-calendar-2-line', 'admin.leave-requests.calendar', 6, 'leave-request.view');
+        // Module 12: both now gated by their own dedicated 'attendance.report'
+        // permission (was 'attendance.view') — matching PART 14's suggested
+        // conceptual permission vocabulary and the route middleware below.
+        $this->menu($hrmModule->id, 'hrm.attendances-monthly', $attendance->id, 'Monthly Sheet', 'ri-calendar-todo-line', 'admin.attendances.monthly', 3, 'attendance.report');
+        $this->menu($hrmModule->id, 'hrm.attendances-report', $attendance->id, 'Attendance Report', 'ri-bar-chart-grouped-line', 'admin.attendances.report', 4, 'attendance.report');
+        $this->menu($hrmModule->id, 'hrm.attendance-adjustments', $attendance->id, 'Attendance Adjustments', 'ri-time-zone-line', 'admin.attendance-adjustments.index', 5, 'attendance-adjustment.view');
+        $this->menu($hrmModule->id, 'hrm.leave-balances', $attendance->id, 'Leave Balances', 'ri-donut-chart-line', 'admin.leave-balances.index', 6, 'leave-balance.view');
+        $this->menu($hrmModule->id, 'hrm.leave-requests', $attendance->id, 'Leave Requests', 'ri-mail-send-line', 'admin.leave-requests.index', 7, 'leave-request.view');
+        $this->menu($hrmModule->id, 'hrm.leave-calendar', $attendance->id, 'Leave Calendar', 'ri-calendar-2-line', 'admin.leave-requests.calendar', 7, 'leave-request.view');
 
         // Group: Payroll & Finance
         $payroll = $this->group($hrmModule->id, 'hrm.group.payroll', 'Payroll & Finance', 'ri-hand-coin-line', 5);

@@ -191,7 +191,18 @@
                             <td class="amount">{{ format_currency($payroll->attendance_deduction) }}</td>
                         </tr>
                     @endif
-                    @if($deductionItems->isEmpty() && $unpaidLeaveDeduction <= 0 && $payroll->attendance_deduction <= 0)
+                    @foreach($payroll->loanDeductions as $loanDeduction)
+                        <tr>
+                            <td>
+                                Loan Installment
+                                @if($loanDeduction->employeeLoan)
+                                    <br><small>{{ format_currency($loanDeduction->employeeLoan->remaining_balance) }} remaining</small>
+                                @endif
+                            </td>
+                            <td class="amount">{{ format_currency($loanDeduction->amount) }}</td>
+                        </tr>
+                    @endforeach
+                    @if($deductionItems->isEmpty() && $unpaidLeaveDeduction <= 0 && $payroll->attendance_deduction <= 0 && $payroll->loanDeductions->isEmpty())
                         <tr>
                             <td colspan="2" style="text-align:center; color:#8a9199;">No deductions this period</td>
                         </tr>

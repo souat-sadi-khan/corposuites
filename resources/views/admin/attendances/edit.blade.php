@@ -12,7 +12,7 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" class="form-select select" data-placeholder="Select Employee" required>
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
                         <option value="{{ $employee->id }}" {{ old('employee_id', $attendance->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
@@ -25,7 +25,7 @@
             </div>
             <div class="fm-field">
                 <label>Attendance Status <span class="req">*</span></label>
-                <select name="attendance_status" class="form-select" required>
+                <select name="attendance_status" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="present" {{ old('attendance_status', $attendance->attendance_status) == 'present' ? 'selected' : '' }}>Present</option>
                     <option value="absent" {{ old('attendance_status', $attendance->attendance_status) == 'absent' ? 'selected' : '' }}>Absent</option>
                     <option value="half_day" {{ old('attendance_status', $attendance->attendance_status) == 'half_day' ? 'selected' : '' }}>Half Day</option>
@@ -49,7 +49,7 @@
             </div>
             <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $attendance->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $attendance->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>

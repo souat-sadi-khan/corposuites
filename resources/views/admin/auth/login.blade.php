@@ -202,14 +202,22 @@
         });
 
         const features = [
-            { text: 'Customer Relationship Management', icon: 'ri-customer-service-2-line' },
-            { text: 'Human Resource Management', icon: 'ri-team-line' },
-            { text: 'Enterprise Resource Planning', icon: 'ri-building-4-line' },
-            { text: 'Inventory & Operations', icon: 'ri-archive-stack-line' },
-            { text: 'Accounting & Financial Management', icon: 'ri-calculator-line' },
-            { text: 'Business Intelligence & Analytics', icon: 'ri-bar-chart-box-line' },
-            { text: 'Connected Business Workflows', icon: 'ri-flow-chart' },
-            { text: 'Enterprise-Grade Security', icon: 'ri-shield-check-line' },
+            { text: 'Build stronger customer relationships and close more sales.', icon: 'ri-customer-service-2-line' },
+            { text: 'Manage employee records, leave, payroll, and performance in one place.', icon: 'ri-team-line' },
+            { text: 'Bring finance, sales, purchasing, and operations together.', icon: 'ri-building-4-line' },
+            { text: 'Track stock levels and keep every order moving on time.', icon: 'ri-archive-stack-line' },
+            { text: 'Control cash flow, invoices, expenses, and financial reporting.', icon: 'ri-calculator-line' },
+            { text: 'Turn real-time data into confident, informed business decisions.', icon: 'ri-bar-chart-box-line' },
+            { text: 'Connect teams with automated workflows that reduce manual work.', icon: 'ri-flow-chart' },
+            { text: 'Protect business data with secure, role-based access controls.', icon: 'ri-shield-check-line' },
+            { text: 'Convert leads into loyal customers with a complete sales pipeline.', icon: 'ri-user-follow-line' },
+            { text: 'Plan projects, assign work, and keep every deadline visible.', icon: 'ri-briefcase-4-line' },
+            { text: 'Create quotes, sales orders, and invoices without duplicate entry.', icon: 'ri-file-list-3-line' },
+            { text: 'Simplify purchasing with supplier records, approvals, and order tracking.', icon: 'ri-truck-line' },
+            { text: 'Give your team one shared workspace for daily business operations.', icon: 'ri-group-line' },
+            { text: 'Monitor business health with dashboards tailored to your role.', icon: 'ri-dashboard-3-line' },
+            { text: 'Standardize processes so your business can scale with confidence.', icon: 'ri-settings-3-line' },
+            { text: 'Access the information you need to serve customers faster.', icon: 'ri-speed-up-line' },
         ];
 
         let fi = 0,

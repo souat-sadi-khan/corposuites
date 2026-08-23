@@ -13,7 +13,7 @@ class Payroll extends Model
 
     protected $fillable = [
         'employee_id', 'salary_structure_id', 'month', 'year', 'commission_sales_amount', 'basic_salary',
-        'total_earnings', 'overtime_hours', 'overtime_amount', 'attendance_deduction', 'total_deductions', 'net_salary', 'payment_status', 'payment_date', 'status'
+        'total_earnings', 'overtime_hours', 'overtime_amount', 'attendance_deduction', 'loan_deduction', 'total_deductions', 'net_salary', 'payment_status', 'payment_date', 'status'
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class Payroll extends Model
         'overtime_hours' => 'decimal:2',
         'overtime_amount' => 'decimal:2',
         'attendance_deduction' => 'decimal:2',
+        'loan_deduction' => 'decimal:2',
         'status' => 'boolean',
     ];
 
@@ -38,6 +39,11 @@ class Payroll extends Model
     public function items(): HasMany
     {
         return $this->hasMany(PayrollItem::class);
+    }
+
+    public function loanDeductions(): HasMany
+    {
+        return $this->hasMany(PayrollLoanDeduction::class);
     }
 
     public function scopeActive($query)

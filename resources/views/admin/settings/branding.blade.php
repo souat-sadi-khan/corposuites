@@ -221,6 +221,32 @@
             </div>
         </div>
 
+        {{-- Printable Branding --}}
+        <div class="settings-card mb-3">
+            <div class="settings-card-head">
+                <div>
+                    <h5>Printable Branding</h5>
+                    <p>Brand identity used in printable media.</p>
+                </div>
+
+                <i class="ri-mail-line"></i>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-12">
+
+                    <label class="form-label">
+                        Print Logo
+                    </label>
+
+                    <input type="file"
+                            name="printable_logo"
+                            class="form-control dropify"
+                            data-default-file="{{ get_settings('printable_logo') ? asset(get_settings('printable_logo')) : '' }}">
+                </div>
+            </div>
+        </div>
+
         {{-- Social Branding --}}
         <div class="settings-card mb-3">
             <div class="settings-card-head">

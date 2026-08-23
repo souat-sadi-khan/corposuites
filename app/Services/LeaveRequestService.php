@@ -166,9 +166,11 @@ class LeaveRequestService
     }
 
     /**
-     * Count leave days between two dates, excluding weekends and active holidays.
-     * Weekend days are configurable via the `leave_weekend_days` system setting
-     * (comma-separated Carbon day numbers: 0=Sun … 6=Sat); default is Fri+Sat (5,6).
+     * Count leave days between two dates, excluding weekends and active
+     * holidays. Weekend classification is delegated to the shared
+     * WeekendCalendarService (day-of-week OR date-parity mode, both
+     * configurable from HRM Settings) so Leave and Attendance can never
+     * disagree about which days don't count as duty days.
      */
     protected function calculateDays($startDate, $endDate): float
     {
@@ -179,13 +181,12 @@ class LeaveRequestService
             return 0.0;
         }
 
-        $weekendDays = $this->weekendDays();
         $holidays = $this->holidayDates($start, $end);
 
         $days = 0;
 
         for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-            if (in_array($date->dayOfWeek, $weekendDays, true)) {
+            if (WeekendCalendarService::isWeekend($date)) {
                 continue;
             }
 
@@ -197,21 +198,6 @@ class LeaveRequestService
         }
 
         return (float) $days;
-    }
-
-    /**
-     * Configured weekend day numbers (Carbon: 0=Sunday … 6=Saturday).
-     */
-    protected function weekendDays(): array
-    {
-        $raw = get_settings('leave_weekend_days', '5,6');
-
-        return collect(explode(',', (string) $raw))
-            ->map(fn ($d) => (int) trim($d))
-            ->filter(fn ($d) => $d >= 0 && $d <= 6)
-            ->unique()
-            ->values()
-            ->all();
     }
 
     /**

@@ -28,7 +28,26 @@
             </div>
 
             <div class="row g-3 fm-body">
-                <div class="col-md-6">
+                <div class="col-md-12">
+                    <label class="form-label">
+                        Weekend Calculation Mode
+                    </label>
+
+                    <select id="weekendModeSelect" name="hrm_weekend_mode" class="form-select select">
+                        <option value="day_of_week" {{ get_settings('hrm_weekend_mode', 'day_of_week') === 'day_of_week' ? 'selected' : '' }}>
+                            Day of Week — a fixed set of weekdays is off every week (e.g. Friday + Saturday)
+                        </option>
+                        <option value="date_parity" {{ get_settings('hrm_weekend_mode', 'day_of_week') === 'date_parity' ? 'selected' : '' }}>
+                            Calendar Date Parity — alternating even/odd dates of the month are off
+                        </option>
+                    </select>
+
+                    <small class="text-muted">
+                        Used by the attendance calendar, header widget, and leave day counting everywhere in HRM.
+                    </small>
+                </div>
+
+                <div class="col-md-6 weekend-mode-field weekend-mode-day_of_week">
                     <label class="form-label">
                         Weekly Off Days
                     </label>
@@ -56,6 +75,27 @@
 
                     <small class="text-muted">
                         Used by the attendance calendar and leave day counting.
+                    </small>
+                </div>
+
+                <div class="col-md-6 weekend-mode-field weekend-mode-date_parity">
+                    <label class="form-label">
+                        Which Calendar Dates Are Off
+                    </label>
+
+                    <select name="hrm_weekend_parity" class="form-select select">
+                        <option value="even" {{ get_settings('hrm_weekend_parity', 'even') === 'even' ? 'selected' : '' }}>
+                            Even dates are off (2nd, 4th, 6th, 8th…) — odd dates are working days
+                        </option>
+                        <option value="odd" {{ get_settings('hrm_weekend_parity', 'even') === 'odd' ? 'selected' : '' }}>
+                            Odd dates are off (1st, 3rd, 5th, 7th…) — even dates are working days
+                        </option>
+                    </select>
+
+                    <small class="text-muted">
+                        A month boundary can put two working (or two off) dates back to back, since a
+                        month's day count doesn't always divide evenly by 2 — this is expected with a
+                        date-parity schedule.
                     </small>
                 </div>
 
@@ -545,6 +585,37 @@
             </div>
         </div>
 
+        {{-- Employee Loan Deductions --}}
+        <div class="settings-card mb-3">
+            <div class="settings-card-head">
+                <div>
+                    <h5>Employee Loan Deductions</h5>
+                    <p>Automatically cut a loan's installment from the employee's monthly salary when Payroll is generated.</p>
+                </div>
+
+                <i class="ri-safe-2-line"></i>
+            </div>
+
+            <div class="row fm-body g-3">
+
+                <div class="col-md-12">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="hrm_loan_deduction_enabled" class="form-check-input" id="loanDeductionSwitch" value="1" {{ get_settings('hrm_loan_deduction_enabled') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="loanDeductionSwitch">Deduct Loan Installments from Salary</label>
+                    </div>
+                    <small class="text-muted">
+                        While on, every payroll run cuts each matching loan's installment (capped at whatever is
+                        still owed) straight off the employee's net salary and records it as an actual repayment
+                        against that loan. This is the master switch — each individual
+                        <a href="{{ route('admin.employee-loans.index') }}">Employee Loan</a> also has its own
+                        "Automatically deduct" toggle, so an admin can still exempt a specific loan even while
+                        this is on.
+                    </small>
+                </div>
+
+            </div>
+        </div>
+
         <div class="settings-save-box mt-3">
             <button type="submit" id="submit" class="settings-submit">
                 <i class="ri-save-3-line"></i>
@@ -568,6 +639,15 @@
                 var values = $(this).val() || [];
                 $('#weekendDaysHidden').val(values.join(','));
             });
+
+            function toggleWeekendModeFields() {
+                var mode = $('#weekendModeSelect').val();
+                $('.weekend-mode-field').hide();
+                $('.weekend-mode-' + mode).show();
+            }
+
+            $('#weekendModeSelect').on('change', toggleWeekendModeFields);
+            toggleWeekendModeFields();
 
             function toggleOvertimeMethodFields() {
                 var method = $('#overtimeMethodSelect').val();

@@ -38,9 +38,15 @@ class EmployeeLoanService
         return $employeeLoan;
     }
 
+    /**
+     * Record a repayment against the loan. $amount may be negative — used
+     * by PayrollService::delete() to reverse a payroll-run's automatic
+     * deduction — so the result is clamped to [0, loan_amount] on both
+     * ends rather than assuming $amount is always a positive addition.
+     */
     public function recordPayment(EmployeeLoan $employeeLoan, float $amount): EmployeeLoan
     {
-        $newPaid = min($employeeLoan->loan_amount, $employeeLoan->paid_amount + $amount);
+        $newPaid = max(0, min((float) $employeeLoan->loan_amount, (float) $employeeLoan->paid_amount + $amount));
         $employeeLoan->update(['paid_amount' => $newPaid]);
 
         return $employeeLoan;

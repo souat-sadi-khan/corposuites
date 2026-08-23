@@ -147,6 +147,10 @@ class PayrollController extends Controller
                         $line .= '<br><small class="text-danger">Attendance deduction: -' . number_format($row->attendance_deduction, 2) . '</small>';
                     }
 
+                    if ($row->loan_deduction > 0) {
+                        $line .= '<br><small class="text-danger">Loan installment: -' . number_format($row->loan_deduction, 2) . '</small>';
+                    }
+
                     return $line;
                 })
                 ->addColumn('payment_badge', function ($row) {
@@ -433,6 +437,7 @@ class PayrollController extends Controller
             'employee.department', 'employee.designation',
             'salaryStructure',
             'items.salaryComponent',
+            'loanDeductions.employeeLoan',
         ]);
 
         $unpaidLeaveDeduction = $this->payrollService->unpaidLeaveDeductionFor($payroll);

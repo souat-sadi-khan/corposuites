@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\Images;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AttendanceAdjustmentRequest;
 use App\Models\AttendanceAdjustment;
@@ -65,7 +66,20 @@ class AttendanceAdjustmentController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.attendance-adjustments.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    return $row->employee ? $row->employee->full_name . '<br><small>' . $row->employee->employee_code . '</small>' : '-';
+                    $avatar = Images::show($row->employee->photo);
+
+                    return '
+                        <div class="d-flex align-items-center">
+                            <div class="mr-2 employee-avatar">
+                                ' . $avatar . '
+                            </div>
+                            <div>
+                                <b class="tl-name-txt">' . e($row->employee->full_name) . '</b>
+                                <br>
+                                <small>' . e($row->employee->employee_code) . '</small>
+                            </div>
+                        </div>
+                    ';
                 })
                 ->addColumn('date_formatted', function ($row) {
                     return $row->adjustment_date ? $row->adjustment_date->format('d-m-Y') : '-';
@@ -91,13 +105,37 @@ class AttendanceAdjustmentController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new resource. When reached via the
+     * "Request Adjustment" quick action (Attendance list/Monthly Sheet —
+     * PART 9), employee_id+date arrive as query params: pre-fills the date,
+     * shows what's actually recorded for that day as context (same
+     * convenience the self-service adjustment form already gives an
+     * employee requesting their own correction), and flags an
+     * already-pending request for that exact employee+date so an admin
+     * doesn't unknowingly file a duplicate.
      */
-    public function create()
+    public function create(Request $request)
     {
         $employees = Employee::active()->get();
 
-        return view('admin.attendance-adjustments.create', compact('employees'));
+        $prefillEmployeeId = $request->input('employee_id');
+        $prefillDate = $request->filled('date') ? \Carbon\Carbon::parse($request->input('date')) : null;
+
+        $existingAttendance = null;
+        $pendingExists = false;
+        if ($prefillEmployeeId && $prefillDate) {
+            $existingAttendance = \App\Models\Attendance::where('employee_id', $prefillEmployeeId)
+                ->whereDate('attendance_date', $prefillDate)
+                ->first();
+            $pendingExists = AttendanceAdjustment::where('employee_id', $prefillEmployeeId)
+                ->whereDate('adjustment_date', $prefillDate)
+                ->where('approval_status', 'pending')
+                ->exists();
+        }
+
+        return view('admin.attendance-adjustments.create', compact(
+            'employees', 'prefillDate', 'existingAttendance', 'pendingExists'
+        ));
     }
 
     /**

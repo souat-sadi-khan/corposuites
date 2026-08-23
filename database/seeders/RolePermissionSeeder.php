@@ -154,6 +154,20 @@ class RolePermissionSeeder extends Seeder
             'attendance.create',
             'attendance.edit',
             'attendance.delete',
+            // Module 12 (Permissions Mapping): 'attendance.report' gates the
+            // Monthly Attendance Sheet + Attendance Report screens (and
+            // their PDF/Excel/CSV exports) — previously both reused
+            // 'attendance.view'; now a dedicated permission, matching PART
+            // 14's own suggested conceptual vocabulary. 'attendance.self-
+            // check-in' gates the self-service check-in/check-out actions
+            // (previously just auth + a linked-employee check, no
+            // permission at all) — kept as a genuinely SEPARATE permission
+            // from 'attendance.create' (which governs an admin manually
+            // creating/backdating ANY employee's record), since "can punch
+            // myself in today" and "can create attendance records for
+            // anyone" are very different risk levels.
+            'attendance.report',
+            'attendance.self-check-in',
 
             'attendance-adjustment.view',
             'attendance-adjustment.create',
@@ -819,17 +833,23 @@ class RolePermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create([
+            Permission::firstOrCreate([
                 'name' => $permission,
-                'guard_name' => 'admin'
+                'guard_name' => 'admin',
             ]);
         }
 
-        $adminRole = Role::create([
+        $adminRole = Role::firstOrCreate([
             'name' => 'Super Admin',
-            'guard_name' => 'admin'
+            'guard_name' => 'admin',
         ]);
 
-        $adminRole->givePermissionTo(Permission::all());
+        // Keep Super Admin aligned with every permission defined for the admin guard.
+        // syncPermissions is safe to run repeatedly and also grants newly added ones.
+        $adminRole->syncPermissions(
+            Permission::where('guard_name', 'admin')->get()
+        );
+
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

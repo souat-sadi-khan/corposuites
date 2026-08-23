@@ -36,7 +36,9 @@ class HrmSettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             // Attendance & Time
-            'leave_weekend_days' => 'required|string|max:20',
+            'hrm_weekend_mode' => 'required|in:day_of_week,date_parity',
+            'leave_weekend_days' => 'required_if:hrm_weekend_mode,day_of_week|nullable|string|max:20',
+            'hrm_weekend_parity' => 'required_if:hrm_weekend_mode,date_parity|nullable|in:even,odd',
             'hrm_default_shift_start' => 'required|date_format:H:i',
             'hrm_default_shift_end' => 'required|date_format:H:i',
             'hrm_late_grace_minutes' => 'required|integer|min:0|max:240',
@@ -74,6 +76,9 @@ class HrmSettingsController extends Controller
             'hrm_early_leave_deduction_grace_count' => 'nullable|integer|min:0|max:60',
             'hrm_early_leave_deduction_per_occurrence' => 'nullable|numeric|min:0',
             'hrm_absent_deduction_enabled' => 'nullable|boolean',
+
+            // Employee Loan Deductions
+            'hrm_loan_deduction_enabled' => 'nullable|boolean',
         ], [
             'hrm_office_latitude.required_if' => 'Set the office location before turning on geofence validation.',
             'hrm_office_longitude.required_if' => 'Set the office location before turning on geofence validation.',
@@ -96,6 +101,7 @@ class HrmSettingsController extends Controller
         $settings['hrm_late_deduction_enabled'] = $request->boolean('hrm_late_deduction_enabled');
         $settings['hrm_early_leave_deduction_enabled'] = $request->boolean('hrm_early_leave_deduction_enabled');
         $settings['hrm_absent_deduction_enabled'] = $request->boolean('hrm_absent_deduction_enabled');
+        $settings['hrm_loan_deduction_enabled'] = $request->boolean('hrm_loan_deduction_enabled');
 
         foreach ($settings as $key => $value) {
             SystemSetting::updateOrCreate(

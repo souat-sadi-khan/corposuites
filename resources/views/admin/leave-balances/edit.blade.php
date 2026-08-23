@@ -12,19 +12,19 @@
         <div class="fm-grid">
             <div class="fm-field fm-full">
                 <label>Employee <span class="req">*</span></label>
-                <select name="employee_id" class="form-select select" required>
+                <select name="employee_id" class="form-select select" required data-placeholder="Select Employee">
                     <option value="">Select Employee</option>
                     @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ old('employee_id', $leaveBalance->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
+                        <option data-logo="{{ $employee->photo ? asset($employee->photo) : asset('assets/system/images/default-avatar.png') }}" data-desc="{{ $employee->email }}" value="{{ $employee->id }}" {{ old('employee_id', $leaveBalance->employee_id) == $employee->id ? 'selected' : '' }}>{{ $employee->full_name }} ({{ $employee->employee_code }})</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field">
                 <label>Leave Type <span class="req">*</span></label>
-                <select name="leave_type_id" class="form-select select" required>
+                <select name="leave_type_id" class="form-select select" required data-placeholder="Select Leave Type">
                     <option value="">Select Leave Type</option>
                     @foreach($leaveTypes as $leaveType)
-                        <option value="{{ $leaveType->id }}" {{ old('leave_type_id', $leaveBalance->leave_type_id) == $leaveType->id ? 'selected' : '' }}>{{ $leaveType->name }}</option>
+                        <option data-desc="{{ $leaveType->id }}" value="{{ $leaveType->id }}" {{ old('leave_type_id', $leaveBalance->leave_type_id) == $leaveType->id ? 'selected' : '' }}>{{ $leaveType->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -40,13 +40,14 @@
                 <label>Used Days</label>
                 <input type="number" step="0.01" class="form-control" name="used_days" min="0" value="{{ old('used_days', $leaveBalance->used_days) }}">
             </div>
-            <div class="fm-field">
+            <input type="hidden" name="status" value="{{ $leaveBalance->status }}">
+            {{-- <div class="fm-field">
                 <label>Status</label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select select" data-minimum-results-for-search="Infinity">
                     <option value="1" {{ old('status', $leaveBalance->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $leaveBalance->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>
-            </div>
+            </div> --}}
         </div>
     </div>
 

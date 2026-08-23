@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\AttendancePunch;
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Services\WeekendCalendarService;
 use Carbon\Carbon;
 
 /**
@@ -45,12 +47,7 @@ class AttendanceStatusService
             return self::state('holiday', 'Holiday', $shiftName, canCheckIn: true, note: $holiday->name);
         }
 
-        $weekendDays = collect(explode(',', (string) get_settings('leave_weekend_days', '5,6')))
-            ->filter(fn ($d) => $d !== '')
-            ->map(fn ($d) => (int) $d)
-            ->all();
-
-        if (in_array($today->dayOfWeek, $weekendDays, true)) {
+        if (WeekendCalendarService::isWeekend($today)) {
             return self::state('weekly_off', 'Weekly Off', $shiftName, canCheckIn: true);
         }
 
@@ -70,6 +67,17 @@ class AttendanceStatusService
         return self::state('not_checked_in', 'Not Checked In', $shiftName, canCheckIn: true);
     }
 
+    /**
+     * Multiple check-in/check-out cycles are allowed per day now (see
+     * AttendancePortalController::performCheckIn/performCheckOut) — the
+     * widget's own can_check_in flag mirrors that exactly: it's true
+     * whenever there's no CURRENTLY OPEN session (the latest punch today,
+     * or an overnight one still open from yesterday, is a check_out or
+     * doesn't exist yet), regardless of whether the employee already
+     * checked out earlier today. "Checked Out" is therefore no longer a
+     * dead end — the Check In button reappears so a second session can
+     * start (back from lunch, back from a client visit, etc.).
+     */
     private static function fromAttendance(Attendance $attendance, string $shiftName): array
     {
         if ($attendance->attendance_status === 'on_leave') {
@@ -83,29 +91,93 @@ class AttendanceStatusService
             return self::state('absent', 'Absent', $shiftName, canCheckIn: true);
         }
 
+        $sessions = self::sessionsFor($attendance);
+        $latestPunch = AttendancePunch::latestFor($attendance->employee_id, today());
+        $isOpen = $latestPunch && $latestPunch->punch_type === 'check_in';
+
         $checkInLabel = self::formatTime($attendance->check_in);
-        $checkInAt = self::combine($attendance->attendance_date, $attendance->check_in);
+        $todaysWorkedMinutes = (int) $attendance->worked_minutes;
 
-        if ($attendance->check_out) {
-            $checkOutAt = self::combine($attendance->attendance_date, $attendance->check_out);
-            if ($checkOutAt->lt($checkInAt)) {
-                $checkOutAt->addDay(); // overnight shift
-            }
+        if ($isOpen) {
+            $isLate = $attendance->attendance_status === 'late';
+            // Running total = every already-closed session today PLUS the
+            // currently open one's elapsed time so far, so "worked today"
+            // reads correctly mid-session, not just after the first pair.
+            $runningMinutes = $todaysWorkedMinutes + (int) $latestPunch->punched_at->diffInMinutes(now());
 
-            return self::state('checked_out', 'Checked Out', $shiftName, canCheckIn: false, canCheckOut: false, checkIn: $checkInLabel, checkOut: self::formatTime($attendance->check_out), workedMinutes: (int) $checkInAt->diffInMinutes($checkOutAt));
+            return self::state(
+                $isLate ? 'late' : 'checked_in',
+                $isLate ? 'Late' : 'Checked In',
+                $shiftName,
+                canCheckIn: false,
+                canCheckOut: true,
+                checkIn: $checkInLabel,
+                workedMinutes: $runningMinutes,
+                sessions: $sessions
+            );
         }
 
-        $isLate = $attendance->attendance_status === 'late';
-
+        // Not currently open — either never checked in, or checked out and
+        // free to check back in. Either way canCheckIn stays true.
         return self::state(
-            $isLate ? 'late' : 'checked_in',
-            $isLate ? 'Late' : 'Checked In',
+            'checked_out',
+            'Checked Out',
             $shiftName,
-            canCheckIn: false,
-            canCheckOut: true,
+            canCheckIn: true,
+            canCheckOut: false,
             checkIn: $checkInLabel,
-            workedMinutes: (int) $checkInAt->diffInMinutes(now())
+            checkOut: $attendance->check_out ? self::formatTime($attendance->check_out) : null,
+            workedMinutes: $todaysWorkedMinutes,
+            sessions: $sessions
         );
+    }
+
+    /**
+     * Every session recorded today, paired up (check_in followed by its
+     * matching check_out) for display — a trailing unmatched check_in is
+     * still "open" and shown as such rather than silently dropped. Kept
+     * here (not in Blade, per this project's own "no calculation in views"
+     * rule) so the header widget and any future consumer read the exact
+     * same session breakdown.
+     */
+    private static function sessionsFor(Attendance $attendance): array
+    {
+        $punches = AttendancePunch::where('employee_id', $attendance->employee_id)
+            ->where('attendance_date', $attendance->attendance_date->toDateString())
+            ->orderBy('punched_at')
+            ->get();
+
+        $sessions = [];
+        $open = null;
+
+        foreach ($punches as $punch) {
+            if ($punch->punch_type === 'check_in') {
+                $open = $punch;
+                continue;
+            }
+
+            // check_out
+            $sessions[] = [
+                'check_in' => $open ? self::formatTime($open->punched_at->format('H:i:s')) : null,
+                'check_out' => self::formatTime($punch->punched_at->format('H:i:s')),
+                'source' => $punch->source_label,
+                'notes' => $punch->notes,
+                'is_open' => false,
+            ];
+            $open = null;
+        }
+
+        if ($open) {
+            $sessions[] = [
+                'check_in' => self::formatTime($open->punched_at->format('H:i:s')),
+                'check_out' => null,
+                'source' => $open->source_label,
+                'notes' => $open->notes,
+                'is_open' => true,
+            ];
+        }
+
+        return $sessions;
     }
 
     private static function state(
@@ -117,7 +189,8 @@ class AttendanceStatusService
         ?string $checkIn = null,
         ?string $checkOut = null,
         ?int $workedMinutes = null,
-        ?string $note = null
+        ?string $note = null,
+        array $sessions = []
     ): array {
         return [
             'state' => $state,
@@ -130,12 +203,8 @@ class AttendanceStatusService
             'can_check_in' => $canCheckIn,
             'can_check_out' => $canCheckOut,
             'note' => $note,
+            'sessions' => $sessions,
         ];
-    }
-
-    private static function combine($date, string $time): Carbon
-    {
-        return Carbon::parse($date->toDateString() . ' ' . $time);
     }
 
     private static function formatTime(string $time): string

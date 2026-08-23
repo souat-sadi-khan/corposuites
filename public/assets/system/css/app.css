@@ -429,6 +429,9 @@ padding       : 8px 14px 3px;
 .main-area {
 margin-left   : var(--sb-expanded);
 flex          : 1;
+min-width     : 0; /* allow this flex item to shrink below its content's intrinsic width instead of
+                       pushing the whole page (and any wide table inside it, e.g. Monthly Attendance
+                       Sheet) past the viewport — flex items default to min-width:auto otherwise */
 display       : flex;
 flex-direction: column;
 min-height    : 100vh;
@@ -632,6 +635,17 @@ hr.pf-div { border: none; border-top: 1px solid var(--border-lt); margin: 0; }
 .aw-item-label { display: flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--tx-3); }
 .aw-item-label i { font-size: 11px; }
 .aw-item-value { display: block; font-size: 13.5px; font-weight: 700; color: var(--tx-1); margin-top: 3px; }
+
+/* Today's individual punch sessions — shown once an employee has checked
+   in/out more than once in a day (or even just once, for source/notes
+   visibility), underneath the summary grid above. */
+.aw-sessions { margin-bottom: 14px; padding: 8px 10px; border-radius: 9px; background: var(--bg-base); border: 1px solid var(--border-lt); }
+.aw-sessions-title { display: flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--tx-3); margin-bottom: 6px; }
+.aw-session-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 4px 0; font-size: 11.5px; border-top: 1px dashed var(--border-lt); }
+.aw-session-row:first-of-type { border-top: none; padding-top: 0; }
+.aw-session-time { font-weight: 700; color: var(--tx-1); }
+.aw-session-source { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--accent-s); color: var(--accent); font-weight: 600; }
+.aw-session-note { font-size: 10.5px; color: var(--tx-3); display: inline-flex; align-items: center; gap: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Gradient action buttons */
 .aw-btn {
