@@ -1,4 +1,5 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.relationship-histories.store') }}">
+    <input type="hidden" name="status" value="1">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Add Relationship History Entry</h5>
@@ -50,7 +51,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}">{{ $company->name }} ({{ $company->email }})</option>
                     @endforeach
                 </select>
             </div>
@@ -58,13 +59,13 @@
                 <label>Description</label>
                 <textarea class="form-control" name="description" rows="3" placeholder="Details of the interaction"></textarea>
             </div>
-            <div class="fm-field fm-full">
+            {{-- <div class="fm-field fm-full">
                 <label>Status</label>
                 <select name="status" class="form-select">
                     <option value="1">Active</option>
                     <option value="0">Inactive</option>
                 </select>
-            </div>
+            </div> --}}
         </div>
     </div>
 

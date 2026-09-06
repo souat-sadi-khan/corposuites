@@ -1,4 +1,5 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.relationship-histories.update', $relationshipHistory->id) }}">
+    <input type="hidden" name="status" value="{{ $relationshipHistory->status }}">
     @method('PATCH')
     <div class="modal-header fm-modal-head">
         <div>
@@ -12,7 +13,7 @@
         <div class="fm-grid">
             <div class="fm-field">
                 <label>Type <span class="req">*</span></label>
-                <select name="type" class="form-select" required>
+                <select name="type" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="call" {{ old('type', $relationshipHistory->type) == 'call' ? 'selected' : '' }}>Call</option>
                     <option value="email" {{ old('type', $relationshipHistory->type) == 'email' ? 'selected' : '' }}>Email</option>
                     <option value="meeting" {{ old('type', $relationshipHistory->type) == 'meeting' ? 'selected' : '' }}>Meeting</option>
@@ -33,7 +34,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}" {{ old('lead_id', $relationshipHistory->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}" {{ old('lead_id', $relationshipHistory->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -42,7 +43,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}" {{ old('contact_id', $relationshipHistory->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email . ' - '. $contact->phone }}" value="{{ $contact->id }}" {{ old('contact_id', $relationshipHistory->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -51,7 +52,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}" {{ old('company_id', $relationshipHistory->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}" {{ old('company_id', $relationshipHistory->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }} ({{ $company->email }})</option>
                     @endforeach
                 </select>
             </div>
@@ -59,13 +60,13 @@
                 <label>Description</label>
                 <textarea class="form-control" name="description" rows="3">{{ old('description', $relationshipHistory->description) }}</textarea>
             </div>
-            <div class="fm-field fm-full">
+            {{-- <div class="fm-field fm-full">
                 <label>Status</label>
                 <select name="status" class="form-select">
                     <option value="1" {{ old('status', $relationshipHistory->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $relationshipHistory->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>
-            </div>
+            </div> --}}
         </div>
     </div>
 

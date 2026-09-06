@@ -1,5 +1,6 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.companies.update', $company->id) }}">
     @method('PATCH')
+    <input type="hidden" name="status" value="{{ $company->status }}">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Edit Company</h5>
@@ -38,13 +39,13 @@
                 <label>Notes</label>
                 <textarea class="form-control" name="notes" rows="3">{{ old('notes', $company->notes) }}</textarea>
             </div>
-            <div class="fm-field fm-full">
+            {{-- <div class="fm-field fm-full">
                 <label>Status</label>
                 <select name="status" class="form-select">
                     <option value="1" {{ old('status', $company->status) == '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ old('status', $company->status) == '0' ? 'selected' : '' }}>Inactive</option>
                 </select>
-            </div>
+            </div> --}}
         </div>
     </div>
 
