@@ -1,4 +1,4 @@
-@extends('admin.layout.app', ['title' => 'Request Adjustment'])
+@extends('admin.layout.app', ['title' => 'Request Regularization'])
 
 @section('content')
 

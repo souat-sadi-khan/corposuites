@@ -88,7 +88,7 @@ class EmployeeController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.employees.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('name', function ($row) {
-                    $avatar = Images::show($row->photo);
+                    $avatar = Images::employeeAvatar($row);
                     $roleName = 'Unassigned';
                     if($row->admin) {
                         $roleName = $row->admin->roles->pluck('name')->implode(', ');
@@ -106,7 +106,7 @@ class EmployeeController extends Controller
 
                     return '
                         <div class="d-flex align-items-center">
-                            <div class="mr-2 employee-avatar">
+                            <div class="employee-avatar employee-avatar-compact">
                                 ' . $avatar . '
                             </div>
                             <div>

@@ -100,13 +100,13 @@ class LeaveBalanceController extends Controller
             $page = $groups->slice($start, $length)->values();
 
             $data = $page->map(function ($row) {
-                $avatar = Images::show($row->employee->photo ?? null);
+                $avatar = Images::employeeAvatar($row->employee);
 
                 return [
                     'id' => $row->key,
                     'employee_name' => '
                         <div class="d-flex align-items-center">
-                            <div class="mr-2 employee-avatar">' . $avatar . '</div>
+                            <div class="employee-avatar employee-avatar-compact">' . $avatar . '</div>
                             <div>
                                 <b class="tl-name-txt">' . e($row->employee->full_name ?? '—') . '</b>
                                 <br>

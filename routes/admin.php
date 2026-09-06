@@ -1016,7 +1016,7 @@ Route::middleware(['isAdmin'])->group(function () {
     // Header attendance widget's own refresh call (see AttendanceWidgetController)
     // — same self-service, ungated reasoning as the portal routes above.
     Route::get('attendance-widget/status', [AttendanceWidgetController::class, 'status'])->name('attendance-widget.status');
-    // Self-service "Request Adjustment" for one of the employee's own past
+    // Self-service "Request Regularization" for one of the employee's own past
     // days — reuses the existing AttendanceAdjustment model/service, same
     // ungated self-service reasoning as the routes above.
     Route::get('attendance-portal/adjustment', [AttendancePortalController::class, 'adjustmentForm'])->name('attendance-portal.adjustment.form');

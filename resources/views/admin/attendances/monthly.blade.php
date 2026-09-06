@@ -344,7 +344,7 @@ _componentSelect();
 // This page has no DataTable of its own, so unlike every other admin list
 // screen (which calls this from a drawCallback), the shared "#openModal"
 // remote-modal click handler is never bound automatically — wired here
-// explicitly so the day cells' "Request Adjustment" quick action works.
+// explicitly so the day cells' "Request Regularization" quick action works.
 if (typeof _componentRemoteModalLoadAfterAjax === 'function') {
     _componentRemoteModalLoadAfterAjax();
 }

@@ -12,9 +12,7 @@
  * The actual Check In / Check Out action now always goes through the shared
  * #awPunchModal (markup lives in header.blade.php, rendered once, globally)
  * instead of a native window.prompt() — it shows the employee's real
- * current location (an embedded OpenStreetMap iframe, no API key / no new
- * mapping library dependency) and an optional note before the punch is
- * actually sent. window.awOpenPunchModal() is exposed on `window` so BOTH
+ * current address and an optional note before the punch is actually sent. window.awOpenPunchModal() is exposed on `window` so BOTH
  * the header widget's own buttons AND the dedicated "My Attendance" page's
  * buttons (see attendance-portal/index.blade.php) can trigger the exact
  * same modal/flow — one implementation, two entry points, so they can never
@@ -27,7 +25,19 @@ $(function () {
 
     var awBusy = false;
     var awPunchModalEl = document.getElementById('awPunchModal');
-    var awPunchModal = new bootstrap.Modal(awPunchModalEl);
+    // Keep the modal outside the sticky topbar's stacking context.
+    document.body.appendChild(awPunchModalEl);
+    var awPunchModal = bootstrap.Modal.getOrCreateInstance(awPunchModalEl);
+    var awLocationRequest = 0;
+    var awAddressRequest = null;
+    awPunchModalEl.addEventListener('hide.bs.modal', function (event) {
+        if (awBusy) {
+            event.preventDefault();
+            return;
+        }
+        awLocationRequest++;
+        if (awAddressRequest) awAddressRequest.abort();
+    });
     var awPunchState = { url: null, latitude: null, longitude: null, ready: false };
 
     function awSetMessage(text, kind) {
@@ -59,8 +69,8 @@ $(function () {
 
     function awPunchResetModal(actionLabel) {
         awPunchState = { url: null, latitude: null, longitude: null, ready: false };
-        $('#awPunchModalTitle').html(
-            (actionLabel && actionLabel.toLowerCase().indexOf('out') !== -1 ? '<i class="ri-logout-circle-fill"></i> Check Out' : '<i class="ri-login-circle-fill"></i> Check In')
+        $('#awPunchModalTitle').text(
+            (actionLabel && actionLabel.toLowerCase().indexOf('out') !== -1 ? 'Check Out' : 'Check In')
         );
         $('#awPunchConfirmLabel').text('Confirm');
         $('#awPunchLoading').removeClass('d-none');
@@ -78,16 +88,26 @@ $(function () {
         awPunchState.longitude = lng;
         awPunchState.ready = true;
 
-        var d = 0.003; // a small bbox around the point for the embed frame
-        var bbox = (lng - d) + ',' + (lat - d) + ',' + (lng + d) + ',' + (lat + d);
-        $('#awPunchMapFrame').attr('src', 'https://www.openstreetmap.org/export/embed.html?bbox=' + bbox + '&layer=mapnik&marker=' + lat + ',' + lng);
-        $('#awPunchMapLink').attr('href', 'https://www.openstreetmap.org/?mlat=' + lat + '&mlon=' + lng + '#map=17/' + lat + '/' + lng);
-        $('#awPunchCoordsText').text(lat.toFixed(6) + ', ' + lng.toFixed(6));
+        var requestId = awLocationRequest;
+        $('#awPunchAddressText').text('Looking up your address…');
 
         $('#awPunchLoading').addClass('d-none');
         $('#awPunchLocationError').addClass('d-none');
         $('#awPunchLocationContent').removeClass('d-none');
-        $('#awPunchConfirmBtn').prop('disabled', false);
+        awAddressRequest = $.ajax({
+            url: 'https://nominatim.openstreetmap.org/reverse',
+            data: { format: 'jsonv2', lat: lat, lon: lng, zoom: 18 },
+            dataType: 'json',
+            timeout: 10000
+        }).done(function (data) {
+            if (requestId !== awLocationRequest) return;
+            $('#awPunchAddressText').text(data.display_name || 'Address unavailable. Your GPS location will still be recorded.');
+        }).fail(function () {
+            if (requestId !== awLocationRequest) return;
+            $('#awPunchAddressText').text('Unable to look up the address. Your GPS location will still be recorded.');
+        }).always(function () {
+            if (requestId === awLocationRequest) $('#awPunchConfirmBtn').prop('disabled', false);
+        });
     }
 
     function awPunchShowLocationError(message) {
@@ -105,8 +125,10 @@ $(function () {
      * call it. `url` is the check-in/check-out endpoint to post to.
      */
     window.awOpenPunchModal = function (url, actionLabel) {
-        if (awBusy) return;
+        if (awBusy || awPunchModalEl.classList.contains('show')) return;
 
+        var requestId = ++awLocationRequest;
+        $('#attendanceWidgetDd').removeClass('is-open');
         awPunchResetModal(actionLabel);
         awPunchState.url = url;
         awPunchModal.show();
@@ -117,8 +139,12 @@ $(function () {
         }
 
         navigator.geolocation.getCurrentPosition(
-            awPunchShowLocation,
-            function () { awPunchShowLocationError('Please allow location access to continue, then try again.'); },
+            function (position) {
+                if (requestId === awLocationRequest) awPunchShowLocation(position);
+            },
+            function () {
+                if (requestId === awLocationRequest) awPunchShowLocationError('Please allow location access to continue, then try again.');
+            },
             { enableHighAccuracy: true, timeout: 15000 }
         );
     };
@@ -138,6 +164,7 @@ $(function () {
             notes: $('#awPunchNotes').val()
         }).done(function (response) {
             if (response.status) {
+                awBusy = false;
                 awPunchModal.hide();
                 awRefresh().done(function () {
                     awSetMessage(response.message, 'success');

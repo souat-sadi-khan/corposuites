@@ -171,7 +171,7 @@
                                 </span>
                             @elseif($isPastDay)
                                 <a href="{{ route('admin.attendance-portal.adjustment.form', ['date' => $dateKey]) }}" class="myatt-adj-link">
-                                    <i class="ri-edit-2-line"></i> Request Adjustment
+                                    <i class="ri-edit-2-line"></i> Request Regularization
                                 </a>
                             @endif
                         </td>

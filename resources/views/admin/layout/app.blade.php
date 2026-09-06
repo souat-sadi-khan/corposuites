@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="{{ asset('assets/system/fonts/fonts.css') }}">
 
     <!-- App CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/system/css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/system/css/app.css') }}?v={{ filemtime(public_path('assets/system/css/app.css')) }}">
 
     <script>
         (function() {

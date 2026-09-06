@@ -5,6 +5,25 @@ use Illuminate\Support\Facades\Storage;
 
 class Images
 {
+    public static function employeeAvatar(?\App\Models\Employee $employee): string
+    {
+        $photo = $employee?->photo;
+        $isPlaceholder = $photo && basename(str_replace('\\', '/', $photo)) === 'default-avatar.png';
+        if ($photo && !$isPlaceholder && is_file(public_path($photo))) {
+            return '<img src="' . e(asset($employee->photo)) . '" alt="' . e($employee->full_name) . '" loading="lazy">';
+        }
+
+        $initials = mb_strtoupper(
+            mb_substr(trim($employee?->first_name ?? ''), 0, 1) .
+            mb_substr(trim($employee?->last_name ?? ''), 0, 1)
+        );
+        // Choose a fresh gradient whenever the table renders the avatar.
+        $hue = random_int(0, 359);
+        $endHue = ($hue + 45) % 360;
+
+        return '<span class="employee-avatar-initials" style="--avatar-hue: ' . $hue . '; --avatar-end-hue: ' . $endHue . ';" role="img" aria-label="' . e($employee?->full_name ?? 'Unknown employee') . '">' . e($initials ?: '?') . '</span>';
+    }
+
     public static function upload($folder, $image)
     {
         $originalName = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);

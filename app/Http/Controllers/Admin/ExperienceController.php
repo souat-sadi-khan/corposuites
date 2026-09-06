@@ -78,11 +78,11 @@ class ExperienceController extends Controller
                     return '<b class="tl-name-txt">' . $row->company_name . '</b><br><small>' . $row->designation . '</small>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    $avatar = Images::show($row->employee->photo);
+                    $avatar = Images::employeeAvatar($row->employee);
 
                     return '
                         <div class="d-flex align-items-center">
-                            <div class="mr-2 employee-avatar">
+                            <div class="employee-avatar employee-avatar-compact">
                                 ' . $avatar . '
                             </div>
                             <div>

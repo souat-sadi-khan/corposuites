@@ -1,4 +1,5 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.opportunities.store') }}">
+    <input type="hidden" name="status" value="1">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Add Opportunity</h5>
@@ -18,7 +19,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}">{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}">{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>

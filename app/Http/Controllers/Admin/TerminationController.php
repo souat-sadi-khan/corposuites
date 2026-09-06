@@ -72,11 +72,11 @@ class TerminationController extends Controller
                     return '<div class="fm-field"><div class="form-check form-switch"><input data-url="' . route('admin.terminations.status', $row->id) . '" class="switch form-check-input" type="checkbox" role="switch" name="status" id="status' . $row->id . '" ' . $checked . ' data-id="' . $row->id . '"></div></div>';
                 })
                 ->addColumn('employee_name', function ($row) {
-                    $avatar = Images::show($row->employee->photo);
+                    $avatar = Images::employeeAvatar($row->employee);
 
                     return '
                         <div class="d-flex align-items-center">
-                            <div class="mr-2 employee-avatar">
+                            <div class="employee-avatar employee-avatar-compact">
                                 ' . $avatar . '
                             </div>
                             <div>
