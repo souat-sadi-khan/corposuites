@@ -1,4 +1,5 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.email-communications.update', $emailCommunication->id) }}">
+    <input type="hidden" name="status" value="{{ $emailCommunication->status }}">
     @method('PATCH')
     <div class="modal-header fm-modal-head">
         <div>
@@ -12,7 +13,7 @@
         <div class="fm-grid">
             <div class="fm-field">
                 <label>Direction <span class="req">*</span></label>
-                <select name="direction" class="form-select" required>
+                <select name="direction" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="outbound" {{ old('direction', $emailCommunication->direction) == 'outbound' ? 'selected' : '' }}>Outbound</option>
                     <option value="inbound" {{ old('direction', $emailCommunication->direction) == 'inbound' ? 'selected' : '' }}>Inbound</option>
                 </select>
@@ -38,7 +39,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}" {{ old('lead_id', $emailCommunication->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}" {{ old('lead_id', $emailCommunication->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -47,7 +48,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}" {{ old('contact_id', $emailCommunication->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email }}" value="{{ $contact->id }}" {{ old('contact_id', $emailCommunication->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -56,20 +57,13 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}" {{ old('company_id', $emailCommunication->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}" {{ old('company_id', $emailCommunication->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field fm-full">
                 <label>Body</label>
                 <textarea class="form-control" name="body" rows="4">{{ old('body', $emailCommunication->body) }}</textarea>
-            </div>
-            <div class="fm-field fm-full">
-                <label>Status</label>
-                <select name="status" class="form-select">
-                    <option value="1" {{ old('status', $emailCommunication->status) == '1' ? 'selected' : '' }}>Active</option>
-                    <option value="0" {{ old('status', $emailCommunication->status) == '0' ? 'selected' : '' }}>Inactive</option>
-                </select>
             </div>
         </div>
     </div>

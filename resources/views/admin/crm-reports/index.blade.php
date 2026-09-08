@@ -2,13 +2,6 @@
 
 @section('content')
 
-    <div class="sec-hdr">
-        <div>
-            <h2>CRM Reports</h2>
-            <div class="sec-sub">Conversion, win-rate, and engagement metrics across the CRM</div>
-        </div>
-    </div>
-
     <!-- Stat cards -->
     <div class="stats-grid">
         <div class="stat-card">
@@ -53,7 +46,7 @@
     </div>
 
     <div class="twin-row mb-3">
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Opportunities by Stage</div>
@@ -75,8 +68,8 @@
                             @forelse($opportunitiesByStage as $row)
                                 <tr>
                                     <td>{{ ucfirst($row->stage) }}</td>
-                                    <td>{{ number_format($row->total) }}</td>
-                                    <td>{{ number_format($row->amount, 2) }}</td>
+                                    <td>{{ format_currency($row->total) }}</td>
+                                    <td>{{ format_currency($row->amount, 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -126,7 +119,7 @@
                         @forelse($leadsBySourceMonthly as $source => $total)
                             <tr>
                                 <td>{{ $source }}</td>
-                                <td>{{ number_format($total) }}</td>
+                                <td>{{ format_currency($total) }}</td>
                             </tr>
                         @empty
                             <tr>

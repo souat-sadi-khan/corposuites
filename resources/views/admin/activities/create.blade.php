@@ -1,4 +1,5 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.activities.store') }}">
+    <input type="hidden" name="status" value="1">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Add Activity</h5>
@@ -11,7 +12,7 @@
         <div class="fm-grid">
             <div class="fm-field">
                 <label>Type <span class="req">*</span></label>
-                <select name="type" class="form-select" required>
+                <select name="type" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="call">Call</option>
                     <option value="meeting">Meeting</option>
                     <option value="email">Email</option>
@@ -30,7 +31,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}">{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}">{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -39,7 +40,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}">{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email }}" value="{{ $contact->id }}">{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -48,7 +49,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}">{{ $company->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -57,7 +58,7 @@
                 <select name="opportunity_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($opportunities as $opportunity)
-                        <option value="{{ $opportunity->id }}">{{ $opportunity->name }}</option>
+                        <option data-desc="Amount: {{ format_currency($opportunity->amount, 2) }}" value="{{ $opportunity->id }}">{{ $opportunity->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -66,13 +67,13 @@
                 <select name="assigned_to" class="form-select select">
                     <option value="">Unassigned</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}">{{ $admin->name }}</option>
+                        <option data-desc="{{ $admin->email }}" value="{{ $admin->id }}">{{ $admin->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field">
                 <label>Activity Status</label>
-                <select name="activity_status" class="form-select">
+                <select name="activity_status" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
@@ -81,13 +82,6 @@
             <div class="fm-field fm-full">
                 <label>Description</label>
                 <textarea class="form-control" name="description" rows="3" placeholder="Details of this activity"></textarea>
-            </div>
-            <div class="fm-field fm-full">
-                <label>Status</label>
-                <select name="status" class="form-select">
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </select>
             </div>
         </div>
     </div>

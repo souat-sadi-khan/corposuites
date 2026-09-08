@@ -1,5 +1,6 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.follow-ups.update', $followUp->id) }}">
     @method('PATCH')
+    <input type="hidden" name="status" value="{{ $followUp->status }}">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Edit Follow Up</h5>
@@ -23,7 +24,7 @@
                 <select name="assigned_to" class="form-select select">
                     <option value="">Unassigned</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}" {{ old('assigned_to', $followUp->assigned_to) == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
+                        <option data-desc="{{ $admin->email }}" value="{{ $admin->id }}" {{ old('assigned_to', $followUp->assigned_to) == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -32,7 +33,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}" {{ old('lead_id', $followUp->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}" {{ old('lead_id', $followUp->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -41,7 +42,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}" {{ old('contact_id', $followUp->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email }}" value="{{ $contact->id }}" {{ old('contact_id', $followUp->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -50,7 +51,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}" {{ old('company_id', $followUp->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}" {{ old('company_id', $followUp->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -59,20 +60,13 @@
                 <select name="opportunity_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($opportunities as $opportunity)
-                        <option value="{{ $opportunity->id }}" {{ old('opportunity_id', $followUp->opportunity_id) == $opportunity->id ? 'selected' : '' }}>{{ $opportunity->name }}</option>
+                        <option data-desc="Amount: {{ format_currency($opportunity->amount) }}" value="{{ $opportunity->id }}" {{ old('opportunity_id', $followUp->opportunity_id) == $opportunity->id ? 'selected' : '' }}>{{ $opportunity->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field fm-full">
                 <label>Notes</label>
                 <textarea class="form-control" name="notes" rows="3">{{ old('notes', $followUp->notes) }}</textarea>
-            </div>
-            <div class="fm-field fm-full">
-                <label>Status</label>
-                <select name="status" class="form-select">
-                    <option value="1" {{ old('status', $followUp->status) == '1' ? 'selected' : '' }}>Active</option>
-                    <option value="0" {{ old('status', $followUp->status) == '0' ? 'selected' : '' }}>Inactive</option>
-                </select>
             </div>
         </div>
     </div>

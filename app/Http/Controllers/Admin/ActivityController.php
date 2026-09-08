@@ -72,7 +72,7 @@ class ActivityController extends Controller
                     return '<b class="tl-name-txt">' . $row->subject . '</b><br><small>' . ucfirst($row->type) . '</small>';
                 })
                 ->addColumn('due_date_formatted', function ($row) {
-                    return $row->due_date ? $row->due_date->format('d M, Y h:i A') : '-';
+                    return $row->due_date ? format_date($row->due_date) . ' ' . $row->due_date->format('h:i A') : '-';
                 })
                 ->addColumn('activity_status_badge', function ($row) {
                     return ucfirst($row->activity_status);
