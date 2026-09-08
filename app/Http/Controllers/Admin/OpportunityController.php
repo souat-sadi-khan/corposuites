@@ -68,7 +68,7 @@ class OpportunityController extends Controller
                     return '<b class="tl-name-txt">' . $row->name . '</b><br><small>' . ($row->company->name ?? '-') . '</small>';
                 })
                 ->addColumn('amount_formatted', function ($row) {
-                    return $row->amount !== null ? number_format($row->amount, 2) : '-';
+                    return $row->amount !== null ? format_currency($row->amount, 2) : '-';
                 })
                 ->addColumn('stage_badge', function ($row) {
                     return ucfirst($row->stage);

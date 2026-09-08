@@ -28,7 +28,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}">{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email }}" value="{{ $contact->id }}">{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -37,7 +37,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}">{{ $company->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -51,7 +51,7 @@
             </div>
             <div class="fm-field">
                 <label>Stage <span class="req">*</span></label>
-                <select name="stage" class="form-select" required>
+                <select name="stage" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="prospecting">Prospecting</option>
                     <option value="qualification">Qualification</option>
                     <option value="proposal">Proposal</option>
@@ -69,20 +69,13 @@
                 <select name="assigned_to" class="form-select select">
                     <option value="">Unassigned</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}">{{ $admin->name }}</option>
+                        <option data-desc="{{ $admin->email }}" value="{{ $admin->id }}">{{ $admin->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field fm-full">
                 <label>Notes</label>
                 <textarea class="form-control" name="notes" rows="3" placeholder="Additional notes about this opportunity"></textarea>
-            </div>
-            <div class="fm-field fm-full">
-                <label>Status</label>
-                <select name="status" class="form-select">
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </select>
             </div>
         </div>
     </div>

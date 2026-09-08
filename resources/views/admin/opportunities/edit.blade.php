@@ -1,5 +1,6 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.opportunities.update', $opportunity->id) }}">
     @method('PATCH')
+    <input type="hidden" name="status" value="{{ $opportunity->status }}">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Edit Opportunity</h5>
@@ -19,7 +20,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}" {{ old('lead_id', $opportunity->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}" {{ old('lead_id', $opportunity->lead_id) == $lead->id ? 'selected' : '' }}>{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -28,7 +29,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}" {{ old('contact_id', $opportunity->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email }}" value="{{ $contact->id }}" {{ old('contact_id', $opportunity->contact_id) == $contact->id ? 'selected' : '' }}>{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -37,7 +38,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}" {{ old('company_id', $opportunity->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}" {{ old('company_id', $opportunity->company_id) == $company->id ? 'selected' : '' }}>{{ $company->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -51,7 +52,7 @@
             </div>
             <div class="fm-field">
                 <label>Stage <span class="req">*</span></label>
-                <select name="stage" class="form-select" required>
+                <select name="stage" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="prospecting" {{ old('stage', $opportunity->stage) == 'prospecting' ? 'selected' : '' }}>Prospecting</option>
                     <option value="qualification" {{ old('stage', $opportunity->stage) == 'qualification' ? 'selected' : '' }}>Qualification</option>
                     <option value="proposal" {{ old('stage', $opportunity->stage) == 'proposal' ? 'selected' : '' }}>Proposal</option>
@@ -69,20 +70,13 @@
                 <select name="assigned_to" class="form-select select">
                     <option value="">Unassigned</option>
                     @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}" {{ old('assigned_to', $opportunity->assigned_to) == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
+                        <option data-desc="{{ $admin->email }}" value="{{ $admin->id }}" {{ old('assigned_to', $opportunity->assigned_to) == $admin->id ? 'selected' : '' }}>{{ $admin->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field fm-full">
                 <label>Notes</label>
                 <textarea class="form-control" name="notes" rows="3">{{ old('notes', $opportunity->notes) }}</textarea>
-            </div>
-            <div class="fm-field fm-full">
-                <label>Status</label>
-                <select name="status" class="form-select">
-                    <option value="1" {{ old('status', $opportunity->status) == '1' ? 'selected' : '' }}>Active</option>
-                    <option value="0" {{ old('status', $opportunity->status) == '0' ? 'selected' : '' }}>Inactive</option>
-                </select>
             </div>
         </div>
     </div>

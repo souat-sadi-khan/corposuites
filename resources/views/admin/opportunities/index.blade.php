@@ -1,4 +1,4 @@
-@extends('admin.layout.app', ['title' => 'Opportunities', 'modal' => 'lg'])
+@extends('admin.layout.app', ['title' => 'Opportunities', 'modal' => 'xl'])
 
 @section('content')
     <div class="tl-toolbar">
