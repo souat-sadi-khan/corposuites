@@ -67,16 +67,16 @@ class QuotationController extends Controller
                     return '<b class="tl-name-txt">' . $row->quotation_number . '</b><br><small>' . ($row->company->name ?? $row->lead->name ?? '-') . '</small>';
                 })
                 ->addColumn('amount_formatted', function ($row) {
-                    return number_format($row->amount, 2);
+                    return format_currency($row->amount, 2);
                 })
                 ->addColumn('quotation_status_badge', function ($row) {
                     return ucfirst($row->quotation_status);
                 })
                 ->addColumn('issue_date_formatted', function ($row) {
-                    return $row->issue_date ? $row->issue_date->format('d M, Y') : '-';
+                    return $row->issue_date ? format_date($row->issue_date) : '-';
                 })
                 ->addColumn('valid_until_formatted', function ($row) {
-                    return $row->valid_until ? $row->valid_until->format('d M, Y') : '-';
+                    return $row->valid_until ? format_date($row->valid_until) : '-';
                 })
                 ->addColumn('action', function ($row) {
                     return view('admin.quotations.action', compact('row'))->render();

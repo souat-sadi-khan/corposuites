@@ -2,19 +2,12 @@
 
 @section('content')
 
-    <div class="sec-hdr">
-        <div>
-            <h2>Sales Forecast</h2>
-            <div class="sec-sub">Projected revenue from open opportunities in the pipeline</div>
-        </div>
-    </div>
-
     <!-- Stat cards -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-lbl">Total Pipeline Value</div>
-                <div class="stat-val">{{ number_format($totalPipelineValue, 2) }}</div>
+                <div class="stat-val">{{ format_currency($totalPipelineValue, 2) }}</div>
             </div>
             <div class="stat-icon-wrap si-blue">
                 <i class="ri-funds-line"></i>
@@ -24,7 +17,7 @@
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-lbl">Weighted Forecast (by Probability)</div>
-                <div class="stat-val">{{ number_format($weightedForecastValue, 2) }}</div>
+                <div class="stat-val">{{ format_currency($weightedForecastValue, 2) }}</div>
             </div>
             <div class="stat-icon-wrap si-green">
                 <i class="ri-line-chart-line"></i>
@@ -34,7 +27,7 @@
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-lbl">Won This Month</div>
-                <div class="stat-val">{{ number_format($wonThisMonth, 2) }}</div>
+                <div class="stat-val">{{ format_currency($wonThisMonth, 2) }}</div>
             </div>
             <div class="stat-icon-wrap si-amber">
                 <i class="ri-trophy-line"></i>
@@ -43,7 +36,7 @@
     </div>
 
     <div class="twin-row mb-3">
-        <div class="nx-card">
+        <div class="nx-card mb-3">
             <div class="nx-card-hdr">
                 <div>
                     <div class="nx-card-title">Pipeline by Stage</div>
@@ -81,9 +74,9 @@
                             @forelse($byMonth as $month => $row)
                                 <tr>
                                     <td>{{ $month }}</td>
-                                    <td>{{ number_format($row->total) }}</td>
-                                    <td>{{ number_format($row->amount, 2) }}</td>
-                                    <td>{{ number_format($row->weighted, 2) }}</td>
+                                    <td>{{ format_currency($row->total) }}</td>
+                                    <td>{{ format_currency($row->amount, 2) }}</td>
+                                    <td>{{ format_currency($row->weighted, 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>

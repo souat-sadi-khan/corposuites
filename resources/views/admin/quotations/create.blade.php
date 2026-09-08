@@ -1,4 +1,5 @@
 <form class="ajax-form" method="POST" action="{{ route('admin.quotations.store') }}">
+    <input type="hidden" name="status" value="1">
     <div class="modal-header fm-modal-head">
         <div>
             <h5 class="modal-title">Add Quotation</h5>
@@ -23,7 +24,7 @@
             </div>
             <div class="fm-field">
                 <label>Quotation Status <span class="req">*</span></label>
-                <select name="quotation_status" class="form-select" required>
+                <select name="quotation_status" class="form-select select" required data-minimum-results-for-search="Infinity">
                     <option value="draft">Draft</option>
                     <option value="sent">Sent</option>
                     <option value="accepted">Accepted</option>
@@ -36,7 +37,7 @@
                 <select name="lead_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($leads as $lead)
-                        <option value="{{ $lead->id }}">{{ $lead->name }}</option>
+                        <option data-desc="{{ $lead->email }}" value="{{ $lead->id }}">{{ $lead->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -45,7 +46,7 @@
                 <select name="contact_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($contacts as $contact)
-                        <option value="{{ $contact->id }}">{{ $contact->name }}</option>
+                        <option data-desc="{{ $contact->email }}" value="{{ $contact->id }}">{{ $contact->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -54,7 +55,7 @@
                 <select name="company_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($companies as $company)
-                        <option value="{{ $company->id }}">{{ $company->name }}</option>
+                        <option data-desc="{{ $company->address }}" value="{{ $company->id }}">{{ $company->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -63,20 +64,13 @@
                 <select name="opportunity_id" class="form-select select">
                     <option value="">None</option>
                     @foreach($opportunities as $opportunity)
-                        <option value="{{ $opportunity->id }}">{{ $opportunity->name }}</option>
+                        <option data-desc="Amount: {{ format_currency($opportunity->amount) }}" value="{{ $opportunity->id }}">{{ $opportunity->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="fm-field fm-full">
                 <label>Notes</label>
                 <textarea class="form-control" name="notes" rows="3" placeholder="Quotation notes / line item summary"></textarea>
-            </div>
-            <div class="fm-field fm-full">
-                <label>Active</label>
-                <select name="status" class="form-select">
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </select>
             </div>
         </div>
     </div>
